@@ -146,7 +146,7 @@
         <button class="clear-btn" onclick="clearPasture()">Clear all</button>
       </div>
       <div class="pasture-tiles" id="pasture-tiles">
-        <span class="pasture-empty" id="pasture-empty">Search and add horses</span>
+        <span class="pasture-empty">Search and add horses</span>
       </div>
     </div>
 
@@ -332,9 +332,8 @@ async function clearPasture(){
 }
 
 function renderPasture(){
-  const el    = document.getElementById('pasture-tiles');
-  const empty = document.getElementById('pasture-empty');
-  const cnt   = document.getElementById('pasture-count');
+  const el  = document.getElementById('pasture-tiles');
+  const cnt = document.getElementById('pasture-count');
   cnt.textContent = pasture.length ? `(${pasture.length})` : '';
 
   // Sync add-button state for any currently visible search results
@@ -345,9 +344,9 @@ function renderPasture(){
   });
 
   if(!pasture.length){
-    el.innerHTML=''; el.appendChild(empty); empty.style.display=''; return;
+    el.innerHTML = '<span class="pasture-empty">Search and add horses</span>';
+    return;
   }
-  empty.style.display='none';
 
   // tile-x buttons use data-name; clicks handled by delegated listener in boot
   el.innerHTML = pasture.map(h=>`
