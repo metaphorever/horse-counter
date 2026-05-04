@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Horse Counter{% endblock %}
+{% block content %}
+
+<div class="box">
+  <h1>🐴 Horse Counter</h1>
+
+  <div style="margin-bottom:12px">
+    <a href="/poetry" style="color:#00cf35;font-size:13px">📝 Poetry editor →</a>
+  </div>
+
+  {% if not tumblr_auth %}
+  <div class="msg warn">
+    Not connected to Tumblr —
+    <a href="/auth">connect now</a>
+    (counts still work, posting disabled)
+  </div>
+  {% else %}
+  <div class="msg ok">✓ Connected as <strong>{{ blog_name }}</strong></div>
+  {% endif %}
+
+  {% if not horses_loaded %}
+  <div class="msg err">⚠ Horse dictionary not loaded — counting unavailable</div>
+  {% endif %}
+
+  {# ── Tab navigation ── #}
+  <div class="tabs">
+    <button class="tab-btn {% if active_tab == 'url' %}on{% endif %}"
+            onclick="switchTab('url', this)">URL</button>
+    <button class="tab-btn {% if active_tab == 'text' %}on{% endif %}"
+            onclick="switchTab('text', this)">Text</button>
+    <button class="tab-btn {% if active_tab == 'reply' %}on{% endif %}"
+            onclick="switchTab('reply', this)">Reply</button>
+  </div>
+
+  {# ── URL tab ── #}
+  <div id="tab-url" class="tab {% if active_tab == 'url' %}on{% endif %}">
+    <form method="post" action="/">
+      <input type="hidden" name="type" value="url">
+      <input type="text" name="url" placeholder="https://blog.tumblr.com/post/123"
+             value="{{ form.url or '' }}">
+      <button type="submit">Find Horses</button>
+    </form>
+  </div>
+
+  {# ── Text tab ── #}
+  <div id="tab-text" class="tab {% if active_tab == 'text' %}on{% endif %}">
+    <form method="post" action="/">
+      <input type="hidden" name="type" value="text">
+      <textarea name="text" placeholder="Paste text to count horses in...">{{ form.text or '' }}</textarea>
+      <button type="submit">Find Horses</button>
+    </form>
+  </div>
+
+  {# ── Reply tab ── #}
+  <div id="tab-reply" class="tab {% if active_tab == 'reply' %}on{% endif %}">
+    <form method="post" action="/">
+      <input type="hidden" name="type" value="reply">
+      <label>Post URL to reply to:</label>
+      <input type="text" name="reply_url" placeholder="https://blog.tumblr.com/post/123"
+             value="{{ form.reply_url or '' }}">
+      <label>Your reply text (horses counted here):</label>
+      <textarea name="reply_text"
+                placeholder="Type your reply or image description...">{{ form.reply_text or '' }}</textarea>
+      <button type="submit">Find Horses in Reply</button>
+    </form>
+  </div>
+
+  {# ── Error ── #}
+  {% if error %}
+  <div class="msg err"><strong>Error:</strong> {{ error }}</div>
+  {% endif %}
+
+  {# ── Simple count result (not authenticated or zero horses) ── #}
+  {% if result %}
+  <div class="msg ok">
+    <strong>Found {{ result.count }} horse{{ 's' if result.count != 1 else '' }}</strong>
+    {% if result.stats %}
+    <span class="density">— {{ result.stats.horse_density }}% horse density
+    ({{ result.stats.linked_words }} of {{ result.stats.total_words }} words)</span>
+    {% endif %}
+  </div>
+  {% if result.horses %}
+  <ul class="horse-list">
+    {% for h in result.horses[:20] %}
+    <li>{{ h.original }}</li>
+    {% endfor %}
+    {% if result.count > 20 %}
+    <li><em>…{{ result.count - 20 }} more</em></li>
+    {% endif %}
+  </ul>
+  {% endif %}
+  {% endif %}
+
+  {# ── Success after queuing ── #}
+  {% if queued %}
+  <div class="msg ok">✓ Post {{ queued }}!</div>
+  {% endif %}
+
+</div>
+
+<script>
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
+  document.getElementById('tab-' + id).classList.add('on');
+  btn.classList.add('on');
+}
+</script>
+{% endblock %}

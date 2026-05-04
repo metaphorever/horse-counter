@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+.venv/
+
+# Secrets & tokens — never commit these
+tumblr_tokens.json
+.env.local
+
+# Runtime state — generated at runtime, not source files
+drafts.json
+pasture.json
+submissions.json
+
+# Horse data — large binary, distributed separately
+data/horses.json.gz
+horses_compressed.json.gz
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

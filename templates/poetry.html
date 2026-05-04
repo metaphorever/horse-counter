@@ -1,0 +1,568 @@
+{% extends "base.html" %}
+{% block title %}Poetry Editor — Horse Counter{% endblock %}
+
+{% block head %}
+<style>
+.poetry-wrap {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.left-col { display: flex; flex-direction: column; gap: 12px; }
+.panel { background: #fff; border-radius: 6px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+/* Search */
+.search-row { display: flex; gap: 6px; margin-bottom: 6px; }
+.search-row input { flex: 1; margin: 0; }
+.search-row button { flex-shrink: 0; padding: 9px 14px; }
+.search-mode { font-size: 11px; color: #00cf35; margin-bottom: 4px; min-height: 16px; font-style: italic; }
+.search-meta { font-size: 12px; color: #888; margin-bottom: 6px; }
+.search-meta a { color: #00cf35; cursor: pointer; text-decoration: underline; }
+.search-hint { font-size: 11px; color: #aaa; line-height: 1.6; margin-top: 8px; border-top: 1px solid #f0f0f0; padding-top: 8px; }
+.search-hint code { background: #f5f5f5; padding: 0 3px; border-radius: 2px; font-size: 11px; }
+.search-results { max-height: 240px; overflow-y: auto; }
+.result-item { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 3px; font-size: 13px; }
+.result-item:hover { background: #f5f5f5; }
+.result-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.multi-badge { font-size: 10px; color: #888; background: #f0f0f0; border-radius: 3px; padding: 1px 4px; flex-shrink: 0; }
+.add-btn { background: #e8f5e9; color: #2e7d32; border: none; border-radius: 3px; padding: 2px 8px; cursor: pointer; font-size: 12px; flex-shrink: 0; white-space: nowrap; }
+.add-btn:hover { background: #c8e6c9; }
+.add-btn:disabled { background: #f5f5f5; color: #aaa; cursor: default; }
+.search-error { color: #c62828; font-size: 12px; margin: 4px 0; }
+
+/* History */
+.history-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.htag { font-size: 11px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 3px; padding: 2px 7px; cursor: pointer; color: #555; }
+.htag:hover { background: #e8f5e9; border-color: #a5d6a7; color: #2e7d32; }
+
+/* Pasture */
+.pasture-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.pasture-head h3 { font-size: 14px; margin: 0; }
+.clear-btn { font-size: 11px; padding: 3px 8px; background: #ffebee; color: #c62828; border: none; border-radius: 3px; cursor: pointer; }
+.pasture-tiles { display: flex; flex-wrap: wrap; gap: 5px; min-height: 40px; }
+.pasture-empty { color: #aaa; font-size: 13px; font-style: italic; }
+
+/* Horse tile */
+.horse-tile {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 8px; background: #e8f5e9; border: 1px solid #a5d6a7;
+  border-radius: 4px; font-size: 13px; cursor: grab; user-select: none;
+  white-space: nowrap; touch-action: none; position: relative;
+}
+.horse-tile.is-dragging { opacity: 0.35; }
+.horse-tile.drop-before { border-left: 3px solid #00cf35; }
+.horse-tile.drop-after  { border-right: 3px solid #00cf35; }
+.tile-x { background: none; border: none; cursor: pointer; color: #aaa; font-size: 15px; padding: 0; line-height: 1; margin-left: 2px; }
+.tile-x:hover { color: #c62828; }
+
+/* Poem */
+.poem-panel { display: flex; flex-direction: column; }
+.poem-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.poem-head h2 { margin: 0; font-size: 1.1rem; }
+.poem-actions { display: flex; gap: 6px; }
+.poem-canvas { display: flex; flex-direction: column; gap: 4px; min-height: 200px; }
+.poem-line {
+  display: flex; align-items: center; gap: 4px;
+  min-height: 40px; padding: 4px 8px;
+  border: 1px dashed #ddd; border-radius: 4px; background: #fafafa;
+}
+.poem-line.drop-target { border-color: #00cf35; background: #f1fff4; }
+.line-num { font-size: 11px; color: #ccc; min-width: 18px; flex-shrink: 0; user-select: none; }
+.line-tiles { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; align-items: center; min-height: 28px; }
+.line-tiles.drop-target { outline: 2px dashed #00cf35; border-radius: 3px; }
+.add-line { margin-top: 6px; background: none; border: 1px dashed #ccc; border-radius: 4px; color: #aaa; padding: 6px; cursor: pointer; font-size: 13px; width: 100%; }
+.add-line:hover { border-color: #00cf35; color: #00cf35; }
+.poem-footer { margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.poem-stat { font-size: 13px; color: #666; }
+
+/* Drag ghost */
+#drag-ghost {
+  position: fixed; pointer-events: none; z-index: 9999;
+  background: #c8e6c9; border: 1px solid #81c784; border-radius: 4px;
+  padding: 4px 10px; font-size: 13px; display: none; white-space: nowrap;
+  transform: translate(-50%, -50%);
+}
+
+/* Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: #fff; border-radius: 6px; padding: 24px; width: min(560px, 95vw); max-height: 90vh; overflow-y: auto; }
+.modal h3 { margin-bottom: 14px; }
+.modal-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.modal-err { margin-top: 10px; }
+
+/* Toast */
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #2e7d32; color: #fff; padding: 10px 22px; border-radius: 4px; z-index: 9999; font-size: 14px; pointer-events: none; }
+
+@media (max-width: 640px) {
+  .poetry-wrap { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="drag-ghost"></div>
+
+<div style="margin-bottom:10px">
+  <a href="/" style="color:#00cf35;font-size:13px">← Back to counter</a>
+</div>
+
+<div class="poetry-wrap">
+
+  <!-- LEFT COLUMN -->
+  <div class="left-col">
+
+    <!-- Search -->
+    <div class="panel">
+      <div class="search-row">
+        <input type="text" id="q" placeholder="e.g. *dance* or dance *" autocomplete="off">
+        <button onclick="doSearch()">Go</button>
+      </div>
+      <div id="search-mode" class="search-mode"></div>
+      <div id="search-meta" class="search-meta"></div>
+      <div id="search-error" class="search-error"></div>
+      <div id="search-results" class="search-results"></div>
+      <div class="search-hint">
+        <code>dance</code> exact &nbsp;
+        <code>dance*</code> starts &nbsp;
+        <code>*dance</code> ends<br>
+        <code>*dance*</code> anywhere &nbsp;
+        <code>dance *</code> first word &nbsp;
+        <code>* dance</code> last word
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="panel" id="history-panel" style="display:none">
+      <div style="font-size:11px;font-weight:bold;color:#888;text-transform:uppercase;letter-spacing:.04em">Recent searches</div>
+      <div class="history-tags" id="history-tags"></div>
+    </div>
+
+    <!-- Pasture -->
+    <div class="panel">
+      <div class="pasture-head">
+        <h3>🌿 Pasture <span id="pasture-count" style="font-weight:normal;color:#888;font-size:12px"></span></h3>
+        <button class="clear-btn" onclick="clearPasture()">Clear all</button>
+      </div>
+      <div class="pasture-tiles" id="pasture-tiles">
+        <span class="pasture-empty" id="pasture-empty">Search and add horses</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT COLUMN -->
+  <div class="panel poem-panel">
+    <div class="poem-head">
+      <h2>📝 Poem</h2>
+      <div class="poem-actions">
+        <button class="btn-sec" onclick="clearPoem()">Clear</button>
+        <button class="btn-primary" id="post-btn" onclick="openModal()" disabled>Post poem</button>
+      </div>
+    </div>
+
+    <div class="poem-canvas" id="poem-canvas"></div>
+    <button class="add-line" onclick="addLine()">+ add line</button>
+
+    <div class="poem-footer">
+      <span class="poem-stat">🐴 <strong id="stat-count">0</strong> horses</span>
+      <span class="poem-stat">100% horse</span>
+      <span class="poem-stat" id="stat-words" style="color:#aaa"></span>
+    </div>
+  </div>
+
+</div>
+
+<!-- POST MODAL -->
+<div class="modal-overlay" id="post-modal">
+  <div class="modal">
+    <h3>Post Poem</h3>
+    <label>Prefix:</label>
+    <textarea id="modal-pre" rows="2"></textarea>
+    <label>Footer:</label>
+    <textarea id="modal-suf" rows="3"></textarea>
+    <label>Tags:</label>
+    <div id="modal-tags" style="display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 10px;padding:10px;background:#f9f9f9;border:1px solid #ddd;border-radius:4px"></div>
+    <label>Extra tags <span style="font-weight:normal;color:#888;font-size:12px">(comma-separated)</span>:</label>
+    <input type="text" id="modal-custom">
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="submitPoem('post')">Post Now</button>
+      <button class="btn-primary" onclick="submitPoem('queue')">Queue</button>
+      <button class="btn-sec"     onclick="submitPoem('draft')">Save Draft</button>
+      <button class="btn-sec"     onclick="closeModal()">Cancel</button>
+    </div>
+    <div id="modal-err" class="msg err modal-err" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let pasture  = {{ pasture_json|safe }};
+let lines    = [[], [], []];   // array of arrays of {name, display, url}
+let history  = [];
+const OPTIONAL_TAGS = {{ optional_tags_json|safe }};
+
+// Drag state — used by both mouse and touch handlers
+let drag = null;
+// { horse:{name,display,url}, srcType:'pasture'|'poem', srcLine:int, srcIdx:int }
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  renderPasture();
+  renderPoem();
+  document.getElementById('q').addEventListener('keydown', e => { if (e.key==='Enter') doSearch(); });
+
+  // Event delegation for "+ pasture" buttons rendered inside search results.
+  // Using delegation instead of inline onclick avoids the HTML-entity-decode
+  // trap: browsers decode &#39; → ' inside event attributes before JS runs,
+  // breaking string literals for horse names/display names with apostrophes.
+  document.getElementById('search-results').addEventListener('click', e => {
+    const btn = e.target.closest('.add-btn');
+    if (!btn || btn.disabled) return;
+    addToPasture(btn.dataset.name, btn.dataset.display, btn.dataset.url);
+  });
+
+  // Event delegation for "×" remove buttons inside the pasture panel.
+  document.getElementById('pasture-tiles').addEventListener('click', e => {
+    const btn = e.target.closest('.tile-x');
+    if (!btn) return;
+    removeFromPasture(btn.dataset.name);
+  });
+});
+
+// ── Util ──────────────────────────────────────────────────────────────────────
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function showToast(msg){
+  const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(),2800);
+}
+
+// Shared fetch helper — returns parsed JSON or null on any failure.
+async function apiPost(url, body=null){
+  try {
+    const opts = {method:'POST'};
+    if(body !== null){
+      opts.headers = {'Content-Type':'application/json'};
+      opts.body    = JSON.stringify(body);
+    }
+    const r = await fetch(url, opts);
+    if(r.status === 401){ showToast('Session expired — please reload the page'); return null; }
+    if(!r.ok){ showToast('Server error — please try again'); return null; }
+    return await r.json();
+  } catch(e){
+    showToast('Network error — please try again');
+    return null;
+  }
+}
+
+// ── Search ────────────────────────────────────────────────────────────────────
+async function doSearch(q, all){
+  q = q || document.getElementById('q').value.trim();
+  if(!q) return;
+  document.getElementById('q').value = q;
+
+  const d = await apiPost('/poetry/search', {query:q, return_all:!!all});
+  if(!d) return;
+
+  document.getElementById('search-mode').textContent  = d.mode  || '';
+  document.getElementById('search-error').textContent = d.error || '';
+  document.getElementById('search-meta').innerHTML    = '';
+  document.getElementById('search-results').innerHTML = '';
+
+  if(d.error) return;
+
+  if(d.limited){
+    document.getElementById('search-meta').innerHTML =
+      `${d.results.length} of ${d.total.toLocaleString()} — <a style="cursor:pointer" onclick="doSearch(${JSON.stringify(q)},true)">show all (slow)</a>`;
+  } else {
+    document.getElementById('search-meta').textContent = d.total===0 ? 'No results' : `${d.total} result${d.total!==1?'s':''}`;
+  }
+
+  const pNames = new Set(pasture.map(h=>h.name));
+  // Buttons use data-* attributes; clicks are handled by the delegated listener
+  // set up in DOMContentLoaded — no inline onclick needed.
+  document.getElementById('search-results').innerHTML = d.results.map(h=>`
+    <div class="result-item">
+      <span class="result-name" title="${esc(h.display)}">${esc(h.display)}</span>
+      ${h.count>1?`<span class="multi-badge">${h.count}</span>`:''}
+      <button class="add-btn"
+        data-name="${esc(h.name)}"
+        data-display="${esc(h.display)}"
+        data-url="${esc(h.url)}"
+        ${pNames.has(h.name)?'disabled':''}>
+        ${pNames.has(h.name)?'✓':'+ pasture'}
+      </button>
+    </div>`).join('');
+
+  addHistory(q);
+}
+
+function addHistory(q){
+  history = [q, ...history.filter(x=>x!==q)].slice(0,10);
+  const panel = document.getElementById('history-panel');
+  if(!history.length){ panel.style.display='none'; return; }
+  panel.style.display='';
+  document.getElementById('history-tags').innerHTML =
+    history.map(t=>`<span class="htag" onclick="doSearch(${JSON.stringify(t)})">${esc(t)}</span>`).join('');
+}
+
+// ── Pasture ───────────────────────────────────────────────────────────────────
+async function addToPasture(name, display, url){
+  if(pasture.find(h=>h.name===name)) return;
+  // Optimistic update
+  pasture.push({name, display, url});
+  renderPasture();
+  // Persist to server; on success, authoritative list replaces optimistic state
+  const d = await apiPost('/poetry/pasture/add', {name, display, url});
+  if(d){ pasture = d.horses; renderPasture(); }
+}
+
+async function removeFromPasture(name){
+  pasture = pasture.filter(h=>h.name!==name);
+  renderPasture();
+  await apiPost('/poetry/pasture/remove', {name});
+}
+
+async function clearPasture(){
+  if(!confirm('Clear all horses from the pasture?')) return;
+  pasture = [];
+  renderPasture();
+  await apiPost('/poetry/pasture/clear');
+}
+
+function renderPasture(){
+  const el    = document.getElementById('pasture-tiles');
+  const empty = document.getElementById('pasture-empty');
+  const cnt   = document.getElementById('pasture-count');
+  cnt.textContent = pasture.length ? `(${pasture.length})` : '';
+
+  // Sync add-button state for any currently visible search results
+  document.querySelectorAll('#search-results .add-btn[data-name]').forEach(btn=>{
+    const inP = pasture.find(h=>h.name===btn.dataset.name);
+    btn.disabled    = !!inP;
+    btn.textContent = inP ? '✓' : '+ pasture';
+  });
+
+  if(!pasture.length){
+    el.innerHTML=''; el.appendChild(empty); empty.style.display=''; return;
+  }
+  empty.style.display='none';
+
+  // tile-x buttons use data-name; clicks handled by delegated listener in boot
+  el.innerHTML = pasture.map(h=>`
+    <div class="horse-tile" data-name="${esc(h.name)}" data-display="${esc(h.display)}" data-url="${esc(h.url)}">
+      ${esc(h.display)}
+      <button class="tile-x" data-name="${esc(h.name)}">×</button>
+    </div>`).join('');
+
+  el.querySelectorAll('.horse-tile').forEach(tile=>attachTileDrag(tile,'pasture'));
+}
+
+// ── Poem ──────────────────────────────────────────────────────────────────────
+function renderPoem(){
+  const canvas = document.getElementById('poem-canvas');
+  canvas.innerHTML = lines.map((line,li)=>`
+    <div class="poem-line" data-li="${li}">
+      <span class="line-num">${li+1}</span>
+      <div class="line-tiles" data-li="${li}">
+        ${line.map((h,hi)=>`
+          <div class="horse-tile" data-li="${li}" data-hi="${hi}"
+               data-name="${esc(h.name)}" data-display="${esc(h.display)}" data-url="${esc(h.url)}">
+            ${esc(h.display)}
+            <button class="tile-x" onclick="removeTile(${li},${hi})">×</button>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+
+  canvas.querySelectorAll('.horse-tile').forEach(tile=>attachTileDrag(tile,'poem'));
+  canvas.querySelectorAll('.line-tiles').forEach(attachLineDrop);
+  updateStats();
+}
+
+function addLine(){ lines.push([]); renderPoem(); }
+function clearPoem(){ if(!confirm('Clear the poem?')) return; lines=[[]]; renderPoem(); }
+function removeTile(li,hi){ lines[li].splice(hi,1); pruneEmptyLines(); renderPoem(); }
+
+function pruneEmptyLines(){
+  while(lines.length>1 && lines[lines.length-1].length===0) lines.pop();
+  if(!lines.length) lines=[[]];
+}
+
+function updateStats(){
+  const flat  = lines.flat();
+  const count = flat.length;
+  const words = flat.reduce((s,h)=>s+h.name.split(' ').length,0);
+  document.getElementById('stat-count').textContent = count;
+  document.getElementById('stat-words').textContent = count ? `${words} words` : '';
+  document.getElementById('post-btn').disabled      = count===0;
+}
+
+function dropHorseOnLine(horse, li, refHi, insertAfter){
+  // Remove from source if it came from the poem
+  if(drag && drag.srcType==='poem'){
+    const sl=drag.srcLine, si=drag.srcIdx;
+    lines[sl].splice(si,1);
+    // Adjust target index if we removed from same line before the target
+    if(sl===li && si<refHi) refHi--;
+  }
+
+  const insertIdx = (refHi==null) ? lines[li].length
+                  : insertAfter   ? refHi+1
+                  :                 refHi;
+
+  lines[li].splice(insertIdx,0,horse);
+  if(lines[lines.length-1].length>0) lines.push([]);
+  renderPoem();
+}
+
+// ── Drag — Mouse ──────────────────────────────────────────────────────────────
+const ghost = document.getElementById('drag-ghost');
+
+function attachTileDrag(tile, srcType){
+  tile.addEventListener('mousedown', e=>{
+    if(e.button!==0) return;
+    if(e.target.classList.contains('tile-x')) return;
+    e.preventDefault();
+    startDrag(e.clientX, e.clientY, tile, srcType);
+  });
+  tile.addEventListener('touchstart', e=>{
+    if(e.target.classList.contains('tile-x')) return;
+    e.preventDefault();
+    const t=e.touches[0];
+    startDrag(t.clientX, t.clientY, tile, srcType);
+  }, {passive:false});
+}
+
+function startDrag(x, y, tile, srcType){
+  const h = {
+    name:    tile.dataset.name,
+    display: tile.dataset.display,
+    url:     tile.dataset.url,
+  };
+  drag = {
+    horse:   h,
+    srcType,
+    srcLine: tile.dataset.li!=null ? parseInt(tile.dataset.li) : -1,
+    srcIdx:  tile.dataset.hi!=null ? parseInt(tile.dataset.hi) : -1,
+    tile,
+  };
+  tile.classList.add('is-dragging');
+  ghost.textContent   = h.display;
+  ghost.style.display = 'block';
+  moveGhost(x,y);
+}
+
+function moveGhost(x,y){
+  ghost.style.left = x+'px';
+  ghost.style.top  = y+'px';
+}
+
+function endDrag(x,y){
+  if(!drag) return;
+  ghost.style.display='none';
+  drag.tile.classList.remove('is-dragging');
+
+  // Find drop target
+  ghost.style.display='none'; // hide so elementFromPoint works
+  const el = document.elementFromPoint(x,y);
+
+  if(el){
+    // Dropped on a tile inside the poem
+    const targetTile = el.closest('.horse-tile[data-li]');
+    if(targetTile){
+      const li  = parseInt(targetTile.dataset.li);
+      const hi  = parseInt(targetTile.dataset.hi);
+      const rect= targetTile.getBoundingClientRect();
+      const after = x > rect.left+rect.width/2;
+      dropHorseOnLine(drag.horse, li, hi, after);
+      drag=null; return;
+    }
+    // Dropped on an empty line zone
+    const lineZone = el.closest('.line-tiles');
+    if(lineZone){
+      const li = parseInt(lineZone.dataset.li);
+      dropHorseOnLine(drag.horse, li, null, false);
+      drag=null; return;
+    }
+  }
+  // Dropped outside — no action, just re-render to restore
+  renderPoem();
+  renderPasture();
+  drag=null;
+}
+
+// Mouse move/up on document
+document.addEventListener('mousemove', e=>{ if(drag) moveGhost(e.clientX,e.clientY); });
+document.addEventListener('mouseup',   e=>{ if(drag) endDrag(e.clientX,e.clientY); });
+
+// Touch move/end
+document.addEventListener('touchmove', e=>{
+  if(!drag) return;
+  e.preventDefault();
+  const t=e.touches[0];
+  moveGhost(t.clientX,t.clientY);
+},{passive:false});
+
+document.addEventListener('touchend', e=>{
+  if(!drag) return;
+  const t=e.changedTouches[0];
+  endDrag(t.clientX,t.clientY);
+});
+
+function attachLineDrop(zone){
+  // Visual feedback only — actual drop handled in endDrag via elementFromPoint
+  zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('drop-target'); });
+  zone.addEventListener('dragleave',    ()=> zone.classList.remove('drop-target'));
+  zone.addEventListener('drop',     e=>{ e.preventDefault(); zone.classList.remove('drop-target'); });
+}
+
+// ── Post modal ────────────────────────────────────────────────────────────────
+function openModal(){
+  const flat  = lines.flat();
+  const count = flat.length;
+  const words = flat.reduce((s,h)=>s+h.name.split(' ').length,0);
+  const plural = count!==1?'s':'';
+
+  document.getElementById('modal-pre').value =
+    `<p><b>This poem contains ${count} horse${plural} (100% of the poem)</b></p>`;
+  document.getElementById('modal-suf').value =
+    `<p><small>This poem was written by a human, processed automatically and queued to post. Click any name for more information about that horse. You can send a link or text to be counted to my ask box.</small></p>`;
+
+  const defaultTags = [`${count} horses`,'100% horse','horse poetry','poetry','gimmick account','counting-horses','horseblr'];
+  document.getElementById('modal-tags').innerHTML = [
+    ...defaultTags.map(t=>({t,on:true})),
+    ...OPTIONAL_TAGS.map(t=>({t,on:false}))
+  ].map(({t,on})=>`<label class="tag-item">
+    <input type="checkbox" name="ptag" value="${esc(t)}" ${on?'checked':''}>
+    <span>${esc(t)}</span></label>`).join('');
+
+  document.getElementById('modal-err').style.display='none';
+  document.getElementById('post-modal').classList.add('open');
+}
+function closeModal(){ document.getElementById('post-modal').classList.remove('open'); }
+
+async function submitPoem(action){
+  const flat = lines.flat();
+  if(!flat.length) return;
+
+  const prefix = document.getElementById('modal-pre').value;
+  const suffix = document.getElementById('modal-suf').value;
+  const custom = document.getElementById('modal-custom').value;
+  const checked = [...document.querySelectorAll('#modal-tags input:checked')].map(el=>el.value);
+  const tags = [...checked, ...custom.split(',').map(t=>t.trim()).filter(Boolean)].join(',');
+
+  const d = await apiPost('/poetry/post', {lines, prefix, suffix, tags, action});
+  if(!d) return;  // apiPost already showed a toast for network/session errors
+
+  if(d.ok){
+    closeModal();
+    lines=[[]]; renderPoem();
+    showToast(d.message);
+  } else {
+    const el=document.getElementById('modal-err');
+    el.textContent=d.error; el.style.display='';
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Horse Counter — Login{% endblock %}
+{% block content %}
+<div class="login-box">
+  <h1>🐴 Horse Counter</h1>
+  <form method="post" action="/login">
+    <label for="pin">PIN</label>
+    <input type="password" id="pin" name="pin" autofocus autocomplete="current-password" placeholder="Enter PIN">
+    {% if error %}
+    <div class="msg err">{{ error }}</div>
+    {% endif %}
+    <button type="submit">Enter</button>
+  </form>
+</div>
+{% endblock %}

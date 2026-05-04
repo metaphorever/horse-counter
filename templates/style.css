@@ -1,0 +1,215 @@
+/* ── Reset & base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font: 14px/1.5 Arial, sans-serif;
+  background: #f0f0f0;
+  color: #222;
+}
+
+.container {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* ── Box ── */
+.box {
+  background: #fff;
+  border-radius: 6px;
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+
+h1 { color: #00cf35; font-size: 1.4rem; margin-bottom: 12px; }
+h2 { color: #333;    font-size: 1.2rem; margin-bottom: 14px; }
+
+/* ── Inputs ── */
+input[type="text"],
+input[type="password"],
+textarea {
+  display: block;
+  width: 100%;
+  padding: 9px 11px;
+  margin: 6px 0 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 14px;
+}
+input[type="text"]:focus,
+input[type="password"]:focus,
+textarea:focus {
+  outline: none;
+  border-color: #00cf35;
+  box-shadow: 0 0 0 2px rgba(0,207,53,.15);
+}
+
+textarea { min-height: 90px; resize: vertical; font-family: monospace; }
+
+label {
+  display: block;
+  font-weight: bold;
+  margin-top: 12px;
+  margin-bottom: 2px;
+}
+label .opt { font-weight: normal; color: #888; font-size: 12px; }
+
+/* ── Buttons ── */
+button, .btn-link {
+  display: inline-block;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  text-decoration: none;
+  margin: 4px 4px 4px 0;
+}
+
+.btn-primary, button[type="submit"] {
+  background: #00cf35;
+  color: #fff;
+}
+.btn-primary:hover, button[type="submit"]:hover { background: #00b82f; }
+
+.btn-sec {
+  background: #666;
+  color: #fff;
+}
+.btn-sec:hover { background: #555; }
+
+.actions { margin-top: 16px; }
+
+/* ── Tabs ── */
+.tabs { margin: 14px 0 0; display: flex; gap: 4px; }
+
+.tab-btn {
+  background: #e0e0e0;
+  color: #333;
+  padding: 7px 16px;
+  border-radius: 4px 4px 0 0;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
+.tab-btn.on {
+  background: #00cf35;
+  color: #fff;
+}
+
+.tab { display: none; padding: 14px 0 4px; }
+.tab.on { display: block; }
+
+/* ── Messages ── */
+.msg {
+  padding: 12px 14px;
+  margin: 10px 0;
+  border-radius: 4px;
+  border-left: 4px solid;
+}
+.msg.err  { background: #ffebee; color: #c62828; border-color: #c62828; }
+.msg.ok   { background: #e8f5e9; color: #2e7d32; border-color: #2e7d32; }
+.msg.warn { background: #fff8e1; color: #f57f17; border-color: #f9a825; }
+
+/* ── Stats bar ── */
+.stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+.stat      { color: #333; }
+.stat.dim  { color: #888; }
+.stat.warn { color: #e65100; }
+
+/* ── Content preview ── */
+.content-preview {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 14px;
+  margin: 8px 0 10px;
+  line-height: 1.6;
+  overflow-wrap: break-word;
+}
+.content-preview p { margin-bottom: 8px; }
+.content-preview p:last-child { margin-bottom: 0; }
+.content-preview a { color: #00cf35; }
+
+/* ── Chain username ── */
+.chain-username {
+  color: #00cf35;
+  font-weight: bold;
+  margin: 10px 0 4px;
+}
+.chain-sep {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 12px 0;
+}
+
+/* ── Horse list ── */
+.horse-list {
+  margin: 8px 0 4px 20px;
+  line-height: 1.8;
+}
+
+/* ── Tags ── */
+.tag-section {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin: 8px 0;
+}
+.tag-section-head {
+  font-size: 12px;
+  font-weight: bold;
+  color: #666;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.tag-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.tag-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px 2px 4px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.tag-item input[type="checkbox"] { margin: 0; }
+
+/* ── Login ── */
+.login-box {
+  max-width: 360px;
+  margin: 80px auto 0;
+  background: #fff;
+  border-radius: 6px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+}
+.login-box h1 { margin-bottom: 20px; text-align: center; }
+.login-box button { width: 100%; margin-top: 4px; }
+
+/* ── Horse density ── */
+.density { color: #666; font-size: 13px; margin-left: 6px; }

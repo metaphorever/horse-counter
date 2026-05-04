@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Review Post — Horse Counter{% endblock %}
+{% block content %}
+
+<div class="box">
+  <h2>Review Post</h2>
+
+  {# ── Stats bar ── #}
+  {% if stats %}
+  <div class="stats-bar">
+    <span class="stat dim">{{ stats.linked_words }} horse words / {{ stats.total_words }} total</span>
+    {% if is_fallback %}
+    <span class="stat warn">⚠ Fallback — will post as text, not reblog</span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <form method="post" action="/queue">
+    <input type="hidden" name="id" value="{{ draft_id }}">
+
+    <label>Count text:</label>
+    <textarea name="pre">{{ pre }}</textarea>
+
+    <label>Post content (with horse links):</label>
+    <div class="content-preview">{{ content|safe }}</div>
+
+    <label>Extra text <span class="opt">(optional)</span>:</label>
+    <textarea name="mid">{{ mid or '' }}</textarea>
+
+    <label>Footer:</label>
+    <textarea name="suf">{{ suf }}</textarea>
+
+    {# ── Tags ── #}
+    <label>Tags:</label>
+    <div class="tag-section">
+      <div class="tag-section-head">Default</div>
+      <div class="tag-grid">
+        {% for tag in default_tags %}
+        <label class="tag-item">
+          <input type="checkbox" name="tag_default" value="{{ tag }}" checked>
+          <span>{{ tag }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="tag-section">
+      <div class="tag-section-head">Optional</div>
+      <div class="tag-grid">
+        {% for tag in optional_tags %}
+        <label class="tag-item">
+          <input type="checkbox" name="tag_optional" value="{{ tag }}">
+          <span>{{ tag }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="tag-section">
+      <div class="tag-section-head">Custom / usernames</div>
+      <input type="text" name="tags_custom"
+             placeholder="Comma-separated extra tags"
+             value="{{ custom_tags or '' }}">
+    </div>
+
+    {# ── Actions ── #}
+    <div class="actions">
+      <button type="submit" name="action" value="post"  class="btn-primary">Post Now</button>
+      <button type="submit" name="action" value="queue" class="btn-primary">Queue</button>
+      <button type="submit" name="action" value="draft" class="btn-sec">Save Draft</button>
+      <a href="/" class="btn-sec btn-link">Cancel</a>
+    </div>
+
+    {% if error %}
+    <div class="msg err"><strong>Failed:</strong> {{ error }}</div>
+    {% endif %}
+
+  </form>
+</div>
+
+{% endblock %}
