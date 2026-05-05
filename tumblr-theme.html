@@ -178,6 +178,22 @@ a { color: {color:Accent}; }
 .post-body .horse-link:nth-of-type(6n+5) { background: #ffcdd2; color: #5a0a0a; transform: rotate(-1.0deg); }
 .post-body .horse-link:nth-of-type(6n+6) { background: #ffffff; color: #333333; transform: rotate( 0.5deg); border: 1px solid #ddd; }
 
+/* ── Reblog chain (inside {Body}) ── */
+.post-body blockquote {
+  border-left: 3px solid #c4a96b;
+  margin: 8px 0;
+  padding: 2px 0 2px 14px;
+}
+.post-body .tumblr_blog,
+.post-body a.tumblr_blog {
+  display: block;
+  font: 700 12px 'Courier Prime', 'Courier New', monospace;
+  color: #5a7a2a;
+  text-decoration: none;
+  margin-bottom: 3px;
+}
+.post-body a.tumblr_blog:hover { text-decoration: underline; }
+
 /* ── Photo posts ── */
 .post-photo img {
   width: 100%;
