@@ -101,9 +101,10 @@
   {% if not is_admin and result.draft_id %}
   <div style="margin-top:10px;padding:14px;background:#f1fff4;border:1px solid #a5d6a7;border-radius:4px">
     <p style="margin:0 0 10px;font-size:14px">Want this posted to the blog? Submit it for review!</p>
-    <form method="post" action="/submit">
+    <form method="post" action="/submit" style="display:flex;gap:8px;flex-wrap:wrap">
       <input type="hidden" name="draft_id" value="{{ result.draft_id }}">
-      <button type="submit" class="btn-primary">Submit for posting</button>
+      <button type="submit" class="btn-primary">Submit for review</button>
+      <a href="/" class="btn-sec btn-link">Cancel</a>
     </form>
   </div>
   {% endif %}
