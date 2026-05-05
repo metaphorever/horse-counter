@@ -92,14 +92,14 @@ def _sanitize_tumblr(raw: str) -> str:
     handle = (raw or '').lstrip('@').strip().lower()
     return re.sub(r'[^a-z0-9-]', '', handle)[:32]
 
-def _attribution_html(name: str, tumblr: str) -> str:
+def _attribution_html(name: str, tumblr: str, prefix: str = 'Submitted by') -> str:
     """Build an attribution line for the post body, or empty string if no credit given."""
     if not name and not tumblr:
         return ''
     if tumblr:
         display = name or f'@{tumblr}'
-        return f'<p>Submitted by <a href="https://www.tumblr.com/{tumblr}">{display}</a></p>'
-    return f'<p>Submitted by {name}</p>'
+        return f'<p>{prefix} <a href="https://www.tumblr.com/{tumblr}">{display}</a></p>'
+    return f'<p>{prefix} {name}</p>'
 
 
 @app.template_filter('datefmt')
@@ -702,8 +702,18 @@ def poetry_post():
     if not any(lines):
         return jsonify({'ok': False, 'error': 'Poem is empty'})
 
+    submitter_name   = _sanitize_name(data.get('submitter_name', ''))
+    submitter_tumblr = _sanitize_tumblr(data.get('submitter_tumblr', ''))
+    attribution      = _attribution_html(submitter_name, submitter_tumblr, prefix='by')
+
     poem_html = build_poem_html(lines)
-    body      = prefix + poem_html + suffix
+    body      = prefix + poem_html + suffix + attribution
+
+    if submitter_name:
+        tags = ','.join(filter(None, [tags, f'by {submitter_name}']))
+    if submitter_tumblr:
+        tags = ','.join(filter(None, [tags, submitter_tumblr]))
+
     state     = _post_state(action)
 
     success, err = _create_text_post(tumblr.make_request, body, tags, state)

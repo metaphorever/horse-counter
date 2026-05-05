@@ -59,12 +59,15 @@
   white-space: nowrap; touch-action: none; position: relative;
   border: none;
 }
-.horse-tile:nth-child(6n+1) { background: #ffe082; color: #5a3e00; transform: rotate(-1.8deg); }
-.horse-tile:nth-child(6n+2) { background: #b5ead7; color: #0a3d2a; transform: rotate( 1.2deg); }
-.horse-tile:nth-child(6n+3) { background: #d4b8f5; color: #2d0a5a; transform: rotate(-0.7deg); }
-.horse-tile:nth-child(6n+4) { background: #a8d4f7; color: #0a2d5a; transform: rotate( 1.5deg); }
-.horse-tile:nth-child(6n+5) { background: #ffcdd2; color: #5a0a0a; transform: rotate(-1.1deg); }
-.horse-tile:nth-child(6n+6) { background: #fff;    color: #333;    transform: rotate( 0.6deg); border: 1px solid #ddd; }
+/* Pasture tiles get the rainbow magnet treatment */
+.pasture-tiles .horse-tile:nth-child(6n+1) { background: #ffe082; color: #5a3e00; transform: rotate(-1.8deg); }
+.pasture-tiles .horse-tile:nth-child(6n+2) { background: #b5ead7; color: #0a3d2a; transform: rotate( 1.2deg); }
+.pasture-tiles .horse-tile:nth-child(6n+3) { background: #d4b8f5; color: #2d0a5a; transform: rotate(-0.7deg); }
+.pasture-tiles .horse-tile:nth-child(6n+4) { background: #a8d4f7; color: #0a2d5a; transform: rotate( 1.5deg); }
+.pasture-tiles .horse-tile:nth-child(6n+5) { background: #ffcdd2; color: #5a0a0a; transform: rotate(-1.1deg); }
+.pasture-tiles .horse-tile:nth-child(6n+6) { background: #fff;    color: #333;    transform: rotate( 0.6deg); border: 1px solid #ddd; }
+/* Poem canvas tiles are always post-it yellow so position doesn't change color */
+.line-tiles .horse-tile { background: #ffe082; color: #5a3e00; transform: rotate(-0.5deg); }
 .horse-tile.is-dragging { opacity: 0.35; }
 .horse-tile.drop-before { outline: 3px solid #5a7a2a; outline-offset: 1px; }
 .horse-tile.drop-after  { outline: 3px solid #5a7a2a; outline-offset: 1px; }
@@ -181,8 +184,8 @@
 {% block content %}
 <div id="drag-ghost"></div>
 
-<div class="nav-links" style="margin-bottom:10px">
-  <a href="/">← Back to counter</a>
+<div style="margin-bottom:14px">
+  <a href="/" class="btn-sec btn-link">← Back to counter</a>
 </div>
 
 <div class="poetry-wrap">
@@ -276,13 +279,11 @@
     <div id="modal-tags" style="display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 10px;padding:10px;background:#f0ead8;border:1px solid #c4a96b;border-radius:2px"></div>
     <label>Extra tags <span style="font-weight:normal;color:#888;font-size:12px">(comma-separated)</span>:</label>
     <input type="text" id="modal-custom">
-    {% if not is_admin %}
-    <label>Credit <span style="font-weight:normal;color:#888;font-size:12px">(optional — for attribution on the post)</span>:</label>
+    <label>{% if is_admin %}Sign as{% else %}Credit{% endif %} <span style="font-weight:normal;color:#888;font-size:12px">(optional — for attribution on the post)</span>:</label>
     <div style="display:flex;gap:6px;margin-bottom:4px">
       <input type="text" id="modal-submitter-name"   placeholder="Your name"        maxlength="60" style="flex:1;margin:0">
       <input type="text" id="modal-submitter-tumblr" placeholder="Tumblr @ (no @)"  maxlength="32" style="flex:1;margin:0">
     </div>
-    {% endif %}
     <div class="modal-actions">
       {% if is_admin %}
       <button class="btn-primary" onclick="submitPoem('post')">Post Now</button>
@@ -745,7 +746,12 @@ async function submitPoem(action){
   const checked = [...document.querySelectorAll('#modal-tags input:checked')].map(el=>el.value);
   const tags = [...checked, ...custom.split(',').map(t=>t.trim()).filter(Boolean)].join(',');
 
-  const d = await apiPost('/poetry/post', {lines, prefix, suffix, tags, action});
+  const submitterName   = (document.getElementById('modal-submitter-name')?.value   || '').trim();
+  const submitterTumblr = (document.getElementById('modal-submitter-tumblr')?.value || '').trim().replace(/^@/, '');
+  localStorage.setItem('horse-submitter-name',   submitterName);
+  localStorage.setItem('horse-submitter-tumblr', submitterTumblr);
+
+  const d = await apiPost('/poetry/post', {lines, prefix, suffix, tags, action, submitter_name: submitterName, submitter_tumblr: submitterTumblr});
   if(!d) return;  // apiPost already showed a toast for network/session errors
 
   if(d.ok){
