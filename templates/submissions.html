@@ -3,34 +3,34 @@
 {% block content %}
 
 <div class="box">
-  <div style="margin-bottom:10px;display:flex;gap:16px;align-items:center">
-    <a href="/" style="color:#00cf35;font-size:13px">← Back to counter</a>
-    <a href="/poetry" style="color:#00cf35;font-size:13px">📝 Poetry editor →</a>
+  <div class="nav-links">
+    <a href="/">← Back to counter</a>
+    <a href="/poetry">Poetry editor →</a>
   </div>
 
-  <h1>📬 Pending Submissions</h1>
+  <h1>Pending Submissions</h1>
 
   {% if not submissions %}
   <div class="msg ok">No pending submissions — all caught up!</div>
   {% endif %}
 
   {% for sub in submissions %}
-  <div style="background:#fff;border-radius:6px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+  <div style="background:#faf5e9;border-radius:2px;padding:16px;margin-bottom:12px;box-shadow:2px 2px 6px rgba(0,0,0,.1),0 0 0 1px rgba(139,105,20,.1)">
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:11px;background:#f0f0f0;border-radius:3px;padding:2px 7px;text-transform:uppercase;letter-spacing:.05em;font-weight:bold">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font:700 10px 'Courier Prime','Courier New',monospace;background:#f0ead8;border:1px solid #c4a96b;border-radius:2px;padding:2px 7px;text-transform:uppercase;letter-spacing:.06em;color:#6b5430">
           {{ sub.type }}
         </span>
-        <strong>{{ sub.horse_count }} horse{{ 's' if sub.horse_count != 1 else '' }}</strong>
+        <strong style="font-family:Georgia,serif">{{ sub.horse_count }} horse{{ 's' if sub.horse_count != 1 else '' }}</strong>
         {% if sub.stats %}
-        <span style="color:#888;font-size:12px">{{ sub.stats.horse_density }}% horse</span>
+        <span style="font:12px 'Courier Prime','Courier New',monospace;color:#8a7050">{{ sub.stats.horse_density }}% horse</span>
         {% endif %}
-        <span style="color:#aaa;font-size:12px">{{ sub.submitted_at | datefmt }}</span>
+        <span style="font:12px 'Courier Prime','Courier New',monospace;color:#a08060">{{ sub.submitted_at | datefmt }}</span>
         {% if sub.submitter_name or sub.submitter_tumblr %}
-        <span style="color:#555;font-size:12px">—
+        <span style="font:12px Georgia,serif;color:#6b5430">—
           {% if sub.submitter_tumblr %}
-            <a href="https://www.tumblr.com/{{ sub.submitter_tumblr }}" target="_blank">
+            <a href="https://www.tumblr.com/{{ sub.submitter_tumblr }}" target="_blank" style="color:#5a7a2a">
               {{ sub.submitter_name or ('@' + sub.submitter_tumblr) }}
             </a>
           {% else %}
@@ -42,19 +42,19 @@
       <div style="display:flex;gap:6px">
         <form method="post" action="/submissions/approve" style="display:inline">
           <input type="hidden" name="id" value="{{ sub.id }}">
-          <button type="submit" class="btn-primary" style="font-size:12px;padding:6px 14px">Review &amp; post →</button>
+          <button type="submit" class="btn-primary">Review &amp; post →</button>
         </form>
         <form method="post" action="/submissions/reject" style="display:inline"
               onsubmit="return confirm('Reject this submission?')">
           <input type="hidden" name="id" value="{{ sub.id }}">
-          <button type="submit" class="btn-sec" style="font-size:12px;padding:6px 14px;background:#ffebee;color:#c62828;border-color:#ffcdd2">Reject</button>
+          <button type="submit" class="btn-sec" style="background:#fff0ef;color:#7a2020;border-color:#e8b0a8;box-shadow:2px 2px 0 #e8b0a8">Reject</button>
         </form>
       </div>
     </div>
 
     <details>
-      <summary style="cursor:pointer;font-size:13px;color:#00cf35;user-select:none">Preview</summary>
-      <div style="margin-top:8px;padding:12px;background:#fafafa;border:1px solid #eee;border-radius:4px;max-height:320px;overflow-y:auto;font-size:14px">
+      <summary style="cursor:pointer;font:13px 'Courier Prime','Courier New',monospace;color:#5a7a2a;user-select:none">Preview</summary>
+      <div style="margin-top:8px;padding:12px;background:#fff9ee;border:1px solid #d9c88f;border-radius:2px;max-height:320px;overflow-y:auto;font-size:14px;line-height:1.9">
         {{ sub.linked_html | safe }}
       </div>
     </details>

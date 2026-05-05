@@ -335,7 +335,7 @@ def render_chain_item(
         original_text = result[start:end]
 
         if registration:
-            link = f'<a href="{registration["url"]}">{original_text}</a>'
+            link = f'<a class="horse-link" href="{registration["url"]}">{original_text}</a>'
             linked_words += len(m['name'].split())
         else:
             link = original_text  # exhausted registrations — plain text

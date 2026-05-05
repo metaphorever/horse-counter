@@ -3,12 +3,12 @@
 {% block content %}
 
 <div class="box">
-  <h1>🐴 Horse Counter</h1>
+  <h1>Horse Counter</h1>
 
-  <div style="margin-bottom:12px;display:flex;gap:16px;align-items:center">
-    <a href="/poetry" style="color:#00cf35;font-size:13px">📝 Poetry editor →</a>
+  <div class="nav-links">
+    <a href="/poetry">Poetry editor →</a>
     {% if is_admin %}
-    <a href="/submissions" style="color:#00cf35;font-size:13px">📬 Submissions →</a>
+    <a href="/submissions">Submissions →</a>
     {% endif %}
   </div>
 
@@ -92,15 +92,15 @@
   </div>
 
   {% if result.linked_html %}
-  <div style="margin:12px 0;padding:12px;background:#fafafa;border:1px solid #eee;border-radius:4px;max-height:400px;overflow-y:auto">
+  <div style="margin:12px 0;padding:12px;background:#fff9ee;border:1px solid #d9c88f;border-radius:2px;max-height:400px;overflow-y:auto;line-height:1.9">
     {{ result.linked_html|safe }}
   </div>
   {% endif %}
 
   {# Submit option for public users #}
   {% if not is_admin and result.draft_id %}
-  <div style="margin-top:10px;padding:14px;background:#f1fff4;border:1px solid #a5d6a7;border-radius:4px">
-    <p style="margin:0 0 10px;font-size:14px">Want this posted to the blog? Submit it for review!</p>
+  <div style="margin-top:10px;padding:14px;background:#eaf5e0;border:2px solid #6dbf4a;border-radius:2px">
+    <p style="margin:0 0 10px;font:13px 'Courier Prime','Courier New',monospace;color:#3a5a1a">Want this posted to the blog? Submit it for review!</p>
     <form method="post" action="/submit">
       <input type="hidden" name="draft_id" value="{{ result.draft_id }}">
       <div style="display:flex;gap:6px;margin-bottom:10px">

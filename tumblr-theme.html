@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Theme customisation variables (editable in Tumblr's Customize panel) -->
+<meta name="color:Background"   content="#4d7432">
+<meta name="color:Card"         content="#faf5e9">
+<meta name="color:Fence"        content="#8b6914">
+<meta name="color:Text"         content="#2d2316">
+<meta name="color:Accent"       content="#5a7a2a">
+
+<title>{block:PostSummary}{PostSummary} — {/block:PostSummary}{BlogTitle}</title>
+<meta name="description" content="{MetaDescription}">
+
+<!-- Open Graph -->
+<meta property="og:title"       content="{block:PostSummary}{PostSummary}{/block:PostSummary}{block:IndexPage}{BlogTitle}{/block:IndexPage}">
+<meta property="og:description" content="{MetaDescription}">
+<meta property="og:type"        content="website">
+<meta property="og:url"         content="{block:PermalinkPage}{Permalink}{/block:PermalinkPage}{block:IndexPage}{BlogURL}{/block:IndexPage}">
+
+<link rel="alternate"    type="application/rss+xml" href="{RSS}">
+<link rel="canonical"    href="{block:PermalinkPage}{Permalink}{/block:PermalinkPage}{block:IndexPage}{BlogURL}{/block:IndexPage}">
+<link rel="shortcut icon" href="{PortraitURL-16}">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet"  href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@700&display=swap">
+
+<style>
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Base ── */
+body {
+  font: 15px/1.75 Georgia, 'Times New Roman', serif;
+  background-color: {color:Background};
+  background-image: url('https://horsecounterbot.pythonanywhere.com/static/grass.svg');
+  background-size: 40px 40px;
+  color: {color:Text};
+}
+
+a { color: {color:Accent}; }
+
+/* ── Fence divider ── */
+.fence {
+  width: 100%;
+  height: 28px;
+  position: relative;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0px, transparent 28px,
+    {color:Fence} 28px, {color:Fence} 36px
+  );
+}
+.fence::before,
+.fence::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 5px;
+  background: {color:Fence};
+  border-radius: 2px;
+}
+.fence::before { top: 5px; }
+.fence::after  { top: 17px; }
+
+/* ── Site header ── */
+.site-header {
+  text-align: center;
+  padding: 28px 16px 24px;
+  background: {color:Card};
+  border-bottom: 2px solid #c4a96b;
+}
+
+.blog-title-link {
+  font: 700 2rem/1.1 'Playfair Display', Georgia, serif;
+  color: {color:Text};
+  text-decoration: none;
+  display: block;
+  margin-bottom: 6px;
+}
+.blog-title-link:hover { color: {color:Accent}; }
+
+.blog-desc {
+  font: italic 14px Georgia, serif;
+  color: #8a7050;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+/* ── Nav links ── */
+.site-nav {
+  text-align: center;
+  padding: 10px 16px;
+  background: {color:Card};
+  border-top: 1px solid #e0d4b0;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.site-nav a {
+  font: 12px 'Courier Prime', 'Courier New', monospace;
+  color: {color:Accent};
+  text-decoration: none;
+  border-bottom: 1px solid #b5d68a;
+}
+.site-nav a:hover { color: #3d5a1a; }
+
+/* ── Container ── */
+.container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px 16px 8px;
+}
+
+/* ── Post card ── */
+.post-card {
+  background: {color:Card};
+  border-radius: 2px;
+  padding: 22px 20px 18px;
+  box-shadow: 2px 3px 10px rgba(0,0,0,.13), 0 0 0 1px rgba(139,105,20,.11);
+  margin-bottom: 0;
+}
+
+/* ── Post title ── */
+.post-title {
+  font: 700 1.25rem/1.2 'Playfair Display', Georgia, serif;
+  color: {color:Text};
+  margin-bottom: 12px;
+}
+.post-title a { color: inherit; text-decoration: none; }
+.post-title a:hover { color: {color:Accent}; }
+
+/* ── Post body ── */
+.post-body {
+  line-height: 1.85;
+  overflow-wrap: break-word;
+}
+.post-body p { margin-bottom: 10px; }
+.post-body p:last-child { margin-bottom: 0; }
+
+/* regular links in post body */
+.post-body a {
+  color: {color:Accent};
+  text-decoration: underline;
+  text-decoration-color: #b5d68a;
+}
+.post-body a:hover { text-decoration-color: {color:Accent}; }
+
+/* ── Horse links — fridge magnets ──
+   These have class="horse-link" added by the horse counter app. ── */
+.post-body .horse-link {
+  display: inline-block;
+  padding: 2px 9px;
+  font: 700 0.88em 'Courier Prime', 'Courier New', monospace;
+  box-shadow: 2px 2px 3px rgba(0,0,0,.22);
+  border-radius: 2px;
+  text-decoration: none;
+  vertical-align: middle;
+  margin: 2px 3px;
+  transition: transform .1s, box-shadow .1s;
+}
+.post-body .horse-link:hover {
+  transform: scale(1.06) rotate(0deg) !important;
+  box-shadow: 3px 3px 6px rgba(0,0,0,.28);
+}
+
+.post-body .horse-link:nth-of-type(6n+1) { background: #ffe082; color: #5a3e00; transform: rotate(-1.5deg); }
+.post-body .horse-link:nth-of-type(6n+2) { background: #b5ead7; color: #0a3d2a; transform: rotate( 1.0deg); }
+.post-body .horse-link:nth-of-type(6n+3) { background: #d4b8f5; color: #2d0a5a; transform: rotate(-0.7deg); }
+.post-body .horse-link:nth-of-type(6n+4) { background: #a8d4f7; color: #0a2d5a; transform: rotate( 1.3deg); }
+.post-body .horse-link:nth-of-type(6n+5) { background: #ffcdd2; color: #5a0a0a; transform: rotate(-1.0deg); }
+.post-body .horse-link:nth-of-type(6n+6) { background: #ffffff; color: #333333; transform: rotate( 0.5deg); border: 1px solid #ddd; }
+
+/* ── Photo posts ── */
+.post-photo img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 2px;
+  margin-bottom: 12px;
+}
+
+/* ── Quote posts ── */
+.post-quote {
+  font: italic 1.1rem/1.6 'Playfair Display', Georgia, serif;
+  border-left: 4px solid #c4a96b;
+  padding: 4px 0 4px 16px;
+  color: #4a3a20;
+  margin-bottom: 10px;
+}
+.post-source {
+  font: 12px 'Courier Prime', 'Courier New', monospace;
+  color: #8a7050;
+}
+
+/* ── Chat posts ── */
+.post-chat { list-style: none; }
+.post-chat-line { padding: 5px 0; border-bottom: 1px solid #e8d9b0; font-size: 14px; }
+.post-chat-line:last-child { border-bottom: none; }
+.post-chat-label { font: 700 13px 'Courier Prime', 'Courier New', monospace; color: #6b5430; margin-right: 6px; }
+
+/* ── Reblog attribution ── */
+.post-reblog-source {
+  margin-top: 12px;
+  padding: 8px 10px;
+  background: #f0ead8;
+  border-left: 3px solid #c4a96b;
+  border-radius: 0 2px 2px 0;
+  font: 12px 'Courier Prime', 'Courier New', monospace;
+  color: #8a7050;
+}
+.post-reblog-source a { color: #5a7a2a; text-decoration: none; }
+.post-reblog-source a:hover { text-decoration: underline; }
+
+/* ── Post meta (date + notes) ── */
+.post-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #e0d4b0;
+}
+.post-date {
+  font: 11px 'Courier Prime', 'Courier New', monospace;
+  color: #a08060;
+  text-decoration: none;
+}
+.post-date:hover { color: {color:Accent}; }
+.post-notes {
+  font: 11px 'Courier Prime', 'Courier New', monospace;
+  color: #5a7a2a;
+}
+
+/* ── Tags — mini fridge magnets ── */
+.post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.post-tag {
+  display: inline-block;
+  padding: 3px 9px;
+  font: 700 11px 'Courier Prime', 'Courier New', monospace;
+  box-shadow: 1px 1px 3px rgba(0,0,0,.18);
+  border-radius: 2px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.post-tag:hover { opacity: .85; box-shadow: 2px 2px 5px rgba(0,0,0,.22); }
+
+.post-tag:nth-child(6n+1) { background: #ffe082; color: #5a3e00; }
+.post-tag:nth-child(6n+2) { background: #b5ead7; color: #0a3d2a; }
+.post-tag:nth-child(6n+3) { background: #d4b8f5; color: #2d0a5a; }
+.post-tag:nth-child(6n+4) { background: #a8d4f7; color: #0a2d5a; }
+.post-tag:nth-child(6n+5) { background: #ffcdd2; color: #5a0a0a; }
+.post-tag:nth-child(6n+6) { background: #ffffff; color: #333333; border: 1px solid #ddd; }
+
+/* ── Fence between posts ── */
+.post-fence {
+  margin: 0;
+}
+
+/* ── Pagination ── */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px 0 8px;
+}
+.pagination a {
+  display: inline-block;
+  padding: 8px 18px;
+  background: #f5e9c8;
+  color: #6b5430;
+  border: 2px solid #c4a96b;
+  border-radius: 2px;
+  font: 700 12px 'Courier Prime', 'Courier New', monospace;
+  text-decoration: none;
+  box-shadow: 2px 2px 0 #c4a96b;
+  letter-spacing: .04em;
+}
+.pagination a:hover { background: #ede0b0; }
+.pagination a:active { transform: translate(2px, 2px); box-shadow: none; }
+
+/* ── Permalink page: notes ── */
+.notes-section {
+  background: {color:Card};
+  border-radius: 2px;
+  padding: 16px 20px;
+  margin-top: 0;
+  box-shadow: 2px 3px 10px rgba(0,0,0,.13), 0 0 0 1px rgba(139,105,20,.11);
+}
+.notes-section h3 {
+  font: 700 11px 'Courier Prime', 'Courier New', monospace;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #a08060;
+  margin-bottom: 12px;
+}
+.notes-section ol { list-style: none; }
+.notes-section li {
+  padding: 6px 0;
+  border-bottom: 1px solid #e8d9b0;
+  font-size: 13px;
+  color: #6b5430;
+}
+.notes-section li:last-child { border-bottom: none; }
+.notes-section a { color: {color:Accent}; text-decoration: none; }
+.notes-section .like_note::before   { content: '♥ '; color: #ffcdd2; }
+.notes-section .reblog_note::before { content: '⇌ '; color: #b5ead7; }
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .post-card { padding: 16px 14px 14px; }
+  .blog-title-link { font-size: 1.6rem; }
+  .post-body { font-size: 14px; }
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- ── Site header ── -->
+<div class="fence"></div>
+<header>
+  <div class="site-header">
+    <a class="blog-title-link" href="{BlogURL}">{BlogTitle}</a>
+    {block:Description}
+    <p class="blog-desc">{Description}</p>
+    {/block:Description}
+  </div>
+  {block:HasPages}
+  <nav class="site-nav">
+    {block:Pages}
+    <a href="{URL}">{Label}</a>
+    {/block:Pages}
+    <a href="{BlogURL}/archive">Archive</a>
+  </nav>
+  {/block:HasPages}
+</header>
+<div class="fence"></div>
+
+<!-- ── Posts ── -->
+<main class="container">
+
+  {block:Posts}
+
+  <article class="post-card {TagsAsClasses}">
+
+    {block:Text}
+      {block:Title}
+      <h2 class="post-title"><a href="{Permalink}">{Title}</a></h2>
+      {/block:Title}
+      <div class="post-body">{Body}</div>
+    {/block:Text}
+
+    {block:Photo}
+      <div class="post-photo">
+        <a href="{Permalink}">
+          <img src="{PhotoURL-500}"
+               srcset="{PhotoURL-500} 500w, {PhotoURL-400} 400w"
+               alt="{PhotoAlt}"
+               loading="lazy">
+        </a>
+        {block:Caption}
+        <div class="post-body">{Caption}</div>
+        {/block:Caption}
+      </div>
+    {/block:Photo}
+
+    {block:Photoset}
+      <div class="post-photo">
+        {Photoset-500}
+        {block:Caption}
+        <div class="post-body">{Caption}</div>
+        {/block:Caption}
+      </div>
+    {/block:Photoset}
+
+    {block:Quote}
+      <blockquote class="post-quote">{Quote}</blockquote>
+      {block:Source}
+      <p class="post-source">— {Source}</p>
+      {/block:Source}
+    {/block:Quote}
+
+    {block:Link}
+      <h2 class="post-title"><a href="{URL}" {block:Target}target="_blank"{/block:Target}>{Name}</a></h2>
+      {block:Description}
+      <div class="post-body">{Description}</div>
+      {/block:Description}
+    {/block:Link}
+
+    {block:Chat}
+      <ul class="post-chat">
+        {block:Lines}
+        <li class="post-chat-line">
+          {block:Label}<span class="post-chat-label">{Label}</span>{/block:Label}{Line}
+        </li>
+        {/block:Lines}
+      </ul>
+    {/block:Chat}
+
+    {block:Answer}
+      <div class="post-reblog-source">
+        <strong><a href="{AskerURL}">{Asker}</a></strong> asked:
+      </div>
+      <div class="post-body" style="margin-top:10px">{Answer}</div>
+    {/block:Answer}
+
+    <!-- Reblog source -->
+    {block:RebloggedFrom}
+    <div class="post-reblog-source">
+      via <a href="{ReblogParentURL}">@{ReblogParentName}</a>
+      {block:NotRebloggedFromSelf}
+        originally from <a href="{ReblogRootURL}">@{ReblogRootName}</a>
+      {/block:NotRebloggedFromSelf}
+    </div>
+    {/block:RebloggedFrom}
+
+    <!-- Date + notes -->
+    <div class="post-meta">
+      <a class="post-date" href="{Permalink}">{ShortMonth} {DayOfMonth}, {Year}</a>
+      {block:NoteCount}
+      <span class="post-notes">{NoteCountWithLabel}</span>
+      {/block:NoteCount}
+    </div>
+
+    <!-- Tags -->
+    <div class="post-tags">
+      {block:Tags}<a class="post-tag" href="{TagURL}">#{Tag}</a>{/block:Tags}
+    </div>
+
+  </article>
+
+  <div class="fence post-fence"></div>
+
+  {/block:Posts}
+
+  <!-- Permalink: notes -->
+  {block:PermalinkPage}
+  {block:PostNotes}
+  <div class="notes-section">
+    <h3>{NoteCount} notes</h3>
+    {PostNotes}
+  </div>
+  {/block:PostNotes}
+  {/block:PermalinkPage}
+
+  <!-- Pagination -->
+  {block:Pagination}
+  <nav class="pagination">
+    {block:PreviousPage}<a href="{PreviousPage}">← Older</a>{/block:PreviousPage}
+    {block:NextPage}<a href="{NextPage}">Newer →</a>{/block:NextPage}
+  </nav>
+  {/block:Pagination}
+
+</main>
+
+<div class="fence"></div>
+
+</body>
+</html>
