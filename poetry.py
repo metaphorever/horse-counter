@@ -11,7 +11,6 @@ from typing import List, Dict, Optional, Tuple, Callable
 from config import BASE_DIR, OPTIONAL_TAGS
 
 PASTURE_FILE    = os.path.join(BASE_DIR, 'pasture.json')
-SEARCH_LIMIT    = 20
 SEARCH_HARD_CAP = 500
 
 POEM_PREFIX_TEMPLATE = (
@@ -117,14 +116,12 @@ def _describe_mode(query: str) -> str:
     return f'Pattern: {q}'
 
 
-def search_dictionary(query: str, dictionary, limit: int = SEARCH_LIMIT, return_all: bool = False) -> Dict:
+def search_dictionary(query: str, dictionary) -> Dict:
     matcher, err = _compile_search(query.strip())
     if err:
-        return {'results': [], 'total': 0, 'limited': False, 'query': query, 'error': err, 'mode': ''}
+        return {'results': [], 'total': 0, 'capped': False, 'query': query, 'error': err, 'mode': ''}
 
-    cap   = SEARCH_HARD_CAP if return_all else limit
     found = []
-
     for name, registrations in dictionary.horses.items():
         if matcher(name):
             reg = registrations[0]
@@ -134,15 +131,10 @@ def search_dictionary(query: str, dictionary, limit: int = SEARCH_LIMIT, return_
                 'url':     reg.get('url', ''),
                 'count':   len(registrations),
             })
-            if len(found) >= cap:
+            if len(found) >= SEARCH_HARD_CAP:
                 break
 
-    total   = len(found)
-    limited = not return_all and total >= limit
-
-    if limited:
-        true_total = sum(1 for name in dictionary.horses if matcher(name))
-        total = true_total
+    capped = len(found) >= SEARCH_HARD_CAP
 
     q_core = query.strip().lower().replace('*', '').strip()
     found.sort(key=lambda x: (
@@ -151,9 +143,9 @@ def search_dictionary(query: str, dictionary, limit: int = SEARCH_LIMIT, return_
     ))
 
     return {
-        'results': found[:cap],
-        'total':   total,
-        'limited': limited,
+        'results': found,
+        'total':   len(found),
+        'capped':  capped,
         'query':   query,
         'error':   None,
         'mode':    _describe_mode(query.strip()),

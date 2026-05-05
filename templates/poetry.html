@@ -120,9 +120,61 @@
 /* Toast */
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #3a5a1a; color: #fff; padding: 10px 22px; border-radius: 2px; z-index: 9999; font: 13px 'Courier Prime','Courier New',monospace; pointer-events: none; box-shadow: 2px 2px 6px rgba(0,0,0,.3); }
 
+/* Wider layout on desktop */
+@media (min-width: 900px) {
+  .container { max-width: 1200px; }
+  .poetry-wrap { grid-template-columns: 300px 1fr; }
+  .search-results { max-height: 340px; }
+}
 @media (max-width: 640px) {
   .poetry-wrap { grid-template-columns: 1fr; }
 }
+
+/* Page-size selector */
+.page-size-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.page-size-row label {
+  font: 10px 'Courier Prime','Courier New',monospace;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #a08060;
+  margin: 0;
+}
+.page-size-row select {
+  font: 11px 'Courier Prime','Courier New',monospace;
+  background: #fff9ee;
+  border: 1px solid #c4a96b;
+  border-radius: 2px;
+  color: #2d2316;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+
+/* Pager */
+.search-pager {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+.search-pager button {
+  padding: 3px 10px;
+  font: 700 11px 'Courier Prime','Courier New',monospace;
+  background: #f5e9c8;
+  color: #6b5430;
+  border: 1px solid #c4a96b;
+  border-radius: 2px;
+  box-shadow: 1px 1px 0 #c4a96b;
+  cursor: pointer;
+  margin: 0;
+}
+.search-pager button:disabled { opacity: .4; cursor: default; box-shadow: none; }
+.search-pager button:not(:disabled):active { transform: translate(1px,1px); box-shadow: none; }
+.pager-info { font: 11px 'Courier Prime','Courier New',monospace; color: #8a7050; flex: 1; text-align: center; }
 </style>
 {% endblock %}
 
@@ -144,10 +196,23 @@
         <input type="text" id="q" placeholder="e.g. *dance* or dance *" autocomplete="off">
         <button onclick="doSearch()">Go</button>
       </div>
+      <div class="page-size-row">
+        <label for="page-size">Per page</label>
+        <select id="page-size" onchange="changePageSize(this.value)">
+          <option value="10">10</option>
+          <option value="25" selected>25</option>
+          <option value="50">50</option>
+        </select>
+      </div>
       <div id="search-mode" class="search-mode"></div>
       <div id="search-meta" class="search-meta"></div>
       <div id="search-error" class="search-error"></div>
       <div id="search-results" class="search-results"></div>
+      <div class="search-pager" id="search-pager">
+        <button id="pager-prev" onclick="movePage(-1)">←</button>
+        <span class="pager-info" id="pager-info"></span>
+        <button id="pager-next" onclick="movePage(1)">→</button>
+      </div>
       <div class="search-hint">
         <code>dance</code> exact &nbsp;
         <code>dance*</code> starts &nbsp;
@@ -303,32 +368,49 @@ async function apiPost(url, body=null){
 }
 
 // ── Search ────────────────────────────────────────────────────────────────────
-async function doSearch(q, all){
-  q = q || document.getElementById('q').value.trim();
-  if(!q) return;
-  document.getElementById('q').value = q;
+let searchResults = [];
+let searchCapped  = false;
+let searchPage    = 0;
+let pageSize      = parseInt(localStorage.getItem('horse-page-size') || '25', 10);
 
-  const d = await apiPost('/poetry/search', {query:q, return_all:!!all});
-  if(!d) return;
+(function(){ // restore saved page-size on load
+  const sel = document.getElementById('page-size');
+  if(sel){ sel.value = pageSize; }
+})();
 
-  document.getElementById('search-mode').textContent  = d.mode  || '';
-  document.getElementById('search-error').textContent = d.error || '';
-  document.getElementById('search-meta').innerHTML    = '';
-  document.getElementById('search-results').innerHTML = '';
+function changePageSize(val){
+  pageSize = parseInt(val, 10);
+  localStorage.setItem('horse-page-size', val);
+  searchPage = 0;
+  renderSearchPage();
+}
 
-  if(d.error) return;
+function movePage(dir){
+  const pages = Math.ceil(searchResults.length / pageSize);
+  searchPage = Math.max(0, Math.min(searchPage + dir, pages - 1));
+  renderSearchPage();
+  document.getElementById('search-results').scrollTop = 0;
+}
 
-  if(d.limited){
-    document.getElementById('search-meta').innerHTML =
-      `${d.results.length} of ${d.total.toLocaleString()} — <a style="cursor:pointer" onclick="doSearch(${JSON.stringify(q)},true)">show all (slow)</a>`;
+function renderSearchPage(){
+  const total = searchResults.length;
+  const pages = Math.ceil(total / pageSize) || 1;
+  const start = searchPage * pageSize;
+  const end   = Math.min(start + pageSize, total);
+  const slice = searchResults.slice(start, end);
+
+  if(total === 0){
+    document.getElementById('search-meta').textContent = 'No results';
   } else {
-    document.getElementById('search-meta').textContent = d.total===0 ? 'No results' : `${d.total} result${d.total!==1?'s':''}`;
+    const cap = searchCapped ? '+' : '';
+    document.getElementById('search-meta').textContent =
+      total === 1 ? '1 result'
+      : pages > 1 ? `${start+1}–${end} of ${total}${cap}`
+      : `${total}${cap} result${total!==1?'s':''}`;
   }
 
   const pNames = new Set(pasture.map(h=>h.name));
-  // Buttons use data-* attributes; clicks are handled by the delegated listener
-  // set up in DOMContentLoaded — no inline onclick needed.
-  document.getElementById('search-results').innerHTML = d.results.map(h=>`
+  document.getElementById('search-results').innerHTML = slice.map(h=>`
     <div class="result-item">
       <span class="result-name" title="${esc(h.display)}">${esc(h.display)}</span>
       ${h.count>1?`<span class="multi-badge">${h.count}</span>`:''}
@@ -341,6 +423,38 @@ async function doSearch(q, all){
       </button>
     </div>`).join('');
 
+  const pager = document.getElementById('search-pager');
+  if(pages > 1){
+    pager.style.display = 'flex';
+    document.getElementById('pager-prev').disabled = searchPage === 0;
+    document.getElementById('pager-next').disabled = searchPage >= pages - 1;
+    document.getElementById('pager-info').textContent = `${searchPage+1} / ${pages}`;
+  } else {
+    pager.style.display = 'none';
+  }
+}
+
+async function doSearch(q){
+  q = q || document.getElementById('q').value.trim();
+  if(!q) return;
+  document.getElementById('q').value = q;
+
+  document.getElementById('search-meta').textContent  = 'Searching…';
+  document.getElementById('search-error').textContent = '';
+  document.getElementById('search-results').innerHTML = '';
+  document.getElementById('search-pager').style.display = 'none';
+
+  const d = await apiPost('/poetry/search', {query:q});
+  if(!d) return;
+
+  document.getElementById('search-mode').textContent  = d.mode  || '';
+  document.getElementById('search-error').textContent = d.error || '';
+  if(d.error) return;
+
+  searchResults = d.results;
+  searchCapped  = d.capped;
+  searchPage    = 0;
+  renderSearchPage();
   addHistory(q);
 }
 

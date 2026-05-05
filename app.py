@@ -652,10 +652,9 @@ def poetry_editor():
 @app.route('/poetry/search', methods=['POST'])
 def poetry_search():
     from flask import jsonify
-    data       = request.get_json()
-    query      = data.get('query', '')
-    return_all = data.get('return_all', False)
-    results    = search_dictionary(query, dictionary, return_all=return_all)
+    data    = request.get_json(silent=True) or {}
+    query   = data.get('query', '')
+    results = search_dictionary(query, dictionary)
     return jsonify(results)
 
 
