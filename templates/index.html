@@ -101,10 +101,18 @@
   {% if not is_admin and result.draft_id %}
   <div style="margin-top:10px;padding:14px;background:#f1fff4;border:1px solid #a5d6a7;border-radius:4px">
     <p style="margin:0 0 10px;font-size:14px">Want this posted to the blog? Submit it for review!</p>
-    <form method="post" action="/submit" style="display:flex;gap:8px;flex-wrap:wrap">
+    <form method="post" action="/submit">
       <input type="hidden" name="draft_id" value="{{ result.draft_id }}">
-      <button type="submit" class="btn-primary">Submit for review</button>
-      <a href="/" class="btn-sec btn-link">Cancel</a>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <input type="text" name="submitter_name" placeholder="Your name (optional)"
+               maxlength="60" style="flex:1;margin:0">
+        <input type="text" name="submitter_tumblr" placeholder="Tumblr @ (optional)"
+               maxlength="32" style="flex:1;margin:0">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button type="submit" class="btn-primary">Submit for review</button>
+        <a href="/" class="btn-sec btn-link">Cancel</a>
+      </div>
     </form>
   </div>
   {% endif %}

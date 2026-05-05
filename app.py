@@ -22,6 +22,7 @@ Admin routes (login required):
 """
 
 import os
+import re
 from datetime import datetime
 from flask import (
     Flask, request, redirect, session, url_for,
@@ -80,6 +81,25 @@ def inject_globals():
         'tumblr_auth': tumblr.authenticated,
         'blog_name':   TUMBLR_BLOG_NAME,
     }
+
+
+def _sanitize_name(raw: str) -> str:
+    """Strip HTML-dangerous chars, limit length."""
+    return re.sub(r'[<>&"\'\\]', '', raw or '').strip()[:60]
+
+def _sanitize_tumblr(raw: str) -> str:
+    """Strip leading @, restrict to valid Tumblr username characters."""
+    handle = (raw or '').lstrip('@').strip().lower()
+    return re.sub(r'[^a-z0-9-]', '', handle)[:32]
+
+def _attribution_html(name: str, tumblr: str) -> str:
+    """Build an attribution line for the post body, or empty string if no credit given."""
+    if not name and not tumblr:
+        return ''
+    if tumblr:
+        display = name or f'@{tumblr}'
+        return f'<p>Submitted by <a href="https://www.tumblr.com/{tumblr}">{display}</a></p>'
+    return f'<p>Submitted by {name}</p>'
 
 
 @app.template_filter('datefmt')
@@ -418,14 +438,18 @@ def public_submit():
             error='Submission timed out — please count again and try again',
         )
 
-    sub_type = 'text' if draft.get('is_text_post') else 'url'
+    sub_type         = 'text' if draft.get('is_text_post') else 'url'
+    submitter_name   = _sanitize_name(request.form.get('submitter_name', ''))
+    submitter_tumblr = _sanitize_tumblr(request.form.get('submitter_tumblr', ''))
     save_submission(sub_type, {
-        'post_data':    draft.get('post_data', {}),
-        'horse_count':  draft['horse_count'],
-        'linked_html':  draft['linked_html'],
-        'stats':        draft.get('stats', {}),
-        'is_text_post': draft.get('is_text_post', False),
-        'is_fallback':  draft.get('is_fallback', False),
+        'post_data':        draft.get('post_data', {}),
+        'horse_count':      draft['horse_count'],
+        'linked_html':      draft['linked_html'],
+        'stats':            draft.get('stats', {}),
+        'is_text_post':     draft.get('is_text_post', False),
+        'is_fallback':      draft.get('is_fallback', False),
+        'submitter_name':   submitter_name,
+        'submitter_tumblr': submitter_tumblr,
     })
     delete_draft(draft_id)
 
@@ -450,24 +474,28 @@ def submit_poem_public():
     if not any(lines):
         return jsonify({'ok': False, 'error': 'Poem is empty'})
 
-    flat        = [h for line in lines for h in line]
-    horse_count = len(flat)
-    poem_html   = build_poem_html(lines)
-    linked_html = prefix + poem_html + suffix
-    total_words = sum(len(h['name'].split()) for h in flat)
+    flat             = [h for line in lines for h in line]
+    horse_count      = len(flat)
+    poem_html        = build_poem_html(lines)
+    linked_html      = prefix + poem_html + suffix
+    total_words      = sum(len(h['name'].split()) for h in flat)
+    submitter_name   = _sanitize_name(data.get('submitter_name', ''))
+    submitter_tumblr = _sanitize_tumblr(data.get('submitter_tumblr', ''))
 
     save_submission('poem', {
-        'post_data':    {},
-        'horse_count':  horse_count,
-        'linked_html':  linked_html,
-        'poem_tags':    tags,
-        'stats':        {
+        'post_data':        {},
+        'horse_count':      horse_count,
+        'linked_html':      linked_html,
+        'poem_tags':        tags,
+        'stats':            {
             'horse_density': 100.0,
             'total_words':   total_words,
             'linked_words':  total_words,
         },
-        'is_text_post': True,
-        'is_fallback':  False,
+        'is_text_post':     True,
+        'is_fallback':      False,
+        'submitter_name':   submitter_name,
+        'submitter_tumblr': submitter_tumblr,
     })
     return jsonify({'ok': True, 'message': 'Poem submitted for review!'})
 
@@ -489,9 +517,11 @@ def approve_submission():
     if not sub:
         return redirect(url_for('submissions'))
 
-    horse_count = sub.get('horse_count', 0)
-    stats       = sub.get('stats') or {}
-    density     = stats.get('horse_density', 0.0)
+    horse_count      = sub.get('horse_count', 0)
+    stats            = sub.get('stats') or {}
+    density          = stats.get('horse_density', 0.0)
+    submitter_name   = sub.get('submitter_name', '')
+    submitter_tumblr = sub.get('submitter_tumblr', '')
 
     draft_id = save_draft({
         'post_data':    sub.get('post_data', {}),
@@ -504,17 +534,26 @@ def approve_submission():
     })
     update_status(sub_id, 'approved')
 
+    # Pre-populate mid with attribution HTML (admin can edit before posting)
+    mid = _attribution_html(submitter_name, submitter_tumblr)
+
+    # Add submitter name to custom tags so it appears on the post
+    base_tags   = sub.get('poem_tags', '')
+    name_tag    = f'submitted by {submitter_name}' if submitter_name else ''
+    tumblr_tag  = submitter_tumblr if submitter_tumblr else ''
+    extra_tags  = ','.join(t for t in [base_tags, name_tag, tumblr_tag] if t)
+
     return render_template('review.html',
         draft_id=draft_id,
         horse_count=horse_count,
         stats=stats,
         content=sub.get('linked_html', ''),
         pre=format_prefix(horse_count, False, density),
-        mid='',
+        mid=mid,
         suf=POST_SUFFIX,
         default_tags=build_default_tags(horse_count, density),
         optional_tags=OPTIONAL_TAGS,
-        custom_tags=sub.get('poem_tags', ''),
+        custom_tags=extra_tags,
         is_fallback=sub.get('is_fallback', False),
         error=None,
     )

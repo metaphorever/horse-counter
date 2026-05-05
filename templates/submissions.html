@@ -27,6 +27,17 @@
         <span style="color:#888;font-size:12px">{{ sub.stats.horse_density }}% horse</span>
         {% endif %}
         <span style="color:#aaa;font-size:12px">{{ sub.submitted_at | datefmt }}</span>
+        {% if sub.submitter_name or sub.submitter_tumblr %}
+        <span style="color:#555;font-size:12px">—
+          {% if sub.submitter_tumblr %}
+            <a href="https://www.tumblr.com/{{ sub.submitter_tumblr }}" target="_blank">
+              {{ sub.submitter_name or ('@' + sub.submitter_tumblr) }}
+            </a>
+          {% else %}
+            {{ sub.submitter_name }}
+          {% endif %}
+        </span>
+        {% endif %}
       </div>
       <div style="display:flex;gap:6px">
         <form method="post" action="/submissions/approve" style="display:inline">

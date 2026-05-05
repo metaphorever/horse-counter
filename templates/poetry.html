@@ -186,6 +186,13 @@
     <div id="modal-tags" style="display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 10px;padding:10px;background:#f9f9f9;border:1px solid #ddd;border-radius:4px"></div>
     <label>Extra tags <span style="font-weight:normal;color:#888;font-size:12px">(comma-separated)</span>:</label>
     <input type="text" id="modal-custom">
+    {% if not is_admin %}
+    <label>Credit <span style="font-weight:normal;color:#888;font-size:12px">(optional — for attribution on the post)</span>:</label>
+    <div style="display:flex;gap:6px;margin-bottom:4px">
+      <input type="text" id="modal-submitter-name"   placeholder="Your name"        maxlength="60" style="flex:1;margin:0">
+      <input type="text" id="modal-submitter-tumblr" placeholder="Tumblr @ (no @)"  maxlength="32" style="flex:1;margin:0">
+    </div>
+    {% endif %}
     <div class="modal-actions">
       {% if is_admin %}
       <button class="btn-primary" onclick="submitPoem('post')">Post Now</button>
@@ -568,7 +575,9 @@ async function submitPoemPublic(){
   const checked = [...document.querySelectorAll('#modal-tags input:checked')].map(el=>el.value);
   const tags    = [...checked, ...custom.split(',').map(t=>t.trim()).filter(Boolean)].join(',');
 
-  const d = await apiPost('/submit/poem', {lines, prefix, suffix, tags});
+  const submitterName   = (document.getElementById('modal-submitter-name')?.value   || '').trim();
+  const submitterTumblr = (document.getElementById('modal-submitter-tumblr')?.value || '').trim().replace(/^@/, '');
+  const d = await apiPost('/submit/poem', {lines, prefix, suffix, tags, submitter_name: submitterName, submitter_tumblr: submitterTumblr});
   if(!d) return;
   if(d.ok){
     closeModal();
