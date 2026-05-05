@@ -187,10 +187,14 @@
     <label>Extra tags <span style="font-weight:normal;color:#888;font-size:12px">(comma-separated)</span>:</label>
     <input type="text" id="modal-custom">
     <div class="modal-actions">
+      {% if is_admin %}
       <button class="btn-primary" onclick="submitPoem('post')">Post Now</button>
       <button class="btn-primary" onclick="submitPoem('queue')">Queue</button>
       <button class="btn-sec"     onclick="submitPoem('draft')">Save Draft</button>
-      <button class="btn-sec"     onclick="closeModal()">Cancel</button>
+      {% else %}
+      <button class="btn-primary" onclick="submitPoemPublic()">Submit for review</button>
+      {% endif %}
+      <button class="btn-sec" onclick="closeModal()">Cancel</button>
     </div>
     <div id="modal-err" class="msg err modal-err" style="display:none"></div>
   </div>
@@ -198,7 +202,8 @@
 
 <script>
 // ── State ─────────────────────────────────────────────────────────────────────
-let pasture  = {{ pasture_json|safe }};
+const isAdmin = {{ is_admin|tojson }};
+let pasture  = {{ pasture_json|safe }};  // server pasture for admin; [] for public (overridden from localStorage on boot)
 let lines    = [[], [], []];   // array of arrays of {name, display, url}
 let history  = [];
 const OPTIONAL_TAGS = {{ optional_tags_json|safe }};
@@ -207,8 +212,17 @@ const OPTIONAL_TAGS = {{ optional_tags_json|safe }};
 let drag = null;
 // { horse:{name,display,url}, srcType:'pasture'|'poem', srcLine:int, srcIdx:int }
 
+// ── localStorage helpers (public users only) ──────────────────────────────────
+function savePastureLocal(){
+  try { localStorage.setItem('horse-pasture', JSON.stringify(pasture)); } catch(e){}
+}
+function loadPastureLocal(){
+  try { return JSON.parse(localStorage.getItem('horse-pasture') || '[]'); } catch{ return []; }
+}
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  if(!isAdmin) pasture = loadPastureLocal();
   renderPasture();
   renderPoem();
   document.getElementById('q').addEventListener('keydown', e => { if (e.key==='Enter') doSearch(); });
@@ -310,25 +324,29 @@ function addHistory(q){
 // ── Pasture ───────────────────────────────────────────────────────────────────
 async function addToPasture(name, display, url){
   if(pasture.find(h=>h.name===name)) return;
-  // Optimistic update
   pasture.push({name, display, url});
   renderPasture();
-  // Persist to server; on success, authoritative list replaces optimistic state
-  const d = await apiPost('/poetry/pasture/add', {name, display, url});
-  if(d){ pasture = d.horses; renderPasture(); }
+  if(isAdmin){
+    const d = await apiPost('/poetry/pasture/add', {name, display, url});
+    if(d){ pasture = d.horses; renderPasture(); }
+  } else {
+    savePastureLocal();
+  }
 }
 
 async function removeFromPasture(name){
   pasture = pasture.filter(h=>h.name!==name);
   renderPasture();
-  await apiPost('/poetry/pasture/remove', {name});
+  if(isAdmin) await apiPost('/poetry/pasture/remove', {name});
+  else        savePastureLocal();
 }
 
 async function clearPasture(){
   if(!confirm('Clear all horses from the pasture?')) return;
   pasture = [];
   renderPasture();
-  await apiPost('/poetry/pasture/clear');
+  if(isAdmin) await apiPost('/poetry/pasture/clear');
+  else        savePastureLocal();
 }
 
 function renderPasture(){
@@ -540,6 +558,27 @@ function openModal(){
   document.getElementById('post-modal').classList.add('open');
 }
 function closeModal(){ document.getElementById('post-modal').classList.remove('open'); }
+
+async function submitPoemPublic(){
+  const flat = lines.flat();
+  if(!flat.length) return;
+  const prefix  = document.getElementById('modal-pre').value;
+  const suffix  = document.getElementById('modal-suf').value;
+  const custom  = document.getElementById('modal-custom').value;
+  const checked = [...document.querySelectorAll('#modal-tags input:checked')].map(el=>el.value);
+  const tags    = [...checked, ...custom.split(',').map(t=>t.trim()).filter(Boolean)].join(',');
+
+  const d = await apiPost('/submit/poem', {lines, prefix, suffix, tags});
+  if(!d) return;
+  if(d.ok){
+    closeModal();
+    lines=[[]]; renderPoem();
+    showToast(d.message || 'Poem submitted for review!');
+  } else {
+    const el=document.getElementById('modal-err');
+    el.textContent=d.error; el.style.display='';
+  }
+}
 
 async function submitPoem(action){
   const flat = lines.flat();

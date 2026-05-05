@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Submissions — Horse Counter{% endblock %}
+{% block content %}
+
+<div class="box">
+  <div style="margin-bottom:10px;display:flex;gap:16px;align-items:center">
+    <a href="/" style="color:#00cf35;font-size:13px">← Back to counter</a>
+    <a href="/poetry" style="color:#00cf35;font-size:13px">📝 Poetry editor →</a>
+  </div>
+
+  <h1>📬 Pending Submissions</h1>
+
+  {% if not submissions %}
+  <div class="msg ok">No pending submissions — all caught up!</div>
+  {% endif %}
+
+  {% for sub in submissions %}
+  <div style="background:#fff;border-radius:6px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08)">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:11px;background:#f0f0f0;border-radius:3px;padding:2px 7px;text-transform:uppercase;letter-spacing:.05em;font-weight:bold">
+          {{ sub.type }}
+        </span>
+        <strong>{{ sub.horse_count }} horse{{ 's' if sub.horse_count != 1 else '' }}</strong>
+        {% if sub.stats %}
+        <span style="color:#888;font-size:12px">{{ sub.stats.horse_density }}% horse</span>
+        {% endif %}
+        <span style="color:#aaa;font-size:12px">{{ sub.submitted_at | datefmt }}</span>
+      </div>
+      <div style="display:flex;gap:6px">
+        <form method="post" action="/submissions/approve" style="display:inline">
+          <input type="hidden" name="id" value="{{ sub.id }}">
+          <button type="submit" class="btn-primary" style="font-size:12px;padding:6px 14px">Review &amp; post →</button>
+        </form>
+        <form method="post" action="/submissions/reject" style="display:inline"
+              onsubmit="return confirm('Reject this submission?')">
+          <input type="hidden" name="id" value="{{ sub.id }}">
+          <button type="submit" class="btn-sec" style="font-size:12px;padding:6px 14px;background:#ffebee;color:#c62828;border-color:#ffcdd2">Reject</button>
+        </form>
+      </div>
+    </div>
+
+    <details>
+      <summary style="cursor:pointer;font-size:13px;color:#00cf35;user-select:none">Preview</summary>
+      <div style="margin-top:8px;padding:12px;background:#fafafa;border:1px solid #eee;border-radius:4px;max-height:320px;overflow-y:auto;font-size:14px">
+        {{ sub.linked_html | safe }}
+      </div>
+    </details>
+
+  </div>
+  {% endfor %}
+
+</div>
+{% endblock %}

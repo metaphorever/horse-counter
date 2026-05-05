@@ -1,20 +1,28 @@
 """
 app.py - Flask routes for Horse Counter
 
-Routes:
-  GET  /login          login form
-  POST /login          PIN check
-  GET  /logout         clear session
-  GET  /               main input page
-  POST /               process URL / text / reply
-  POST /queue          post/queue/draft the reviewed post
+Public routes (no login required):
+  GET  /               main input page (URL + text tabs)
+  POST /               process URL or text, show count + submit option
+  POST /submit         save a counted post as a public submission
+  POST /submit/poem    save a public poem submission
+  GET  /poetry         poetry editor
+  POST /poetry/search  horse name search
+
+Admin routes (login required):
+  POST /               reply mode
+  POST /queue          post/queue/draft a reviewed post
   GET  /auth           start Tumblr OAuth
   GET  /callback       OAuth callback
-  GET  /submissions    (stub) view pending submissions
-  POST /submit         (stub) public submission endpoint
+  GET  /submissions    review pending public submissions
+  POST /submissions/approve  move a submission to the review page
+  POST /submissions/reject   discard a submission
+  POST /poetry/pasture/*     server-persisted pasture (admin only)
+  POST /poetry/post          post a poem directly (admin only)
 """
 
 import os
+from datetime import datetime
 from flask import (
     Flask, request, redirect, session, url_for,
     render_template, flash
@@ -43,6 +51,9 @@ from queue_handler import (
     save_draft, load_draft, delete_draft,
     assemble_tags, build_post_body, submit_post,
 )
+from submissions import (
+    save_submission, load_pending, load_submission, update_status,
+)
 
 # ── App setup ─────────────────────────────────────────────────────────────────
 
@@ -59,14 +70,31 @@ print(f"Ready. Dictionary: {dictionary.source}, "
       f"Tumblr: {'connected' if tumblr.authenticated else 'not connected'}")
 
 
+# ── Template globals ──────────────────────────────────────────────────────────
+
+@app.context_processor
+def inject_globals():
+    """Make is_admin and tumblr_auth available in every template."""
+    return {
+        'is_admin':    bool(session.get('logged_in')),
+        'tumblr_auth': tumblr.authenticated,
+        'blog_name':   TUMBLR_BLOG_NAME,
+    }
+
+
+@app.template_filter('datefmt')
+def datefmt(ts):
+    return datetime.fromtimestamp(ts).strftime('%b %d %H:%M')
+
+
 # ── Auth guard ────────────────────────────────────────────────────────────────
 
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not session.get('logged_in'):
-            # Return JSON 401 for API/AJAX calls so the client can handle it gracefully
-            # instead of silently following a redirect to the login HTML page.
+            # Return JSON 401 for API/AJAX calls so the client can handle it
+            # gracefully instead of silently following a redirect to login HTML.
             if (request.content_type or '').startswith('application/json') or \
                request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 from flask import jsonify
@@ -99,19 +127,18 @@ def logout():
 # ── Main page ─────────────────────────────────────────────────────────────────
 
 @app.route('/', methods=['GET', 'POST'])
-@login_required
 def index():
+    is_admin = bool(session.get('logged_in'))
+
     if request.method == 'GET':
         return render_template('index.html',
-            tumblr_auth=tumblr.authenticated,
-            blog_name=TUMBLR_BLOG_NAME,
             horses_loaded=dictionary.loaded,
             active_tab='url',
             form={},
         )
 
-    form_type  = request.form.get('type', 'url')
-    form_data  = {
+    form_type = request.form.get('type', 'url')
+    form_data = {
         'url':        request.form.get('url', ''),
         'text':       request.form.get('text', ''),
         'reply_url':  request.form.get('reply_url', ''),
@@ -121,8 +148,6 @@ def index():
 
     def error(msg):
         return render_template('index.html',
-            tumblr_auth=tumblr.authenticated,
-            blog_name=TUMBLR_BLOG_NAME,
             horses_loaded=dictionary.loaded,
             active_tab=active_tab,
             form=form_data,
@@ -130,7 +155,6 @@ def index():
         )
 
     try:
-        # ── URL: fetch post and reblog with count ──────────────────────────────
         if form_type == 'url':
             url = form_data['url'].strip()
             if not url:
@@ -138,34 +162,37 @@ def index():
 
             post_data = extract_post(
                 url,
-                make_api_request=tumblr.make_request if tumblr.authenticated else None,
+                # Authenticated API (OAuth, has posting rights) for admins only.
+                # Public users use the consumer-key-only public API path so the
+                # OAuth token is never exercised on their behalf.
+                make_api_request=tumblr.make_request if (tumblr.authenticated and is_admin) else None,
             )
             if not post_data:
                 return error("Could not fetch post — check the URL or try again")
 
-            return _process_chain(post_data, active_tab='url', form=form_data)
+            return _process_chain(post_data, active_tab='url', form=form_data, is_admin=is_admin)
 
-        # ── Text: standalone post from pasted text ────────────────────────────
         elif form_type == 'text':
             text = form_data['text'].strip()
             if not text:
                 return error("Enter some text")
 
-            # Wrap in a minimal post_data structure
             pseudo_post = {
-                'blog_name':   '',
-                'post_id':     '',
-                'post_url':    '',
-                'reblog_key':  '',
-                'chain':       [{'username': '', 'text': text}],
-                'is_multi':    False,
-                'is_fallback': False,
+                'blog_name':    '',
+                'post_id':      '',
+                'post_url':     '',
+                'reblog_key':   '',
+                'chain':        [{'username': '', 'text': text}],
+                'is_multi':     False,
+                'is_fallback':  False,
                 'is_text_post': True,
             }
-            return _process_chain(pseudo_post, active_tab='text', form=form_data)
+            return _process_chain(pseudo_post, active_tab='text', form=form_data, is_admin=is_admin)
 
-        # ── Reply: reblog a post but count horses in your own reply text ───────
         elif form_type == 'reply':
+            if not is_admin:
+                return error("Reply mode is admin only")
+
             reply_url  = form_data['reply_url'].strip()
             reply_text = form_data['reply_text'].strip()
             if not reply_url:
@@ -180,54 +207,45 @@ def index():
             if not post_data:
                 return error("Could not fetch post — check the URL or try again")
 
-            # Override chain: only count horses in the reply text
             post_data = dict(post_data)
-            post_data['reply_text'] = reply_text
-            post_data['is_reply']   = True
-            # Replace chain with just the reply text for matching purposes
-            post_data['reply_chain'] = post_data['chain']  # keep original for reblog
+            post_data['reply_text']  = reply_text
+            post_data['is_reply']    = True
+            post_data['reply_chain'] = post_data['chain']
             post_data['chain']       = [{'username': 'reply', 'text': reply_text}]
 
-            return _process_chain(post_data, active_tab='reply', form=form_data)
+            return _process_chain(post_data, active_tab='reply', form=form_data, is_admin=is_admin)
 
     except Exception as e:
         import traceback; traceback.print_exc()
         return error(f"Unexpected error: {e}")
 
 
-def _process_chain(post_data: dict, active_tab: str, form: dict):
+def _process_chain(post_data: dict, active_tab: str, form: dict, is_admin: bool = False):
     """
-    Run matching on all chain items with a shared ChainCounter,
-    then either show review page (if authenticated + horses found)
-    or show simple count result.
+    Run matching on all chain items with a shared ChainCounter.
+
+    Admin + Tumblr connected + horses found → review page (direct post flow).
+    Everyone else → count result page.
+    Public + horses found → also saves a draft so the user can submit it.
     """
-    chain  = post_data['chain']
+    chain   = post_data['chain']
     counter = ChainCounter(dictionary)
 
-    # ── Find horses in every chain item ──
     chain_matches = []
     for item in chain:
         matches = find_horses_in_text(item['text'], dictionary)
         chain_matches.append(matches)
 
-    total_horse_occurrences = sum(len(m) for m in chain_matches)
-
-    # ── Render HTML for each chain item (consumes counter) ──
-    rendered_parts = []
+    rendered_parts     = []
     total_linked_words = 0
 
     for item, matches in zip(chain, chain_matches):
         html, linked_words = render_chain_item(item['text'], matches, counter)
         total_linked_words += linked_words
-        rendered_parts.append({
-            'username': item['username'],
-            'html':     html,
-        })
+        rendered_parts.append({'username': item['username'], 'html': html})
 
-    # ── Stats ──
     raw_texts = [item['text'] for item in chain]
-    stats = compute_stats(raw_texts, counter)
-    # Override linked_words with the accurate per-render count
+    stats     = compute_stats(raw_texts, counter)
     stats['linked_words'] = total_linked_words
     total_words = stats['total_words']
     stats['horse_density'] = (
@@ -235,21 +253,19 @@ def _process_chain(post_data: dict, active_tab: str, form: dict):
         if total_words > 0 else 0.0
     )
 
-    horse_count = counter.total_linked()  # unique linked occurrences
+    horse_count = counter.total_linked()
 
-    # ── Build combined HTML for review ──
+    # ── Build combined HTML ──
     if post_data.get('is_multi') or len(rendered_parts) > 1:
-        content_html_parts = []
+        parts = []
         for i, part in enumerate(rendered_parts):
             if part['username']:
                 emoji = get_horse_emoji(part['username'])
-                content_html_parts.append(
-                    f'<p class="chain-username">{emoji} @{part["username"]}</p>'
-                )
-            content_html_parts.append(part['html'])
+                parts.append(f'<p class="chain-username">{emoji} @{part["username"]}</p>')
+            parts.append(part['html'])
             if i < len(rendered_parts) - 1:
-                content_html_parts.append('<hr class="chain-sep">')
-        linked_html = ''.join(content_html_parts)
+                parts.append('<hr class="chain-sep">')
+        linked_html = ''.join(parts)
     else:
         part = rendered_parts[0]
         if part['username']:
@@ -258,57 +274,65 @@ def _process_chain(post_data: dict, active_tab: str, form: dict):
         else:
             linked_html = part['html']
 
-    # ── If not authenticated or no horses, just show count ──
-    if not tumblr.authenticated or horse_count == 0:
-        all_matches = [m for matches in chain_matches for m in matches]
-        return render_template('index.html',
-            tumblr_auth=tumblr.authenticated,
-            blog_name=TUMBLR_BLOG_NAME,
-            horses_loaded=dictionary.loaded,
-            active_tab=active_tab,
-            form=form,
-            result={
-                'count':  horse_count,
-                'horses': all_matches,
-                'stats':  stats,
-            },
+    # ── Admin + Tumblr + horses → direct review/post flow ──
+    if is_admin and tumblr.authenticated and horse_count > 0:
+        usernames = set()
+        for item in post_data.get('reply_chain', post_data['chain']):
+            u = item.get('username', '')
+            if u and u not in ('unknown', 'reply', ''):
+                usernames.add(u)
+
+        default_tags = build_default_tags(horse_count, stats['horse_density'])
+        prefix       = format_prefix(horse_count, post_data.get('is_multi', False), stats['horse_density'])
+
+        draft_id = save_draft({
+            'post_data':    post_data,
+            'horse_count':  horse_count,
+            'linked_html':  linked_html,
+            'stats':        stats,
+            'is_text_post': post_data.get('is_text_post', False),
+            'is_reply':     post_data.get('is_reply', False),
+            'is_fallback':  post_data.get('is_fallback', False),
+        })
+
+        return render_template('review.html',
+            draft_id=draft_id,
+            horse_count=horse_count,
+            stats=stats,
+            content=linked_html,
+            pre=prefix,
+            mid='',
+            suf=POST_SUFFIX,
+            default_tags=default_tags,
+            optional_tags=OPTIONAL_TAGS,
+            custom_tags=','.join(sorted(usernames)),
+            is_fallback=post_data.get('is_fallback', False),
+            error=None,
         )
 
-    # ── Build usernames for custom tags ──
-    usernames = set()
-    # Use reply_chain for reply posts (original chain authors), not reply text username
-    source_chain = post_data.get('reply_chain', post_data['chain'])
-    for item in source_chain:
-        u = item.get('username', '')
-        if u and u not in ('unknown', 'reply', ''):
-            usernames.add(u)
+    # ── Public user with horses → save draft so they can submit it ──
+    draft_id = None
+    if not is_admin and horse_count > 0:
+        draft_id = save_draft({
+            'post_data':    post_data,
+            'horse_count':  horse_count,
+            'linked_html':  linked_html,
+            'stats':        stats,
+            'is_text_post': post_data.get('is_text_post', False),
+            'is_reply':     False,
+            'is_fallback':  post_data.get('is_fallback', False),
+        })
 
-    default_tags = build_default_tags(horse_count, stats['horse_density'])
-    prefix       = format_prefix(horse_count, post_data.get('is_multi', False), stats['horse_density'])
-
-    # ── Save draft and go to review ──
-    draft_id = save_draft({
-        'post_data':    post_data,
-        'horse_count':  horse_count,
-        'linked_html':  linked_html,
-        'is_text_post': post_data.get('is_text_post', False),
-        'is_reply':     post_data.get('is_reply', False),
-        'is_fallback':  post_data.get('is_fallback', False),
-    })
-
-    return render_template('review.html',
-        draft_id=draft_id,
-        horse_count=horse_count,
-        stats=stats,
-        content=linked_html,
-        pre=prefix,
-        mid='',
-        suf=POST_SUFFIX,
-        default_tags=default_tags,
-        optional_tags=OPTIONAL_TAGS,
-        custom_tags=','.join(sorted(usernames)),
-        is_fallback=post_data.get('is_fallback', False),
-        error=None,
+    return render_template('index.html',
+        horses_loaded=dictionary.loaded,
+        active_tab=active_tab,
+        form=form,
+        result={
+            'count':       horse_count,
+            'stats':       stats,
+            'linked_html': linked_html if horse_count > 0 else None,
+            'draft_id':    draft_id,
+        },
     )
 
 
@@ -325,18 +349,16 @@ def queue_post():
 
     if not draft:
         return render_template('index.html',
-            tumblr_auth=tumblr.authenticated,
-            blog_name=TUMBLR_BLOG_NAME,
             horses_loaded=dictionary.loaded,
             active_tab='url',
             form={},
             error='Draft expired — please re-process the post',
         )
 
-    action  = request.form.get('action', 'queue')
-    prefix  = request.form.get('pre', '')
-    middle  = request.form.get('mid', '')
-    suffix  = request.form.get('suf', POST_SUFFIX)
+    action = request.form.get('action', 'queue')
+    prefix = request.form.get('pre', '')
+    middle = request.form.get('mid', '')
+    suffix = request.form.get('suf', POST_SUFFIX)
 
     tags = assemble_tags(
         default_tags=request.form.getlist('tag_default'),
@@ -358,19 +380,16 @@ def queue_post():
         delete_draft(draft_id)
         action_label = {'post': 'published', 'queue': 'queued', 'draft': 'saved as draft'}.get(action, 'queued')
         return render_template('index.html',
-            tumblr_auth=tumblr.authenticated,
-            blog_name=TUMBLR_BLOG_NAME,
             horses_loaded=dictionary.loaded,
             active_tab='url',
             form={},
             queued=action_label,
         )
 
-    # Failed — return to review with error
     return render_template('review.html',
         draft_id=draft_id,
         horse_count=draft['horse_count'],
-        stats=None,
+        stats=draft.get('stats'),
         content=draft['linked_html'],
         pre=prefix,
         mid=middle,
@@ -383,6 +402,131 @@ def queue_post():
     )
 
 
+# ── Public submissions ────────────────────────────────────────────────────────
+
+@app.route('/submit', methods=['POST'])
+def public_submit():
+    """Accept a counted post submission from a public user."""
+    draft_id = request.form.get('draft_id', '')
+    draft    = load_draft(draft_id)
+
+    if not draft:
+        return render_template('index.html',
+            horses_loaded=dictionary.loaded,
+            active_tab='url',
+            form={},
+            error='Submission timed out — please count again and try again',
+        )
+
+    sub_type = 'text' if draft.get('is_text_post') else 'url'
+    save_submission(sub_type, {
+        'post_data':    draft.get('post_data', {}),
+        'horse_count':  draft['horse_count'],
+        'linked_html':  draft['linked_html'],
+        'stats':        draft.get('stats', {}),
+        'is_text_post': draft.get('is_text_post', False),
+        'is_fallback':  draft.get('is_fallback', False),
+    })
+    delete_draft(draft_id)
+
+    return render_template('index.html',
+        horses_loaded=dictionary.loaded,
+        active_tab='url',
+        form={},
+        submitted=True,
+    )
+
+
+@app.route('/submit/poem', methods=['POST'])
+def submit_poem_public():
+    """Accept a poem submission from a public user."""
+    from flask import jsonify
+    data   = request.get_json()
+    lines  = data.get('lines', [])
+    prefix = data.get('prefix', '')
+    suffix = data.get('suffix', POEM_SUFFIX)
+    tags   = data.get('tags', '')
+
+    if not any(lines):
+        return jsonify({'ok': False, 'error': 'Poem is empty'})
+
+    flat        = [h for line in lines for h in line]
+    horse_count = len(flat)
+    poem_html   = build_poem_html(lines)
+    linked_html = prefix + poem_html + suffix
+    total_words = sum(len(h['name'].split()) for h in flat)
+
+    save_submission('poem', {
+        'post_data':    {},
+        'horse_count':  horse_count,
+        'linked_html':  linked_html,
+        'poem_tags':    tags,
+        'stats':        {
+            'horse_density': 100.0,
+            'total_words':   total_words,
+            'linked_words':  total_words,
+        },
+        'is_text_post': True,
+        'is_fallback':  False,
+    })
+    return jsonify({'ok': True, 'message': 'Poem submitted for review!'})
+
+
+# ── Admin submission review ───────────────────────────────────────────────────
+
+@app.route('/submissions')
+@login_required
+def submissions():
+    pending = load_pending()
+    return render_template('submissions.html', submissions=pending)
+
+
+@app.route('/submissions/approve', methods=['POST'])
+@login_required
+def approve_submission():
+    sub_id = request.form.get('id', '')
+    sub    = load_submission(sub_id)
+    if not sub:
+        return redirect(url_for('submissions'))
+
+    horse_count = sub.get('horse_count', 0)
+    stats       = sub.get('stats') or {}
+    density     = stats.get('horse_density', 0.0)
+
+    draft_id = save_draft({
+        'post_data':    sub.get('post_data', {}),
+        'horse_count':  horse_count,
+        'linked_html':  sub.get('linked_html', ''),
+        'stats':        stats,
+        'is_text_post': sub.get('is_text_post', False),
+        'is_reply':     False,
+        'is_fallback':  sub.get('is_fallback', False),
+    })
+    update_status(sub_id, 'approved')
+
+    return render_template('review.html',
+        draft_id=draft_id,
+        horse_count=horse_count,
+        stats=stats,
+        content=sub.get('linked_html', ''),
+        pre=format_prefix(horse_count, False, density),
+        mid='',
+        suf=POST_SUFFIX,
+        default_tags=build_default_tags(horse_count, density),
+        optional_tags=OPTIONAL_TAGS,
+        custom_tags=sub.get('poem_tags', ''),
+        is_fallback=sub.get('is_fallback', False),
+        error=None,
+    )
+
+
+@app.route('/submissions/reject', methods=['POST'])
+@login_required
+def reject_submission():
+    update_status(request.form.get('id', ''), 'rejected')
+    return redirect(url_for('submissions'))
+
+
 # ── Tumblr OAuth ──────────────────────────────────────────────────────────────
 
 @app.route('/auth')
@@ -391,8 +535,6 @@ def auth():
     from config import TUMBLR_CONSUMER_KEY
     if not TUMBLR_CONSUMER_KEY:
         return render_template('index.html',
-            tumblr_auth=False,
-            blog_name=TUMBLR_BLOG_NAME,
             horses_loaded=dictionary.loaded,
             active_tab='url',
             form={},
@@ -403,8 +545,6 @@ def auth():
     if auth_url:
         return redirect(auth_url)
     return render_template('index.html',
-        tumblr_auth=False,
-        blog_name=TUMBLR_BLOG_NAME,
         horses_loaded=dictionary.loaded,
         active_tab='url',
         form={},
@@ -421,21 +561,18 @@ def callback():
 
     if error:
         return render_template('index.html',
-            tumblr_auth=False, blog_name=TUMBLR_BLOG_NAME,
             horses_loaded=dictionary.loaded, active_tab='url', form={},
             error=f'Tumblr auth error: {error}',
         )
 
     if not code:
         return render_template('index.html',
-            tumblr_auth=False, blog_name=TUMBLR_BLOG_NAME,
             horses_loaded=dictionary.loaded, active_tab='url', form={},
             error='Auth failed: no code received',
         )
 
     if state != session.get('oauth_state'):
         return render_template('index.html',
-            tumblr_auth=False, blog_name=TUMBLR_BLOG_NAME,
             horses_loaded=dictionary.loaded, active_tab='url', form={},
             error='Auth failed: state mismatch (try again)',
         )
@@ -445,7 +582,6 @@ def callback():
 
     if not code_verifier:
         return render_template('index.html',
-            tumblr_auth=False, blog_name=TUMBLR_BLOG_NAME,
             horses_loaded=dictionary.loaded, active_tab='url', form={},
             error='Auth failed: missing code verifier (session may have expired)',
         )
@@ -454,41 +590,20 @@ def callback():
         return redirect(url_for('index'))
 
     return render_template('index.html',
-        tumblr_auth=False, blog_name=TUMBLR_BLOG_NAME,
         horses_loaded=dictionary.loaded, active_tab='url', form={},
         error='Auth failed: could not exchange code for token',
     )
 
 
-# ── Submissions (stub) ────────────────────────────────────────────────────────
-
-@app.route('/submissions')
-@login_required
-def submissions():
-    """Placeholder — will show pending public submissions for review."""
-    return render_template('index.html',
-        tumblr_auth=tumblr.authenticated,
-        blog_name=TUMBLR_BLOG_NAME,
-        horses_loaded=dictionary.loaded,
-        active_tab='url',
-        form={},
-        error='Submissions screen coming soon',
-    )
-
-
-@app.route('/submit', methods=['POST'])
-def public_submit():
-    """Stub public endpoint for future ask/submission intake."""
-    return ('Submissions not yet open', 503)
-
-
-# ── Poetry editor ────────────────────────────────────────────────────────────
+# ── Poetry editor ─────────────────────────────────────────────────────────────
 
 @app.route('/poetry')
-@login_required
 def poetry_editor():
     import json
-    pasture = load_pasture()
+    is_admin = bool(session.get('logged_in'))
+    # Admin uses server-persisted pasture; public starts from empty (loads
+    # from localStorage on the client side).
+    pasture = load_pasture() if is_admin else []
     return render_template('poetry.html',
         pasture_json=json.dumps(pasture),
         optional_tags_json=json.dumps(OPTIONAL_TAGS),
@@ -496,7 +611,6 @@ def poetry_editor():
 
 
 @app.route('/poetry/search', methods=['POST'])
-@login_required
 def poetry_search():
     from flask import jsonify
     data       = request.get_json()
@@ -510,8 +624,8 @@ def poetry_search():
 @login_required
 def pasture_add():
     from flask import jsonify
-    data    = request.get_json()
-    horses  = add_to_pasture(data['name'], data['display'], data['url'])
+    data   = request.get_json()
+    horses = add_to_pasture(data['name'], data['display'], data['url'])
     return jsonify({'horses': horses})
 
 

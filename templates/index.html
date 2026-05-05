@@ -5,18 +5,24 @@
 <div class="box">
   <h1>🐴 Horse Counter</h1>
 
-  <div style="margin-bottom:12px">
+  <div style="margin-bottom:12px;display:flex;gap:16px;align-items:center">
     <a href="/poetry" style="color:#00cf35;font-size:13px">📝 Poetry editor →</a>
+    {% if is_admin %}
+    <a href="/submissions" style="color:#00cf35;font-size:13px">📬 Submissions →</a>
+    {% endif %}
   </div>
 
-  {% if not tumblr_auth %}
-  <div class="msg warn">
-    Not connected to Tumblr —
-    <a href="/auth">connect now</a>
-    (counts still work, posting disabled)
-  </div>
-  {% else %}
-  <div class="msg ok">✓ Connected as <strong>{{ blog_name }}</strong></div>
+  {# Tumblr connection status — admin only #}
+  {% if is_admin %}
+    {% if not tumblr_auth %}
+    <div class="msg warn">
+      Not connected to Tumblr —
+      <a href="/auth">connect now</a>
+      (counts still work, posting disabled)
+    </div>
+    {% else %}
+    <div class="msg ok">✓ Connected as <strong>{{ blog_name }}</strong></div>
+    {% endif %}
   {% endif %}
 
   {% if not horses_loaded %}
@@ -29,8 +35,10 @@
             onclick="switchTab('url', this)">URL</button>
     <button class="tab-btn {% if active_tab == 'text' %}on{% endif %}"
             onclick="switchTab('text', this)">Text</button>
+    {% if is_admin %}
     <button class="tab-btn {% if active_tab == 'reply' %}on{% endif %}"
             onclick="switchTab('reply', this)">Reply</button>
+    {% endif %}
   </div>
 
   {# ── URL tab ── #}
@@ -52,7 +60,8 @@
     </form>
   </div>
 
-  {# ── Reply tab ── #}
+  {# ── Reply tab (admin only) ── #}
+  {% if is_admin %}
   <div id="tab-reply" class="tab {% if active_tab == 'reply' %}on{% endif %}">
     <form method="post" action="/">
       <input type="hidden" name="type" value="reply">
@@ -65,36 +74,49 @@
       <button type="submit">Find Horses in Reply</button>
     </form>
   </div>
+  {% endif %}
 
   {# ── Error ── #}
   {% if error %}
   <div class="msg err"><strong>Error:</strong> {{ error }}</div>
   {% endif %}
 
-  {# ── Simple count result (not authenticated or zero horses) ── #}
+  {# ── Count result ── #}
   {% if result %}
-  <div class="msg ok">
+  <div class="msg {% if result.count > 0 %}ok{% else %}warn{% endif %}">
     <strong>Found {{ result.count }} horse{{ 's' if result.count != 1 else '' }}</strong>
     {% if result.stats %}
     <span class="density">— {{ result.stats.horse_density }}% horse density
     ({{ result.stats.linked_words }} of {{ result.stats.total_words }} words)</span>
     {% endif %}
   </div>
-  {% if result.horses %}
-  <ul class="horse-list">
-    {% for h in result.horses[:20] %}
-    <li>{{ h.original }}</li>
-    {% endfor %}
-    {% if result.count > 20 %}
-    <li><em>…{{ result.count - 20 }} more</em></li>
-    {% endif %}
-  </ul>
+
+  {% if result.linked_html %}
+  <div style="margin:12px 0;padding:12px;background:#fafafa;border:1px solid #eee;border-radius:4px;max-height:400px;overflow-y:auto">
+    {{ result.linked_html|safe }}
+  </div>
+  {% endif %}
+
+  {# Submit option for public users #}
+  {% if not is_admin and result.draft_id %}
+  <div style="margin-top:10px;padding:14px;background:#f1fff4;border:1px solid #a5d6a7;border-radius:4px">
+    <p style="margin:0 0 10px;font-size:14px">Want this posted to the blog? Submit it for review!</p>
+    <form method="post" action="/submit">
+      <input type="hidden" name="draft_id" value="{{ result.draft_id }}">
+      <button type="submit" class="btn-primary">Submit for posting</button>
+    </form>
+  </div>
   {% endif %}
   {% endif %}
 
-  {# ── Success after queuing ── #}
+  {# ── Success after queuing (admin) ── #}
   {% if queued %}
   <div class="msg ok">✓ Post {{ queued }}!</div>
+  {% endif %}
+
+  {# ── Success after public submission ── #}
+  {% if submitted %}
+  <div class="msg ok">✓ Submitted! It'll be reviewed and posted if selected — thanks!</div>
   {% endif %}
 
 </div>
