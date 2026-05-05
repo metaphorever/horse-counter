@@ -137,5 +137,17 @@ function switchTab(id, btn) {
   document.getElementById('tab-' + id).classList.add('on');
   btn.classList.add('on');
 }
+
+// Pre-fill attribution fields from localStorage; save as the user types.
+// The fields only exist in the DOM when a countable result is shown.
+(function(){
+  const nameEl   = document.querySelector('input[name="submitter_name"]');
+  const tumblrEl = document.querySelector('input[name="submitter_tumblr"]');
+  if (!nameEl) return;
+  nameEl.value   = localStorage.getItem('horse-submitter-name')   || '';
+  tumblrEl.value = localStorage.getItem('horse-submitter-tumblr') || '';
+  nameEl.addEventListener('input',   () => localStorage.setItem('horse-submitter-name',   nameEl.value));
+  tumblrEl.addEventListener('input', () => localStorage.setItem('horse-submitter-tumblr', tumblrEl.value));
+})();
 </script>
 {% endblock %}

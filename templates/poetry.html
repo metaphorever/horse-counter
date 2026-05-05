@@ -562,6 +562,11 @@ function openModal(){
     <span>${esc(t)}</span></label>`).join('');
 
   document.getElementById('modal-err').style.display='none';
+  // Pre-fill attribution from localStorage (fields only exist for public users)
+  const nameEl   = document.getElementById('modal-submitter-name');
+  const tumblrEl = document.getElementById('modal-submitter-tumblr');
+  if (nameEl)   nameEl.value   = localStorage.getItem('horse-submitter-name')   || '';
+  if (tumblrEl) tumblrEl.value = localStorage.getItem('horse-submitter-tumblr') || '';
   document.getElementById('post-modal').classList.add('open');
 }
 function closeModal(){ document.getElementById('post-modal').classList.remove('open'); }
@@ -577,6 +582,8 @@ async function submitPoemPublic(){
 
   const submitterName   = (document.getElementById('modal-submitter-name')?.value   || '').trim();
   const submitterTumblr = (document.getElementById('modal-submitter-tumblr')?.value || '').trim().replace(/^@/, '');
+  localStorage.setItem('horse-submitter-name',   submitterName);
+  localStorage.setItem('horse-submitter-tumblr', submitterTumblr);
   const d = await apiPost('/submit/poem', {lines, prefix, suffix, tags, submitter_name: submitterName, submitter_tumblr: submitterTumblr});
   if(!d) return;
   if(d.ok){
