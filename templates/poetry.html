@@ -60,15 +60,45 @@
   white-space: nowrap; touch-action: none; position: relative;
   border: none;
 }
-/* Pasture tiles: horse coat colors */
-.pasture-tiles .horse-tile:nth-child(8n+1) { background: #7a3520; color: #f5ecd7; transform: rotate(-1.8deg); } /* bay */
-.pasture-tiles .horse-tile:nth-child(8n+2) { background: #1c1c1c; color: #e8d5b0; transform: rotate( 1.2deg); } /* black */
-.pasture-tiles .horse-tile:nth-child(8n+3) { background: #7a7a7a; color: #f0ead6; transform: rotate(-0.7deg); } /* dapple grey */
-.pasture-tiles .horse-tile:nth-child(8n+4) { background: #8b3a1f; color: #fae8c8; transform: rotate( 1.5deg); } /* chestnut */
-.pasture-tiles .horse-tile:nth-child(8n+5) { background: #c8961a; color: #2a1800; transform: rotate(-1.1deg); } /* palomino */
-.pasture-tiles .horse-tile:nth-child(8n+6) { background: #c8bfaa; color: #1c1008; transform: rotate( 0.6deg); border: 1px solid #9e9080; } /* grey/white */
-.pasture-tiles .horse-tile:nth-child(8n+7) { background: #4a2812; color: #ead8b8; transform: rotate(-1.4deg); } /* liver/dark brown */
-.pasture-tiles .horse-tile:nth-child(8n+8) { background: #8a6a5a; color: #f0e4d0; transform: rotate( 0.9deg); } /* roan */
+/* Pasture tiles: horse coat colors + decorations */
+.pasture-tiles .horse-tile {
+  overflow: visible;
+  padding: 5px 14px 5px 16px;
+}
+.pasture-tiles .horse-tile:nth-child(8n+1) { --bg:#7a3520; --fg:#f5ecd7; background:var(--bg); color:var(--fg); transform:rotate(-1.8deg); } /* bay */
+.pasture-tiles .horse-tile:nth-child(8n+2) { --bg:#1c1c1c; --fg:#e8d5b0; background:var(--bg); color:var(--fg); transform:rotate( 1.2deg); } /* black */
+.pasture-tiles .horse-tile:nth-child(8n+3) { --bg:#7a7a7a; --fg:#f0ead6; background:var(--bg); color:var(--fg); transform:rotate(-0.7deg); } /* dapple grey */
+.pasture-tiles .horse-tile:nth-child(8n+4) { --bg:#8b3a1f; --fg:#fae8c8; background:var(--bg); color:var(--fg); transform:rotate( 1.5deg); } /* chestnut */
+.pasture-tiles .horse-tile:nth-child(8n+5) { --bg:#c8961a; --fg:#2a1800; background:var(--bg); color:var(--fg); transform:rotate(-1.1deg); } /* palomino */
+.pasture-tiles .horse-tile:nth-child(8n+6) { --bg:#c8bfaa; --fg:#1c1008; background:var(--bg); color:var(--fg); transform:rotate( 0.6deg); border:1px solid #9e9080; } /* grey/white */
+.pasture-tiles .horse-tile:nth-child(8n+7) { --bg:#4a2812; --fg:#ead8b8; background:var(--bg); color:var(--fg); transform:rotate(-1.4deg); } /* liver */
+.pasture-tiles .horse-tile:nth-child(8n+8) { --bg:#8a6a5a; --fg:#f0e4d0; background:var(--bg); color:var(--fg); transform:rotate( 0.9deg); } /* roan */
+/* Head */
+.pasture-tiles .horse-tile::before {
+  content:'♞'; position:absolute; pointer-events:none;
+  color:var(--bg); font-size:32px; line-height:1;
+  left:-4px; top:-20px;
+}
+/* Tail */
+.pasture-tiles .horse-tile::after {
+  content:'∫'; position:absolute; pointer-events:none;
+  color:var(--bg); font-size:22px; line-height:1;
+  right:-10px; top:50%;
+  transform:translateY(-50%) scaleY(-1);
+}
+/* Facing right */
+.pasture-tiles .horse-tile.rev::before { left:auto; right:-4px; transform:scaleX(-1); }
+.pasture-tiles .horse-tile.rev::after  { right:auto; left:-10px; transform:translateY(-50%) scaleY(-1) scaleX(-1); }
+/* Legs */
+.pasture-tiles .horse-tile .legs {
+  position:absolute; pointer-events:none;
+  bottom:-6px; left:0; right:0; height:6px;
+  background:
+    linear-gradient(var(--bg),var(--bg))  4px 0 / 2px 100% no-repeat,
+    linear-gradient(var(--bg),var(--bg)) 10px 0 / 2px 100% no-repeat,
+    linear-gradient(var(--bg),var(--bg)) calc(100% - 10px) 0 / 2px 100% no-repeat,
+    linear-gradient(var(--bg),var(--bg)) calc(100% -  4px) 0 / 2px 100% no-repeat;
+}
 /* Poem canvas tiles are always post-it yellow so position doesn't change color */
 .line-tiles .horse-tile { background: #ffe082; color: #5a3e00; transform: rotate(-0.5deg); }
 .horse-tile.is-dragging { opacity: 0.35; }
@@ -522,9 +552,11 @@ function renderPasture(){
     return;
   }
 
-  // tile-x buttons use data-name; clicks handled by delegated listener in boot
+  // Stable facing direction per horse: sum of char codes mod 2
+  const rev = n => n.split('').reduce((s,c)=>s+c.charCodeAt(0),0) % 2 === 0;
   el.innerHTML = pasture.map(h=>`
-    <div class="horse-tile" data-name="${esc(h.name)}" data-display="${esc(h.display)}" data-url="${esc(h.url)}">
+    <div class="horse-tile${rev(h.name)?' rev':''}" data-name="${esc(h.name)}" data-display="${esc(h.display)}" data-url="${esc(h.url)}">
+      <span class="legs"></span>
       ${esc(h.display)}
       <button class="tile-x" data-name="${esc(h.name)}">×</button>
     </div>`).join('');
