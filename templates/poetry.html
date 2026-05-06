@@ -692,18 +692,23 @@ function openModal(){
   const words = flat.reduce((s,h)=>s+h.name.split(' ').length,0);
   const plural = count!==1?'s':'';
 
-  document.getElementById('modal-pre').value =
+  const preEl = document.getElementById('modal-pre');
+  if(preEl) preEl.value =
     `<p><b>This poem contains ${count} horse${plural} (100% of the poem)</b></p>`;
-  document.getElementById('modal-suf').value =
+  const sufEl = document.getElementById('modal-suf');
+  if(sufEl) sufEl.value =
     `<p><small>This poem was written by a human, processed automatically and queued to post. Click any name for more information about that horse. You can send a link or text to be counted to my ask box.</small></p>`;
 
-  const defaultTags = [`${count} horse${plural}`,'100% horse','horse poetry','poetry','gimmick account','counting-horses','horseblr'];
-  document.getElementById('modal-tags').innerHTML = [
-    ...defaultTags.map(t=>({t,on:true})),
-    ...OPTIONAL_TAGS.map(t=>({t,on:false}))
-  ].map(({t,on})=>`<label class="tag-item">
-    <input type="checkbox" name="ptag" value="${esc(t)}" ${on?'checked':''}>
-    <span>${esc(t)}</span></label>`).join('');
+  const tagsEl = document.getElementById('modal-tags');
+  if(tagsEl){
+    const defaultTags = [`${count} horse${plural}`,'100% horse','horse poetry','poetry','gimmick account','counting-horses','horseblr'];
+    tagsEl.innerHTML = [
+      ...defaultTags.map(t=>({t,on:true})),
+      ...OPTIONAL_TAGS.map(t=>({t,on:false}))
+    ].map(({t,on})=>`<label class="tag-item">
+      <input type="checkbox" name="ptag" value="${esc(t)}" ${on?'checked':''}>
+      <span>${esc(t)}</span></label>`).join('');
+  }
 
   document.getElementById('modal-err').style.display='none';
   // Pre-fill attribution from localStorage (fields only exist for public users)
