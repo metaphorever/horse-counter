@@ -395,3 +395,13 @@ button[type="submit"]:active { transform: translate(2px, 2px); box-shadow: none;
   .box { padding: 18px 14px; }
   h1 { font-size: 1.25rem; }
 }
+
+/* Prevent iOS Safari auto-zoom on input focus (triggers below 16px) */
+@media (hover: none) and (pointer: coarse) {
+  input[type="text"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
