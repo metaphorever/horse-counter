@@ -270,7 +270,7 @@ button[type="submit"]:active { transform: translate(2px, 2px); box-shadow: none;
   box-shadow: 2px 2px 3px rgba(0,0,0,.22);
   border-radius: 6px;
   text-decoration: none;
-  vertical-align: middle;
+  vertical-align: baseline;
   margin: 22px 14px 8px 4px;
   position: relative;
   overflow: visible;
