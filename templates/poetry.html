@@ -132,15 +132,8 @@
 .poem-footer { margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0d4b0; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .poem-stat { font: 12px 'Courier Prime','Courier New',monospace; color: #8a7050; }
 
-/* Drag ghost */
-#drag-ghost {
-  position: fixed; pointer-events: none; z-index: 9999;
-  background: #ffe082; border: 1px solid #c4a030; border-radius: 6px;
-  padding: 4px 10px; font: 700 12px 'Courier Prime','Courier New',monospace;
-  display: none; white-space: nowrap;
-  transform: translate(-50%, -50%);
-  box-shadow: 2px 2px 4px rgba(0,0,0,.25);
-}
+/* Drag ghost — appearance set dynamically via .horse-tile class + inline CSS vars */
+#drag-ghost { display: none; }
 
 /* Modal */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(45,35,22,.55); z-index: 100; align-items: center; justify-content: center; }
@@ -687,8 +680,11 @@ function startDrag(x, y, tile, srcType){
     tile,
   };
   tile.classList.add('is-dragging');
-  ghost.textContent   = h.display;
-  ghost.style.display = 'block';
+  const t = tileStyle(h.name);
+  ghost.className = 'horse-tile' + t.cls;
+  ghost.style.cssText = `${t.style}; position:fixed; pointer-events:none; z-index:9999; white-space:nowrap; transform:translate(-50%,-50%);`;
+  ghost.innerHTML = `<span class="legs"></span>${esc(h.display)}`;
+  ghost.style.display = 'inline-flex';
   moveGhost(x,y);
 }
 

@@ -242,7 +242,7 @@ button[type="submit"]:active { transform: translate(2px, 2px); box-shadow: none;
 }
 .content-preview p { margin-bottom: 8px; }
 .content-preview p:last-child { margin-bottom: 0; }
-.content-preview a { color: #5a7a2a; }
+.content-preview a:not(.horse-link) { color: #5a7a2a; }
 
 /* ── Chain username ── */
 .chain-username {
