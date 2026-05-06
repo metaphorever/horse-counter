@@ -4,6 +4,7 @@ poetry.py - Poetry editor backend
 
 import json
 import os
+import random as _random
 import re
 import time
 from typing import List, Dict, Optional, Tuple, Callable
@@ -174,6 +175,21 @@ def search_dictionary(query: str, dictionary) -> Dict:
     }
 
 
+def random_horses(dictionary, n: int = 5) -> List[Dict]:
+    items = list(dictionary.horses.items())
+    sample = _random.sample(items, min(n, len(items)))
+    results = []
+    for name, registrations in sample:
+        reg = registrations[0]
+        results.append({
+            'name':    name,
+            'display': reg.get('display_name', ' '.join(w.capitalize() for w in name.split())),
+            'url':     reg.get('url', ''),
+            'count':   len(registrations),
+        })
+    return results
+
+
 # ── Pasture ───────────────────────────────────────────────────────────────────
 
 def load_pasture() -> List[Dict]:
@@ -194,11 +210,14 @@ def save_pasture(horses: List[Dict]):
         print(f"Pasture save error: {e}")
 
 
-def add_to_pasture(name: str, display: str, url: str) -> List[Dict]:
+def add_to_pasture(name: str, display: str, url: str, remaining: int = 1) -> List[Dict]:
     horses = load_pasture()
-    if not any(h['name'] == name for h in horses):
-        horses.append({'name': name, 'display': display, 'url': url})
-        save_pasture(horses)
+    existing = next((h for h in horses if h['name'] == name), None)
+    if existing:
+        existing['remaining'] = remaining
+    else:
+        horses.append({'name': name, 'display': display, 'url': url, 'remaining': remaining})
+    save_pasture(horses)
     return horses
 
 

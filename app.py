@@ -45,7 +45,7 @@ from matcher import (
 from post_builder import extract_post
 from famous import FamousHorses
 from poetry import (
-    search_dictionary, load_pasture, add_to_pasture,
+    search_dictionary, random_horses, load_pasture, add_to_pasture,
     remove_from_pasture, clear_pasture,
     build_poem_html, compute_poem_stats, format_poem_prefix,
     POEM_SUFFIX, build_poem_tags, order_poem_tags, order_request_tags,
@@ -727,12 +727,20 @@ def poetry_search():
     return jsonify(results)
 
 
+@app.route('/poetry/random', methods=['POST'])
+def poetry_random():
+    from flask import jsonify
+    data = request.get_json(silent=True) or {}
+    n    = min(int(data.get('n', 5)), 20)
+    return jsonify({'ok': True, 'results': random_horses(dictionary, n)})
+
+
 @app.route('/poetry/pasture/add', methods=['POST'])
 @login_required
 def pasture_add():
     from flask import jsonify
     data   = request.get_json()
-    horses = add_to_pasture(data['name'], data['display'], data['url'])
+    horses = add_to_pasture(data['name'], data['display'], data['url'], int(data.get('remaining', 1)))
     return jsonify({'horses': horses})
 
 

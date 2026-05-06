@@ -221,6 +221,9 @@
           <input type="text" id="q" placeholder="e.g. *dance* or dance *" autocomplete="off">
           <button onclick="doSearch()">Go</button>
         </div>
+        <div class="search-row" style="margin-bottom:0">
+          <button class="btn-sec" style="width:100%;margin:0" onclick="doRandom()">5 random horses</button>
+        </div>
         <div class="page-size-row">
           <label for="page-size">Per page</label>
           <select id="page-size" onchange="changePageSize(this.value)">
@@ -378,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('search-results').addEventListener('click', e => {
     const btn = e.target.closest('.add-btn');
     if (!btn || btn.disabled) return;
-    addToPasture(btn.dataset.name, btn.dataset.display, btn.dataset.url);
+    addToPasture(btn.dataset.name, btn.dataset.display, btn.dataset.url, parseInt(btn.dataset.count||'1',10));
   });
 
   // Event delegation for "×" remove buttons inside the pasture panel.
@@ -467,6 +470,7 @@ function renderSearchPage(){
         data-name="${esc(h.name)}"
         data-display="${esc(h.display)}"
         data-url="${esc(h.url)}"
+        data-count="${h.count||1}"
         ${pNames.has(h.name)?'disabled':''}>
         ${pNames.has(h.name)?'✓':'+ pasture'}
       </button>
@@ -507,6 +511,14 @@ async function doSearch(q){
   addHistory(q);
 }
 
+async function doRandom(){
+  const d = await apiPost('/poetry/random', {n: 5});
+  if(!d || !d.results) return;
+  for(const h of d.results){
+    await addToPasture(h.name, h.display, h.url, h.count||1);
+  }
+}
+
 function addHistory(q){
   history = [q, ...history.filter(x=>x!==q)].slice(0,10);
   const panel = document.getElementById('history-panel');
@@ -517,12 +529,12 @@ function addHistory(q){
 }
 
 // ── Pasture ───────────────────────────────────────────────────────────────────
-async function addToPasture(name, display, url){
+async function addToPasture(name, display, url, count=1){
   if(pasture.find(h=>h.name===name)) return;
-  pasture.push({name, display, url});
+  pasture.push({name, display, url, remaining: count});
   renderPasture();
   if(isAdmin){
-    const d = await apiPost('/poetry/pasture/add', {name, display, url});
+    const d = await apiPost('/poetry/pasture/add', {name, display, url, remaining: count});
     if(d){ pasture = d.horses; renderPasture(); }
   } else {
     savePastureLocal();
@@ -561,10 +573,10 @@ function renderPasture(){
     return;
   }
 
-  el.innerHTML = pasture.map(h=>{ const t=tileStyle(h.name); return `
+  el.innerHTML = pasture.map(h=>{ const t=tileStyle(h.name); const rem=h.remaining||1; return `
     <div class="horse-tile${t.cls}" style="${t.style}" data-name="${esc(h.name)}" data-display="${esc(h.display)}" data-url="${esc(h.url)}">
       <span class="legs"></span>
-      ${esc(h.display)}
+      ${esc(h.display)}${rem>1?` <span class="multi-badge">(${rem})</span>`:''}
       <button class="tile-x" data-name="${esc(h.name)}">×</button>
     </div>`; }).join('');
 
@@ -599,10 +611,15 @@ function removeTile(li,hi){
   const horse = lines[li][hi];
   lines[li].splice(hi,1);
   pruneEmptyLines();
-  // Return horse to pasture if not already present
-  if(!pasture.find(h=>h.name===horse.name)){
-    pasture.push({name:horse.name, display:horse.display, url:horse.url});
-    if(isAdmin) apiPost('/poetry/pasture/add', {name:horse.name, display:horse.display, url:horse.url});
+  // Return horse to pasture — increment if already there, otherwise add fresh
+  const existing = pasture.find(h=>h.name===horse.name);
+  if(existing){
+    existing.remaining = (existing.remaining||1) + 1;
+    if(isAdmin) apiPost('/poetry/pasture/add', {name:existing.name, display:existing.display, url:existing.url, remaining:existing.remaining});
+    else savePastureLocal();
+  } else {
+    pasture.push({name:horse.name, display:horse.display, url:horse.url, remaining:1});
+    if(isAdmin) apiPost('/poetry/pasture/add', {name:horse.name, display:horse.display, url:horse.url, remaining:1});
     else savePastureLocal();
   }
   renderPoem();
@@ -630,11 +647,17 @@ function dropHorseOnLine(horse, li, refHi, insertAfter){
     lines[sl].splice(si,1);
     if(sl===li && si<refHi) refHi--;
   } else if(drag && drag.srcType==='pasture'){
-    // Remove from pasture if only one by this name (future: duplicates stay)
-    if(pasture.filter(h=>h.name===horse.name).length <= 1){
-      pasture = pasture.filter(h=>h.name!==horse.name);
-      if(isAdmin) apiPost('/poetry/pasture/remove', {name:horse.name});
-      else savePastureLocal();
+    const entry = pasture.find(h=>h.name===horse.name);
+    if(entry){
+      entry.remaining = (entry.remaining||1) - 1;
+      if(entry.remaining <= 0){
+        pasture = pasture.filter(h=>h.name!==horse.name);
+        if(isAdmin) apiPost('/poetry/pasture/remove', {name:horse.name});
+        else savePastureLocal();
+      } else {
+        if(isAdmin) apiPost('/poetry/pasture/add', {name:entry.name, display:entry.display, url:entry.url, remaining:entry.remaining});
+        else savePastureLocal();
+      }
     }
   }
 
