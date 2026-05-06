@@ -170,24 +170,31 @@ a { color: {color:Accent}; }
   transition: transform .1s, box-shadow .1s;
   background: var(--bg); color: var(--fg);
 }
+/* ::before spans from 20px above the chip to 6px below, giving room for
+   both the ♞ head glyph (rendered at the top) and leg stubs drawn via
+   background gradients pinned to the bottom. This avoids needing a child
+   <span class="legs"> which Tumblr strips from post HTML. */
 .post-body .horse-link::before {
   content: '♞'; position: absolute; pointer-events: none;
   color: var(--bg); font-size: 32px; line-height: 1;
   left: 0; top: -20px;
-}
-/* ::after used for leg stubs — Tumblr strips child <span> elements so we
-   can't use the .legs span approach; tail glyph is omitted on Tumblr. */
-.post-body .horse-link::after {
-  content: ''; position: absolute; pointer-events: none;
-  bottom: -6px; left: 0; right: 0; height: 6px;
+  width: 100%; height: calc(100% + 26px);
   background:
-    linear-gradient(var(--bg),var(--bg))  4px 0 / 2px 100% no-repeat,
-    linear-gradient(var(--bg),var(--bg)) 10px 0 / 2px 100% no-repeat,
-    linear-gradient(var(--bg),var(--bg)) calc(100% - 10px) 0 / 2px 100% no-repeat,
-    linear-gradient(var(--bg),var(--bg)) calc(100% -  4px) 0 / 2px 100% no-repeat;
+    linear-gradient(var(--bg),var(--bg))  4px 100% / 2px 6px no-repeat,
+    linear-gradient(var(--bg),var(--bg)) 10px 100% / 2px 6px no-repeat,
+    linear-gradient(var(--bg),var(--bg)) calc(100% - 10px) 100% / 2px 6px no-repeat,
+    linear-gradient(var(--bg),var(--bg)) calc(100% -  4px) 100% / 2px 6px no-repeat;
+}
+/* ::after is free for the tail */
+.post-body .horse-link::after {
+  content: '∫'; position: absolute; pointer-events: none;
+  color: var(--bg); font-size: 22px; line-height: 1;
+  right: -10px; top: 50%;
+  transform: translateY(-50%) scaleY(-1);
 }
 /* Direction: .rev class set by the horse counter app based on name hash */
 .post-body .horse-link.rev::before { left: auto; right: 0; transform: scaleX(-1); }
+.post-body .horse-link.rev::after  { right: auto; left: -10px; transform: translateY(-50%) scaleY(-1) scaleX(-1); }
 .post-body .horse-link:hover {
   transform: scale(1.06) rotate(0deg) !important;
   box-shadow: 3px 3px 6px rgba(0,0,0,.28);
