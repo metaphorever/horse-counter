@@ -58,7 +58,7 @@ class HorseDictionary:
         self.word_index: Dict[str, List[str]] = {}
         # name → list of registration dicts
         self.horses: Dict[str, List[Dict]] = {}
-        self.max_word_length = 5
+        self.max_word_length = 15
         self.loaded = False
         self.source = None
 
