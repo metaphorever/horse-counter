@@ -221,9 +221,6 @@
           <input type="text" id="q" placeholder="e.g. *dance* or dance *" autocomplete="off">
           <button onclick="doSearch()">Go</button>
         </div>
-        <div class="search-row" style="margin-bottom:0">
-          <button class="btn-sec" style="width:100%;margin:0" onclick="doRandom()">5 random horses</button>
-        </div>
         <div class="page-size-row">
           <label for="page-size">Per page</label>
           <select id="page-size" onchange="changePageSize(this.value)">
@@ -264,7 +261,10 @@
     <div class="panel">
       <div class="pasture-head">
         <h3>Pasture <span id="pasture-count" style="font-weight:normal;color:#a08060;font-size:11px"></span></h3>
-        <button class="clear-btn" onclick="clearPasture()">Clear all</button>
+        <div style="display:flex;gap:4px">
+          <button class="clear-btn" onclick="doRandom()">+ random</button>
+          <button class="clear-btn" onclick="clearPasture()">Clear all</button>
+        </div>
       </div>
       <div class="pasture-tiles" id="pasture-tiles">
         <span class="pasture-empty">Search and add horses</span>
