@@ -32,7 +32,7 @@ from functools import wraps
 
 from config import (
     SECRET_KEY, SESSION_LIFETIME_SECONDS,
-    TUMBLR_BLOG_NAME, HORSES_RICH_FILE, HORSES_LEGACY_FILE,
+    TUMBLR_BLOG_NAME, HORSES_RICH_FILE, HORSES_LEGACY_FILE, HORSE_OVERRIDES_FILE,
     check_pin, get_horse_emoji, build_default_tags,
     OPTIONAL_TAGS, POST_SUFFIX, format_prefix,
 )
@@ -65,7 +65,7 @@ app.permanent_session_lifetime = SESSION_LIFETIME_SECONDS
 # ── Initialise singletons ─────────────────────────────────────────────────────
 
 print("Initialising Horse Counter...")
-dictionary = HorseDictionary(HORSES_RICH_FILE, HORSES_LEGACY_FILE)
+dictionary = HorseDictionary(HORSES_RICH_FILE, HORSES_LEGACY_FILE, HORSE_OVERRIDES_FILE)
 tumblr     = TumblrManager()
 print(f"Ready. Dictionary: {dictionary.source}, "
       f"Tumblr: {'connected' if tumblr.authenticated else 'not connected'}")
@@ -768,6 +768,66 @@ def poetry_post():
         label = {'post': 'published', 'queue': 'queued', 'draft': 'saved as draft'}.get(action, 'queued')
         return jsonify({'ok': True, 'message': f'Poem {label}!'})
     return jsonify({'ok': False, 'error': err})
+
+
+# ── Admin: dictionary editor ──────────────────────────────────────────────────
+
+@app.route('/admin/dictionary')
+@login_required
+def admin_dictionary():
+    from matcher import normalize_text
+    q = request.args.get('q', '').strip()
+    results = []
+    error = None
+    if q:
+        norm = normalize_text(q)
+        if len(norm) < 2:
+            error = 'Search term must be at least 2 characters after normalisation.'
+        else:
+            matches = [
+                (name, regs)
+                for name, regs in dictionary.horses.items()
+                if norm in name
+            ]
+            matches.sort(key=lambda x: (not x[0].startswith(norm), x[0]))
+            results = matches[:50]
+    return render_template('dictionary_admin.html', q=q, results=results, error=error)
+
+
+@app.route('/admin/dictionary/set', methods=['POST'])
+@login_required
+def admin_dictionary_set():
+    from matcher import normalize_text
+    raw_name = request.form.get('name', '').strip()
+    raw_urls = request.form.get('urls', '').strip()
+    if not raw_name:
+        flash('Name is required.', 'err')
+        return redirect(request.referrer or '/admin/dictionary')
+    norm = normalize_text(raw_name)
+    if not norm:
+        flash('Name normalised to empty — check for invalid characters.', 'err')
+        return redirect(request.referrer or '/admin/dictionary')
+    urls = [u.strip() for u in raw_urls.splitlines() if u.strip()]
+    if not urls:
+        flash('At least one URL is required.', 'err')
+        return redirect(request.referrer or '/admin/dictionary')
+    regs = [{'url': u} for u in urls]
+    dictionary.override_set(norm, regs)
+    flash(f'Saved: {norm} ({len(regs)} registration{"s" if len(regs) != 1 else ""})', 'ok')
+    return redirect(f'/admin/dictionary?q={norm}')
+
+
+@app.route('/admin/dictionary/delete', methods=['POST'])
+@login_required
+def admin_dictionary_delete():
+    name = request.form.get('name', '').strip()
+    if not name:
+        flash('No name provided.', 'err')
+        return redirect(request.referrer or '/admin/dictionary')
+    dictionary.override_delete(name)
+    flash(f'Deleted: {name}', 'ok')
+    q = request.form.get('q', name.split()[0])
+    return redirect(f'/admin/dictionary?q={q}')
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

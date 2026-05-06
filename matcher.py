@@ -54,13 +54,15 @@ class HorseDictionary:
     rest of the app never needs to know which format is in use.
     """
 
-    def __init__(self, rich_path: str, legacy_path: str):
+    def __init__(self, rich_path: str, legacy_path: str, overrides_path: str = None):
         self.word_index: Dict[str, List[str]] = {}
         # name → list of registration dicts
         self.horses: Dict[str, List[Dict]] = {}
         self.max_word_length = 15
         self.loaded = False
         self.source = None
+        self._rich_path = rich_path
+        self._overrides_path = overrides_path
 
         if os.path.exists(rich_path):
             self._load_rich(rich_path)
@@ -68,6 +70,9 @@ class HorseDictionary:
             self._load_legacy(legacy_path)
         else:
             print("ERROR: No horse dictionary found.")
+
+        if overrides_path:
+            self._apply_overrides()
 
     def _load_rich(self, path: str):
         try:
@@ -116,6 +121,81 @@ class HorseDictionary:
             print(f"Loaded {len(self.horses)} horses (legacy format)")
         except Exception as e:
             print(f"Legacy dictionary load error: {e}")
+
+    def _apply_overrides(self):
+        if not self._overrides_path or not os.path.exists(self._overrides_path):
+            return
+        try:
+            with open(self._overrides_path, 'r', encoding='utf-8') as f:
+                overrides = json.load(f)
+        except Exception as e:
+            print(f"Overrides load error: {e}")
+            return
+        for name in overrides.get('delete', []):
+            self._remove_from_index(name)
+        for name, regs in overrides.get('set', {}).items():
+            self._add_to_index(name, regs)
+        nd = len(overrides.get('delete', []))
+        ns = len(overrides.get('set', {}))
+        if nd or ns:
+            print(f"Overrides applied: {nd} deletions, {ns} sets")
+
+    def _remove_from_index(self, name: str):
+        if name in self.horses:
+            del self.horses[name]
+        first = name.split()[0] if name else name
+        if first in self.word_index:
+            self.word_index[first] = [n for n in self.word_index[first] if n != name]
+            if not self.word_index[first]:
+                del self.word_index[first]
+
+    def _add_to_index(self, name: str, regs: List[Dict]):
+        self.horses[name] = regs
+        first = name.split()[0] if name else name
+        if first not in self.word_index:
+            self.word_index[first] = []
+        if name not in self.word_index[first]:
+            self.word_index[first].append(name)
+
+    def _read_overrides(self) -> dict:
+        if self._overrides_path and os.path.exists(self._overrides_path):
+            try:
+                with open(self._overrides_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        return {'delete': [], 'set': {}}
+
+    def _write_overrides(self, overrides: dict):
+        with open(self._overrides_path, 'w', encoding='utf-8') as f:
+            json.dump(overrides, f, ensure_ascii=False, indent=2)
+
+    def override_delete(self, name: str):
+        """Remove a name from the live dictionary and persist the deletion."""
+        self._remove_from_index(name)
+        if not self._overrides_path:
+            return
+        overrides = self._read_overrides()
+        # Remove from set if it was there
+        overrides.setdefault('set', {}).pop(name, None)
+        # Add to delete list (deduplicated)
+        delete_list = overrides.setdefault('delete', [])
+        if name not in delete_list:
+            delete_list.append(name)
+        self._write_overrides(overrides)
+
+    def override_set(self, name: str, regs: List[Dict]):
+        """Add or replace a name in the live dictionary and persist the change."""
+        self._add_to_index(name, regs)
+        if not self._overrides_path:
+            return
+        overrides = self._read_overrides()
+        # Remove from delete list if present (set wins)
+        delete_list = overrides.setdefault('delete', [])
+        if name in delete_list:
+            delete_list.remove(name)
+        overrides.setdefault('set', {})[name] = regs
+        self._write_overrides(overrides)
 
     def registrations_for(self, normalized_name: str) -> List[Dict]:
         return self.horses.get(normalized_name, [])

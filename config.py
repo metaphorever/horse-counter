@@ -44,8 +44,9 @@ DRAFTS_FILE    = os.path.join(BASE_DIR, 'drafts.json')
 SUBMISSIONS_FILE = os.path.join(BASE_DIR, 'submissions.json')
 
 # Dictionary: try new rich format first, fall back to legacy compressed format
-HORSES_RICH_FILE   = os.path.join(BASE_DIR, 'data', 'horses.json.gz')
-HORSES_LEGACY_FILE = os.path.join(BASE_DIR, 'horses_compressed.json.gz')
+HORSES_RICH_FILE      = os.path.join(BASE_DIR, 'data', 'horses.json.gz')
+HORSES_LEGACY_FILE    = os.path.join(BASE_DIR, 'horses_compressed.json.gz')
+HORSE_OVERRIDES_FILE  = os.path.join(BASE_DIR, 'data', 'horse_overrides.json')
 
 # ── Session ───────────────────────────────────────────────────────────────────
 SESSION_LIFETIME_SECONDS = 86400  # 24 hours

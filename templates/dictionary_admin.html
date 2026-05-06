@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Dictionary Editor — Horse Counter{% endblock %}
+{% block content %}
+<div class="box">
+  <div class="nav-links">
+    <a href="/">← Back to counter</a>
+    <a href="/submissions">Submissions →</a>
+  </div>
+
+  <h1>Dictionary Editor</h1>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    <div class="msg {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <form method="get" action="/admin/dictionary" style="display:flex;gap:8px;margin-bottom:24px">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search horse name…"
+           style="flex:1;font:14px 'Courier Prime','Courier New',monospace;padding:8px 10px;border:1px solid #c4a96b;border-radius:2px;background:#fffdf5"
+           autofocus autocomplete="off">
+    <button type="submit" class="btn-primary">Search</button>
+  </form>
+
+  {% if error %}
+  <div class="msg err">{{ error }}</div>
+  {% endif %}
+
+  {% if q and not error %}
+    {% if results %}
+    <p style="font:12px 'Courier Prime','Courier New',monospace;color:#8a7050;margin-bottom:16px">
+      {{ results|length }}{% if results|length == 50 %}+{% endif %} result{{ 's' if results|length != 1 else '' }} for <strong>{{ q }}</strong>
+    </p>
+
+    {% for name, regs in results %}
+    <div style="background:#faf5e9;border-radius:2px;padding:14px 16px;margin-bottom:10px;box-shadow:2px 2px 6px rgba(0,0,0,.08),0 0 0 1px rgba(139,105,20,.1)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+
+        <div style="flex:1;min-width:0">
+          <strong style="font:700 15px Georgia,serif;color:#3a2a0a">{{ name }}</strong>
+          <span style="font:11px 'Courier Prime',monospace;color:#a08060;margin-left:8px">
+            {{ regs|length }} registration{{ 's' if regs|length != 1 else '' }}
+          </span>
+          <ul style="margin:6px 0 0 0;padding:0;list-style:none">
+            {% for r in regs %}
+            <li style="font:12px 'Courier Prime','Courier New',monospace;color:#5a7a2a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              <a href="{{ r.url }}" target="_blank" style="color:#5a7a2a">{{ r.url }}</a>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:120px">
+          <button type="button" class="btn-sec"
+                  style="font-size:12px;padding:4px 10px"
+                  onclick="toggleEdit(this, '{{ name | replace("'", "\\'") }}')">Edit</button>
+          <form method="post" action="/admin/dictionary/delete"
+                onsubmit="return confirm('Delete &quot;{{ name }}&quot; from the dictionary?')">
+            <input type="hidden" name="name" value="{{ name }}">
+            <input type="hidden" name="q" value="{{ q }}">
+            <button type="submit" class="btn-sec"
+                    style="font-size:12px;padding:4px 10px;width:100%;background:#fff0ef;color:#7a2020;border-color:#e8b0a8;box-shadow:2px 2px 0 #e8b0a8">
+              Delete
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="edit-form" id="edit-{{ loop.index }}" style="display:none;margin-top:12px;border-top:1px solid #e2d4a8;padding-top:12px">
+        <form method="post" action="/admin/dictionary/set">
+          <input type="hidden" name="name" value="{{ name }}">
+          <label style="font:11px 'Courier Prime',monospace;color:#6b5430;display:block;margin-bottom:4px">
+            URLs (one per line — each becomes a separate registration):
+          </label>
+          <textarea name="urls" rows="{{ [regs|length, 2]|max }}"
+                    style="width:100%;box-sizing:border-box;font:12px 'Courier Prime','Courier New',monospace;padding:6px 8px;border:1px solid #c4a96b;border-radius:2px;background:#fffdf5;resize:vertical">{{ regs | map(attribute='url') | join('\n') }}</textarea>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button type="submit" class="btn-primary" style="font-size:12px;padding:5px 14px">Save</button>
+            <button type="button" class="btn-sec" style="font-size:12px;padding:5px 14px"
+                    onclick="toggleEdit(this.closest('.edit-form').previousElementSibling.querySelector('button'))">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <div class="msg" style="background:#faf5e9;border:1px solid #c4a96b;border-radius:2px;padding:12px 16px;font:14px Georgia,serif;color:#6b5430">
+      No entries found for <strong>{{ q }}</strong>.
+    </div>
+    {% endif %}
+  {% endif %}
+
+  <div style="margin-top:32px;border-top:2px solid #c4a96b;padding-top:20px">
+    <h2 style="font:700 16px Georgia,serif;color:#3a2a0a;margin:0 0 14px">Add / replace entry</h2>
+    <form method="post" action="/admin/dictionary/set">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div>
+          <label style="font:11px 'Courier Prime',monospace;color:#6b5430;display:block;margin-bottom:4px">Horse name (will be normalised):</label>
+          <input type="text" name="name" value="{{ q if not results else '' }}"
+                 placeholder="e.g. Northern Dancer"
+                 style="width:100%;box-sizing:border-box;font:14px 'Courier Prime','Courier New',monospace;padding:7px 10px;border:1px solid #c4a96b;border-radius:2px;background:#fffdf5">
+        </div>
+        <div>
+          <label style="font:11px 'Courier Prime',monospace;color:#6b5430;display:block;margin-bottom:4px">URLs (one per line):</label>
+          <textarea name="urls" rows="3" placeholder="https://www.pedigreequery.com/…"
+                    style="width:100%;box-sizing:border-box;font:12px 'Courier Prime','Courier New',monospace;padding:7px 10px;border:1px solid #c4a96b;border-radius:2px;background:#fffdf5;resize:vertical"></textarea>
+        </div>
+        <div>
+          <button type="submit" class="btn-primary">Add / update</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function toggleEdit(btn, name) {
+  // btn is the Edit button; find the sibling .edit-form
+  var card = btn.closest('[style*="faf5e9"]');
+  var form = card.querySelector('.edit-form');
+  var visible = form.style.display !== 'none';
+  form.style.display = visible ? 'none' : 'block';
+  btn.textContent = visible ? 'Edit' : 'Cancel';
+}
+</script>
+{% endblock %}
