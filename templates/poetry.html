@@ -3,14 +3,14 @@
 
 {% block head %}
 <style>
-.poetry-wrap { display: flex; flex-direction: column; gap: 14px; }
-.poetry-bottom {
+.poetry-wrap {
   display: grid;
   grid-template-columns: 280px 1fr;
   gap: 14px;
   align-items: start;
 }
 .left-col { display: flex; flex-direction: column; gap: 14px; }
+.right-col { display: flex; flex-direction: column; gap: 14px; }
 .panel {
   background: #faf5e9;
   border-radius: 2px;
@@ -28,9 +28,9 @@
 .search-hint { font: 11px 'Courier Prime','Courier New',monospace; color: #a08060; line-height: 1.7; margin-top: 8px; border-top: 1px solid #e0d4b0; padding-top: 8px; }
 .search-hint code { background: #f0ead8; padding: 0 3px; border-radius: 2px; font-size: 11px; }
 .search-results { max-height: 240px; overflow-y: auto; }
-.result-item { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 2px; font-size: 13px; }
-.result-item:hover { background: #f0ead8; }
-.result-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: Georgia, serif; }
+.result-item { display: flex; align-items: center; gap: 8px; padding: 10px 4px 8px; }
+.result-item:hover { background: none; }
+.result-chip { flex: 1; min-width: 0; cursor: default; }
 .multi-badge { font: 10px 'Courier Prime','Courier New',monospace; color: #8a7050; background: #f0ead8; border-radius: 2px; padding: 1px 4px; flex-shrink: 0; }
 .add-btn { background: #eaf5e0; color: #3a5a1a; border: 1px solid #b5d68a; border-radius: 2px; padding: 2px 8px; cursor: pointer; font: 700 11px 'Courier Prime','Courier New',monospace; flex-shrink: 0; white-space: nowrap; }
 .add-btn:hover { background: #d4ecb8; }
@@ -156,11 +156,11 @@
 /* Wider layout on desktop */
 @media (min-width: 900px) {
   .container { max-width: 1200px; }
-  .poetry-bottom { grid-template-columns: 300px 1fr; }
+  .poetry-wrap { grid-template-columns: 300px 1fr; }
   .search-results { max-height: 340px; }
 }
 @media (max-width: 640px) {
-  .poetry-bottom { grid-template-columns: 1fr; }
+  .poetry-wrap { grid-template-columns: 1fr; }
 }
 
 /* Page-size selector */
@@ -220,21 +220,8 @@
 
 <div class="poetry-wrap">
 
-  <!-- PASTURE: full-width on top -->
-  <div class="panel">
-    <div class="pasture-head">
-      <h3>Pasture <span id="pasture-count" style="font-weight:normal;color:#a08060;font-size:11px"></span></h3>
-      <button class="clear-btn" onclick="clearPasture()">Clear all</button>
-    </div>
-    <div class="pasture-tiles" id="pasture-tiles">
-      <span class="pasture-empty">Search and add horses</span>
-    </div>
-  </div>
-
-  <!-- BOTTOM ROW: search left, poem right -->
-  <div class="poetry-bottom">
-
-    <div class="left-col">
+  <!-- LEFT: search (narrow column) -->
+  <div class="left-col">
       <!-- Search -->
       <div class="panel">
         <div class="search-row">
@@ -273,9 +260,21 @@
         <div style="font-size:11px;font-weight:bold;color:#888;text-transform:uppercase;letter-spacing:.04em">Recent searches</div>
         <div class="history-tags" id="history-tags"></div>
       </div>
+  </div>
+
+  <!-- RIGHT: pasture (short) + poem (tall) -->
+  <div class="right-col">
+
+    <div class="panel">
+      <div class="pasture-head">
+        <h3>Pasture <span id="pasture-count" style="font-weight:normal;color:#a08060;font-size:11px"></span></h3>
+        <button class="clear-btn" onclick="clearPasture()">Clear all</button>
+      </div>
+      <div class="pasture-tiles" id="pasture-tiles">
+        <span class="pasture-empty">Search and add horses</span>
+      </div>
     </div>
 
-    <!-- Poem -->
     <div class="panel poem-panel">
       <div class="poem-head">
         <h2>Poem</h2>
@@ -465,10 +464,12 @@ function renderSearchPage(){
   }
 
   const pNames = new Set(pasture.map(h=>h.name));
-  document.getElementById('search-results').innerHTML = slice.map(h=>`
+  document.getElementById('search-results').innerHTML = slice.map(h=>{ const t=tileStyle(h.name); return `
     <div class="result-item">
-      <span class="result-name" title="${esc(h.display)}">${esc(h.display)}</span>
-      ${h.count>1?`<span class="multi-badge">${h.count}</span>`:''}
+      <span class="horse-tile result-chip${t.cls}" style="${t.style}">
+        <span class="legs"></span>
+        ${esc(h.display)}${h.count>1?` <span class="multi-badge">${h.count}</span>`:''}
+      </span>
       <button class="add-btn"
         data-name="${esc(h.name)}"
         data-display="${esc(h.display)}"
@@ -476,7 +477,7 @@ function renderSearchPage(){
         ${pNames.has(h.name)?'disabled':''}>
         ${pNames.has(h.name)?'✓':'+ pasture'}
       </button>
-    </div>`).join('');
+    </div>`; }).join('');
 
   const pager = document.getElementById('search-pager');
   if(pages > 1){
