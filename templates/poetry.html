@@ -52,45 +52,44 @@
 /* Horse tile — fridge magnet style */
 .horse-tile {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 5px 10px;
+  padding: 5px 14px 5px 16px;
   font: 700 12px 'Courier Prime','Courier New',monospace;
   box-shadow: 2px 2px 4px rgba(0,0,0,.25);
   border-radius: 2px;
   cursor: grab; user-select: none;
   white-space: nowrap; touch-action: none; position: relative;
-  border: none;
+  border: none; overflow: visible;
+  background: var(--bg); color: var(--fg);
 }
-/* Pasture tiles: horse coat colors + decorations */
-.pasture-tiles .horse-tile {
-  overflow: visible;
-  padding: 5px 14px 5px 16px;
-}
-.pasture-tiles .horse-tile:nth-child(8n+1) { --bg:#7a3520; --fg:#f5ecd7; background:var(--bg); color:var(--fg); transform:rotate(-1.8deg); } /* bay */
-.pasture-tiles .horse-tile:nth-child(8n+2) { --bg:#1c1c1c; --fg:#e8d5b0; background:var(--bg); color:var(--fg); transform:rotate( 1.2deg); } /* black */
-.pasture-tiles .horse-tile:nth-child(8n+3) { --bg:#7a7a7a; --fg:#f0ead6; background:var(--bg); color:var(--fg); transform:rotate(-0.7deg); } /* dapple grey */
-.pasture-tiles .horse-tile:nth-child(8n+4) { --bg:#8b3a1f; --fg:#fae8c8; background:var(--bg); color:var(--fg); transform:rotate( 1.5deg); } /* chestnut */
-.pasture-tiles .horse-tile:nth-child(8n+5) { --bg:#c8961a; --fg:#2a1800; background:var(--bg); color:var(--fg); transform:rotate(-1.1deg); } /* palomino */
-.pasture-tiles .horse-tile:nth-child(8n+6) { --bg:#c8bfaa; --fg:#1c1008; background:var(--bg); color:var(--fg); transform:rotate( 0.6deg); border:1px solid #9e9080; } /* grey/white */
-.pasture-tiles .horse-tile:nth-child(8n+7) { --bg:#4a2812; --fg:#ead8b8; background:var(--bg); color:var(--fg); transform:rotate(-1.4deg); } /* liver */
-.pasture-tiles .horse-tile:nth-child(8n+8) { --bg:#8a6a5a; --fg:#f0e4d0; background:var(--bg); color:var(--fg); transform:rotate( 0.9deg); } /* roan */
+/* Pasture tile rotations by position */
+.pasture-tiles .horse-tile:nth-child(8n+1) { transform:rotate(-1.8deg); }
+.pasture-tiles .horse-tile:nth-child(8n+2) { transform:rotate( 1.2deg); }
+.pasture-tiles .horse-tile:nth-child(8n+3) { transform:rotate(-0.7deg); }
+.pasture-tiles .horse-tile:nth-child(8n+4) { transform:rotate( 1.5deg); }
+.pasture-tiles .horse-tile:nth-child(8n+5) { transform:rotate(-1.1deg); }
+.pasture-tiles .horse-tile:nth-child(8n+6) { transform:rotate( 0.6deg); }
+.pasture-tiles .horse-tile:nth-child(8n+7) { transform:rotate(-1.4deg); }
+.pasture-tiles .horse-tile:nth-child(8n+8) { transform:rotate( 0.9deg); }
+/* Poem tiles get a subtle tilt */
+.line-tiles .horse-tile { transform: rotate(-0.5deg); }
 /* Head */
-.pasture-tiles .horse-tile::before {
+.horse-tile::before {
   content:'♞'; position:absolute; pointer-events:none;
   color:var(--bg); font-size:32px; line-height:1;
-  left:-4px; top:-20px;
+  left:0; top:-20px;
 }
 /* Tail */
-.pasture-tiles .horse-tile::after {
+.horse-tile::after {
   content:'∫'; position:absolute; pointer-events:none;
   color:var(--bg); font-size:22px; line-height:1;
   right:-10px; top:50%;
   transform:translateY(-50%) scaleY(-1);
 }
 /* Facing right */
-.pasture-tiles .horse-tile.rev::before { left:auto; right:-4px; transform:scaleX(-1); }
-.pasture-tiles .horse-tile.rev::after  { right:auto; left:-10px; transform:translateY(-50%) scaleY(-1) scaleX(-1); }
+.horse-tile.rev::before { left:auto; right:0; transform:scaleX(-1); }
+.horse-tile.rev::after  { right:auto; left:-10px; transform:translateY(-50%) scaleY(-1) scaleX(-1); }
 /* Legs */
-.pasture-tiles .horse-tile .legs {
+.horse-tile .legs {
   position:absolute; pointer-events:none;
   bottom:-6px; left:0; right:0; height:6px;
   background:
@@ -99,8 +98,6 @@
     linear-gradient(var(--bg),var(--bg)) calc(100% - 10px) 0 / 2px 100% no-repeat,
     linear-gradient(var(--bg),var(--bg)) calc(100% -  4px) 0 / 2px 100% no-repeat;
 }
-/* Poem canvas tiles are always post-it yellow so position doesn't change color */
-.line-tiles .horse-tile { background: #ffe082; color: #5a3e00; transform: rotate(-0.5deg); }
 .horse-tile.is-dragging { opacity: 0.35; }
 .horse-tile.drop-before { outline: 3px solid #5a7a2a; outline-offset: 1px; }
 .horse-tile.drop-after  { outline: 3px solid #5a7a2a; outline-offset: 1px; }
@@ -340,10 +337,28 @@
 <script>
 // ── State ─────────────────────────────────────────────────────────────────────
 const isAdmin = {{ is_admin|tojson }};
-let pasture  = {{ pasture_json|safe }};  // server pasture for admin; [] for public (overridden from localStorage on boot)
-let lines    = [[], [], []];   // array of arrays of {name, display, url}
+let pasture  = {{ pasture_json|safe }};
+let lines    = [[], [], []];
 let history  = [];
 const OPTIONAL_TAGS = {{ optional_tags_json|safe }};
+
+// ── Horse tile appearance ─────────────────────────────────────────────────────
+const COATS = [
+  {bg:'#7a3520', fg:'#f5ecd7'}, // bay
+  {bg:'#1c1c1c', fg:'#e8d5b0'}, // black
+  {bg:'#7a7a7a', fg:'#f0ead6'}, // dapple grey
+  {bg:'#8b3a1f', fg:'#fae8c8'}, // chestnut
+  {bg:'#c8961a', fg:'#2a1800'}, // palomino
+  {bg:'#c8bfaa', fg:'#1c1008'}, // grey/white
+  {bg:'#4a2812', fg:'#ead8b8'}, // liver
+  {bg:'#8a6a5a', fg:'#f0e4d0'}, // roan
+];
+function nameHash(name){ return name.split('').reduce((s,c)=>s+c.charCodeAt(0),0); }
+function tileStyle(name){
+  const c = COATS[nameHash(name) % COATS.length];
+  const rev = nameHash(name) % 2 === 0;
+  return { style:`--bg:${c.bg};--fg:${c.fg}`, cls: rev ? ' rev' : '' };
+}
 
 // Drag state — used by both mouse and touch handlers
 let drag = null;
@@ -552,14 +567,12 @@ function renderPasture(){
     return;
   }
 
-  // Stable facing direction per horse: sum of char codes mod 2
-  const rev = n => n.split('').reduce((s,c)=>s+c.charCodeAt(0),0) % 2 === 0;
-  el.innerHTML = pasture.map(h=>`
-    <div class="horse-tile${rev(h.name)?' rev':''}" data-name="${esc(h.name)}" data-display="${esc(h.display)}" data-url="${esc(h.url)}">
+  el.innerHTML = pasture.map(h=>{ const t=tileStyle(h.name); return `
+    <div class="horse-tile${t.cls}" style="${t.style}" data-name="${esc(h.name)}" data-display="${esc(h.display)}" data-url="${esc(h.url)}">
       <span class="legs"></span>
       ${esc(h.display)}
       <button class="tile-x" data-name="${esc(h.name)}">×</button>
-    </div>`).join('');
+    </div>`; }).join('');
 
   el.querySelectorAll('.horse-tile').forEach(tile=>attachTileDrag(tile,'pasture'));
 }
@@ -571,12 +584,13 @@ function renderPoem(){
     <div class="poem-line" data-li="${li}">
       <span class="line-num">${li+1}</span>
       <div class="line-tiles" data-li="${li}">
-        ${line.map((h,hi)=>`
-          <div class="horse-tile" data-li="${li}" data-hi="${hi}"
+        ${line.map((h,hi)=>{ const t=tileStyle(h.name); return `
+          <div class="horse-tile${t.cls}" style="${t.style}" data-li="${li}" data-hi="${hi}"
                data-name="${esc(h.name)}" data-display="${esc(h.display)}" data-url="${esc(h.url)}">
+            <span class="legs"></span>
             ${esc(h.display)}
             <button class="tile-x" onclick="removeTile(${li},${hi})">×</button>
-          </div>`).join('')}
+          </div>`; }).join('')}
       </div>
     </div>`).join('');
 
