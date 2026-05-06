@@ -3,7 +3,8 @@
 
 {% block head %}
 <style>
-.poetry-wrap {
+.poetry-wrap { display: flex; flex-direction: column; gap: 14px; }
+.poetry-bottom {
   display: grid;
   grid-template-columns: 280px 1fr;
   gap: 14px;
@@ -126,11 +127,11 @@
 /* Wider layout on desktop */
 @media (min-width: 900px) {
   .container { max-width: 1200px; }
-  .poetry-wrap { grid-template-columns: 300px 1fr; }
+  .poetry-bottom { grid-template-columns: 300px 1fr; }
   .search-results { max-height: 340px; }
 }
 @media (max-width: 640px) {
-  .poetry-wrap { grid-template-columns: 1fr; }
+  .poetry-bottom { grid-template-columns: 1fr; }
 }
 
 /* Page-size selector */
@@ -190,79 +191,81 @@
 
 <div class="poetry-wrap">
 
-  <!-- LEFT COLUMN -->
-  <div class="left-col">
-
-    <!-- Search -->
-    <div class="panel">
-      <div class="search-row">
-        <input type="text" id="q" placeholder="e.g. *dance* or dance *" autocomplete="off">
-        <button onclick="doSearch()">Go</button>
-      </div>
-      <div class="page-size-row">
-        <label for="page-size">Per page</label>
-        <select id="page-size" onchange="changePageSize(this.value)">
-          <option value="10">10</option>
-          <option value="25" selected>25</option>
-          <option value="50">50</option>
-        </select>
-      </div>
-      <div id="search-mode" class="search-mode"></div>
-      <div id="search-meta" class="search-meta"></div>
-      <div id="search-error" class="search-error"></div>
-      <div id="search-results" class="search-results"></div>
-      <div class="search-pager" id="search-pager">
-        <button id="pager-prev" onclick="movePage(-1)">←</button>
-        <span class="pager-info" id="pager-info"></span>
-        <button id="pager-next" onclick="movePage(1)">→</button>
-      </div>
-      <div class="search-hint">
-        <code>dance</code> exact &nbsp;
-        <code>dance*</code> starts &nbsp;
-        <code>*dance</code> ends<br>
-        <code>*dance*</code> anywhere &nbsp;
-        <code>dance *</code> first word &nbsp;
-        <code>* dance</code> last word
-      </div>
+  <!-- PASTURE: full-width on top -->
+  <div class="panel">
+    <div class="pasture-head">
+      <h3>Pasture <span id="pasture-count" style="font-weight:normal;color:#a08060;font-size:11px"></span></h3>
+      <button class="clear-btn" onclick="clearPasture()">Clear all</button>
     </div>
-
-    <!-- History -->
-    <div class="panel" id="history-panel" style="display:none">
-      <div style="font-size:11px;font-weight:bold;color:#888;text-transform:uppercase;letter-spacing:.04em">Recent searches</div>
-      <div class="history-tags" id="history-tags"></div>
+    <div class="pasture-tiles" id="pasture-tiles">
+      <span class="pasture-empty">Search and add horses</span>
     </div>
-
-    <!-- Pasture -->
-    <div class="panel">
-      <div class="pasture-head">
-        <h3>Pasture <span id="pasture-count" style="font-weight:normal;color:#a08060;font-size:11px"></span></h3>
-        <button class="clear-btn" onclick="clearPasture()">Clear all</button>
-      </div>
-      <div class="pasture-tiles" id="pasture-tiles">
-        <span class="pasture-empty">Search and add horses</span>
-      </div>
-    </div>
-
   </div>
 
-  <!-- RIGHT COLUMN -->
-  <div class="panel poem-panel">
-    <div class="poem-head">
-      <h2>Poem</h2>
-      <div class="poem-actions">
-        <button class="btn-sec" onclick="clearPoem()">Clear</button>
-        <button class="btn-primary" id="post-btn" onclick="openModal()" disabled>Post poem</button>
+  <!-- BOTTOM ROW: search left, poem right -->
+  <div class="poetry-bottom">
+
+    <div class="left-col">
+      <!-- Search -->
+      <div class="panel">
+        <div class="search-row">
+          <input type="text" id="q" placeholder="e.g. *dance* or dance *" autocomplete="off">
+          <button onclick="doSearch()">Go</button>
+        </div>
+        <div class="page-size-row">
+          <label for="page-size">Per page</label>
+          <select id="page-size" onchange="changePageSize(this.value)">
+            <option value="10">10</option>
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+          </select>
+        </div>
+        <div id="search-mode" class="search-mode"></div>
+        <div id="search-meta" class="search-meta"></div>
+        <div id="search-error" class="search-error"></div>
+        <div id="search-results" class="search-results"></div>
+        <div class="search-pager" id="search-pager">
+          <button id="pager-prev" onclick="movePage(-1)">←</button>
+          <span class="pager-info" id="pager-info"></span>
+          <button id="pager-next" onclick="movePage(1)">→</button>
+        </div>
+        <div class="search-hint">
+          <code>dance</code> exact &nbsp;
+          <code>dance*</code> starts &nbsp;
+          <code>*dance</code> ends<br>
+          <code>*dance*</code> anywhere &nbsp;
+          <code>dance *</code> first word &nbsp;
+          <code>* dance</code> last word
+        </div>
+      </div>
+
+      <!-- History -->
+      <div class="panel" id="history-panel" style="display:none">
+        <div style="font-size:11px;font-weight:bold;color:#888;text-transform:uppercase;letter-spacing:.04em">Recent searches</div>
+        <div class="history-tags" id="history-tags"></div>
       </div>
     </div>
 
-    <div class="poem-canvas" id="poem-canvas"></div>
-    <button class="add-line" onclick="addLine()">+ add line</button>
+    <!-- Poem -->
+    <div class="panel poem-panel">
+      <div class="poem-head">
+        <h2>Poem</h2>
+        <div class="poem-actions">
+          <button class="btn-sec" onclick="clearPoem()">Clear</button>
+          <button class="btn-primary" id="post-btn" onclick="openModal()" disabled>Post poem</button>
+        </div>
+      </div>
 
-    <div class="poem-footer">
-      <span class="poem-stat"><strong id="stat-count">0</strong> horses</span>
-      <span class="poem-stat">100% horse</span>
-      <span class="poem-stat" id="stat-words" style="color:#aaa"></span>
+      <div class="poem-canvas" id="poem-canvas"></div>
+      <button class="add-line" onclick="addLine()">+ add line</button>
+
+      <div class="poem-footer">
+        <span class="poem-stat"><strong id="stat-count">0</strong> horses</span>
+        <span class="poem-stat">100% horse</span>
+        <span class="poem-stat" id="stat-words" style="color:#aaa"></span>
+      </div>
     </div>
+
   </div>
 
 </div>
