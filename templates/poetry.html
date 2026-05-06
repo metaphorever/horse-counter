@@ -45,7 +45,8 @@
 /* Pasture */
 .pasture-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .pasture-head h3 { font: 700 13px 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .06em; color: #6b5430; margin: 0; }
-.clear-btn { font: 11px 'Courier Prime','Courier New',monospace; padding: 3px 8px; background: #fff0ef; color: #7a2020; border: 1px solid #e8b0a8; border-radius: 2px; cursor: pointer; }
+.clear-btn  { font: 11px 'Courier Prime','Courier New',monospace; padding: 3px 8px; background: #fff0ef; color: #7a2020; border: 1px solid #e8b0a8; border-radius: 2px; cursor: pointer; }
+.random-btn { font: 11px 'Courier Prime','Courier New',monospace; padding: 3px 8px; background: #f5e9c8; color: #6b5430; border: 1px solid #c4a96b; border-radius: 2px; cursor: pointer; }
 .pasture-tiles { display: flex; flex-wrap: wrap; gap: 8px; min-height: 44px; padding: 8px; background: #f0ead8; border: 2px dashed #c4a96b; border-radius: 2px; }
 .pasture-empty { color: #a08060; font: italic 12px Georgia,serif; }
 
@@ -264,7 +265,7 @@
       <div class="pasture-head">
         <h3>Pasture <span id="pasture-count" style="font-weight:normal;color:#a08060;font-size:11px"></span></h3>
         <div style="display:flex;gap:4px">
-          <button class="clear-btn" id="random-btn" onclick="doRandom()">+ random</button>
+          <button class="random-btn" id="random-btn" onclick="doRandom()">+ random</button>
           <button class="clear-btn" onclick="clearPasture()">Clear all</button>
         </div>
       </div>
