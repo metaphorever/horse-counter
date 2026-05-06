@@ -443,11 +443,10 @@ def render_chain_item(
                 cls += ' rev'
             if is_famous:
                 cls += ' famous-horse'
-            crown = '<span class="famous-crown" aria-hidden="true">&#9812;</span>' if is_famous else ''
             link = (
                 f'<a class="{cls}" href="{registration["url"]}"'
                 f' style="--bg:{bg};--fg:{fg}">'
-                f'<span class="legs"></span>{crown}{original_text}</a>'
+                f'<span class="legs"></span>{original_text}</a>'
             )
             linked_words += len(m['name'].split())
         else:

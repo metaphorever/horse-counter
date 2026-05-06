@@ -19,7 +19,7 @@
   <div class="msg warn famous-callout">
     <strong>Famous horses detected:</strong>
     {% for h in famous_found %}
-      <span class="famous-badge">&#9812; {{ h.display }}</span> ({{ h.races | join(', ') }}){% if not loop.last %},{% endif %}
+      <span class="famous-badge">★ {{ h.display }}</span> ({{ h.races | join(', ') }}){% if not loop.last %},{% endif %}
     {% endfor %}
   </div>
   {% endif %}
