@@ -385,6 +385,26 @@ def _is_in_marker_prefix(text: str, start: int, end: int) -> bool:
     return ':' not in marker_section
 
 
+# ── Horse tile appearance ─────────────────────────────────────────────────────
+
+_COATS = [
+    ('#7a3520', '#f5ecd7'),  # bay
+    ('#1c1c1c', '#e8d5b0'),  # black
+    ('#7a7a7a', '#f0ead6'),  # dapple grey
+    ('#8b3a1f', '#fae8c8'),  # chestnut
+    ('#c8961a', '#2a1800'),  # palomino
+    ('#c8bfaa', '#1c1008'),  # grey/white
+    ('#4a2812', '#ead8b8'),  # liver
+    ('#8a6a5a', '#f0e4d0'),  # roan
+]
+
+def _tile_appearance(name: str) -> Tuple[str, str, bool]:
+    """Return (bg, fg, is_reversed) for a normalized horse name."""
+    h = sum(ord(c) for c in name)
+    bg, fg = _COATS[h % len(_COATS)]
+    return bg, fg, h % 2 == 0
+
+
 # ── HTML rendering ────────────────────────────────────────────────────────────
 
 def render_chain_item(
@@ -416,10 +436,19 @@ def render_chain_item(
         original_text = result[start:end]
 
         if registration:
+            bg, fg, rev = _tile_appearance(m['name'])
             is_famous = famous is not None and famous.lookup(m['name']) is not None
-            cls = 'horse-link famous-horse' if is_famous else 'horse-link'
+            cls = 'horse-link'
+            if rev:
+                cls += ' rev'
+            if is_famous:
+                cls += ' famous-horse'
             crown = '<span class="famous-crown" aria-hidden="true">&#9812;</span>' if is_famous else ''
-            link = f'<a class="{cls}" href="{registration["url"]}">{crown}{original_text}</a>'
+            link = (
+                f'<a class="{cls}" href="{registration["url"]}"'
+                f' style="--bg:{bg};--fg:{fg}">'
+                f'<span class="legs"></span>{crown}{original_text}</a>'
+            )
             linked_words += len(m['name'].split())
         else:
             link = original_text  # exhausted registrations — plain text
