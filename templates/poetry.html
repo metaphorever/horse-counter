@@ -62,16 +62,18 @@
   background: var(--bg); color: var(--fg);
 }
 /* Pasture tile rotations by position */
-.pasture-tiles .horse-tile:nth-child(8n+1) { transform:rotate(-1.8deg); }
-.pasture-tiles .horse-tile:nth-child(8n+2) { transform:rotate( 1.2deg); }
-.pasture-tiles .horse-tile:nth-child(8n+3) { transform:rotate(-0.7deg); }
-.pasture-tiles .horse-tile:nth-child(8n+4) { transform:rotate( 1.5deg); }
-.pasture-tiles .horse-tile:nth-child(8n+5) { transform:rotate(-1.1deg); }
-.pasture-tiles .horse-tile:nth-child(8n+6) { transform:rotate( 0.6deg); }
-.pasture-tiles .horse-tile:nth-child(8n+7) { transform:rotate(-1.4deg); }
-.pasture-tiles .horse-tile:nth-child(8n+8) { transform:rotate( 0.9deg); }
+.pasture-tiles .horse-tile:nth-child(8n+1) { --rot:-1.8deg; transform:rotate(var(--rot)); }
+.pasture-tiles .horse-tile:nth-child(8n+2) { --rot: 1.2deg; transform:rotate(var(--rot)); }
+.pasture-tiles .horse-tile:nth-child(8n+3) { --rot:-0.7deg; transform:rotate(var(--rot)); }
+.pasture-tiles .horse-tile:nth-child(8n+4) { --rot: 1.5deg; transform:rotate(var(--rot)); }
+.pasture-tiles .horse-tile:nth-child(8n+5) { --rot:-1.1deg; transform:rotate(var(--rot)); }
+.pasture-tiles .horse-tile:nth-child(8n+6) { --rot: 0.6deg; transform:rotate(var(--rot)); }
+.pasture-tiles .horse-tile:nth-child(8n+7) { --rot:-1.4deg; transform:rotate(var(--rot)); }
+.pasture-tiles .horse-tile:nth-child(8n+8) { --rot: 0.9deg; transform:rotate(var(--rot)); }
 /* Poem tiles get a subtle tilt */
-.line-tiles .horse-tile { transform: rotate(-0.5deg); }
+.line-tiles .horse-tile { --rot:-0.5deg; transform:rotate(var(--rot)); }
+/* Keep label text upright inside tilted tiles */
+.horse-tile .tile-label { display:inline-block; transform:rotate(calc(-1 * var(--rot, 0deg))); }
 /* Head */
 .horse-tile::before {
   content:'♞'; position:absolute; pointer-events:none;
@@ -262,7 +264,7 @@
       <div class="pasture-head">
         <h3>Pasture <span id="pasture-count" style="font-weight:normal;color:#a08060;font-size:11px"></span></h3>
         <div style="display:flex;gap:4px">
-          <button class="clear-btn" onclick="doRandom()">+ random</button>
+          <button class="clear-btn" id="random-btn" onclick="doRandom()">+ random</button>
           <button class="clear-btn" onclick="clearPasture()">Clear all</button>
         </div>
       </div>
@@ -464,7 +466,7 @@ function renderSearchPage(){
     <div class="result-item">
       <span class="horse-tile result-chip${t.cls}" style="${t.style}">
         <span class="legs"></span>
-        ${esc(h.display)}${h.count>1?` <span class="multi-badge">${h.count}</span>`:''}
+        <span class="tile-label">${esc(h.display)}${h.count>1?` <span class="multi-badge">${h.count}</span>`:''}</span>
       </span>
       <button class="add-btn"
         data-name="${esc(h.name)}"
@@ -512,7 +514,12 @@ async function doSearch(q){
 }
 
 async function doRandom(){
+  const btn = document.getElementById('random-btn');
+  btn.disabled = true;
+  btn.textContent = '...';
   const d = await apiPost('/poetry/random', {n: 5});
+  btn.disabled = false;
+  btn.textContent = '+ random';
   if(!d || !d.results) return;
   for(const h of d.results){
     await addToPasture(h.name, h.display, h.url, h.count||1);
@@ -576,7 +583,7 @@ function renderPasture(){
   el.innerHTML = pasture.map(h=>{ const t=tileStyle(h.name); const rem=h.remaining||1; return `
     <div class="horse-tile${t.cls}" style="${t.style}" data-name="${esc(h.name)}" data-display="${esc(h.display)}" data-url="${esc(h.url)}">
       <span class="legs"></span>
-      ${esc(h.display)}${rem>1?` <span class="multi-badge">(${rem})</span>`:''}
+      <span class="tile-label">${esc(h.display)}${rem>1?` <span class="multi-badge">(${rem})</span>`:''}</span>
       <button class="tile-x" data-name="${esc(h.name)}">×</button>
     </div>`; }).join('');
 
@@ -594,7 +601,7 @@ function renderPoem(){
           <div class="horse-tile${t.cls}" style="${t.style}" data-li="${li}" data-hi="${hi}"
                data-name="${esc(h.name)}" data-display="${esc(h.display)}" data-url="${esc(h.url)}">
             <span class="legs"></span>
-            ${esc(h.display)}
+            <span class="tile-label">${esc(h.display)}</span>
             <button class="tile-x" onclick="removeTile(${li},${hi})">×</button>
           </div>`; }).join('')}
       </div>
