@@ -553,7 +553,19 @@ function renderPoem(){
 
 function addLine(){ lines.push([]); renderPoem(); }
 function clearPoem(){ if(!confirm('Clear the poem?')) return; lines=[[]]; renderPoem(); }
-function removeTile(li,hi){ lines[li].splice(hi,1); pruneEmptyLines(); renderPoem(); }
+function removeTile(li,hi){
+  const horse = lines[li][hi];
+  lines[li].splice(hi,1);
+  pruneEmptyLines();
+  // Return horse to pasture if not already present
+  if(!pasture.find(h=>h.name===horse.name)){
+    pasture.push({name:horse.name, display:horse.display, url:horse.url});
+    if(isAdmin) apiPost('/poetry/pasture/add', {name:horse.name, display:horse.display, url:horse.url});
+    else savePastureLocal();
+  }
+  renderPoem();
+  renderPasture();
+}
 
 function pruneEmptyLines(){
   while(lines.length>1 && lines[lines.length-1].length===0) lines.pop();
@@ -570,12 +582,18 @@ function updateStats(){
 }
 
 function dropHorseOnLine(horse, li, refHi, insertAfter){
-  // Remove from source if it came from the poem
   if(drag && drag.srcType==='poem'){
+    // Remove from source position in poem
     const sl=drag.srcLine, si=drag.srcIdx;
     lines[sl].splice(si,1);
-    // Adjust target index if we removed from same line before the target
     if(sl===li && si<refHi) refHi--;
+  } else if(drag && drag.srcType==='pasture'){
+    // Remove from pasture if only one by this name (future: duplicates stay)
+    if(pasture.filter(h=>h.name===horse.name).length <= 1){
+      pasture = pasture.filter(h=>h.name!==horse.name);
+      if(isAdmin) apiPost('/poetry/pasture/remove', {name:horse.name});
+      else savePastureLocal();
+    }
   }
 
   const insertIdx = (refHi==null) ? lines[li].length
@@ -585,6 +603,7 @@ function dropHorseOnLine(horse, li, refHi, insertAfter){
   lines[li].splice(insertIdx,0,horse);
   if(lines[lines.length-1].length>0) lines.push([]);
   renderPoem();
+  renderPasture();
 }
 
 // ── Drag — Mouse ──────────────────────────────────────────────────────────────
