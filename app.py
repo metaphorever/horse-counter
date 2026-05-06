@@ -44,6 +44,7 @@ from matcher import (
 )
 from post_builder import extract_post
 from famous import FamousHorses
+from poem_store import save_poem as store_poem
 from poetry import (
     search_dictionary, random_horses, load_pasture, add_to_pasture,
     remove_from_pasture, clear_pasture,
@@ -556,6 +557,13 @@ def submit_poem_public():
         'submitter_name':   submitter_name,
         'submitter_tumblr': submitter_tumblr,
     })
+    store_poem(
+        lines=lines,
+        title=poem_title,
+        author_name=submitter_name,
+        author_tumblr=submitter_tumblr,
+        status='submitted',
+    )
     return jsonify({'ok': True, 'message': 'Poem submitted for review!'})
 
 
@@ -798,6 +806,13 @@ def poetry_post():
 
     success, err = _create_text_post(tumblr.make_request, body, tags, state)
     if success:
+        store_poem(
+            lines=lines,
+            title=poem_title,
+            author_name=submitter_name,
+            author_tumblr=submitter_tumblr,
+            status='posted' if action in ('post', 'queue') else 'draft',
+        )
         label = {'post': 'published', 'queue': 'queued', 'draft': 'saved as draft'}.get(action, 'queued')
         return jsonify({'ok': True, 'message': f'Poem {label}!'})
     return jsonify({'ok': False, 'error': err})
