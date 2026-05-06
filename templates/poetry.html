@@ -270,7 +270,8 @@
 <!-- POST MODAL -->
 <div class="modal-overlay" id="post-modal">
   <div class="modal">
-    <h3>Post Poem</h3>
+    <h3>{% if is_admin %}Post Poem{% else %}Submit Poem{% endif %}</h3>
+    {% if is_admin %}
     <label>Prefix:</label>
     <textarea id="modal-pre" rows="2"></textarea>
     <label>Footer:</label>
@@ -279,9 +280,10 @@
     <div id="modal-tags" style="display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 10px;padding:10px;background:#f0ead8;border:1px solid #c4a96b;border-radius:2px"></div>
     <label>Extra tags <span style="font-weight:normal;color:#888;font-size:12px">(comma-separated)</span>:</label>
     <input type="text" id="modal-custom">
+    {% endif %}
     <label>Title <span style="font-weight:normal;color:#888;font-size:12px">(optional)</span>:</label>
     <input type="text" id="modal-title" placeholder="Poem title" maxlength="120">
-    <label>{% if is_admin %}Sign as{% else %}Credit{% endif %} <span style="font-weight:normal;color:#888;font-size:12px">(optional — for attribution on the post)</span>:</label>
+    <label>{% if is_admin %}Sign as{% else %}Your name{% endif %} <span style="font-weight:normal;color:#888;font-size:12px">(optional — for attribution on the post)</span>:</label>
     <div style="display:flex;gap:6px;margin-bottom:4px">
       <input type="text" id="modal-submitter-name"   placeholder="Your name"        maxlength="60" style="flex:1;margin:0">
       <input type="text" id="modal-submitter-tumblr" placeholder="Tumblr @ (no @)"  maxlength="32" style="flex:1;margin:0">
@@ -717,18 +719,13 @@ function closeModal(){ document.getElementById('post-modal').classList.remove('o
 async function submitPoemPublic(){
   const flat = lines.flat();
   if(!flat.length) return;
-  const prefix  = document.getElementById('modal-pre').value;
-  const suffix  = document.getElementById('modal-suf').value;
-  const custom  = document.getElementById('modal-custom').value;
-  const checked = [...document.querySelectorAll('#modal-tags input:checked')].map(el=>el.value);
-  const tags    = [...checked, ...custom.split(',').map(t=>t.trim()).filter(Boolean)].join(',');
 
   const submitterName   = (document.getElementById('modal-submitter-name')?.value   || '').trim();
   const submitterTumblr = (document.getElementById('modal-submitter-tumblr')?.value || '').trim().replace(/^@/, '');
   const poemTitle       = (document.getElementById('modal-title')?.value            || '').trim();
   localStorage.setItem('horse-submitter-name',   submitterName);
   localStorage.setItem('horse-submitter-tumblr', submitterTumblr);
-  const d = await apiPost('/submit/poem', {lines, prefix, suffix, tags, submitter_name: submitterName, submitter_tumblr: submitterTumblr, poem_title: poemTitle});
+  const d = await apiPost('/submit/poem', {lines, submitter_name: submitterName, submitter_tumblr: submitterTumblr, poem_title: poemTitle});
   if(!d) return;
   if(d.ok){
     closeModal();

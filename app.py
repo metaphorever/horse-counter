@@ -102,6 +102,18 @@ def _attribution_html(name: str, tumblr: str, prefix: str = 'Submitted by') -> s
     return f'<p>{prefix} {name}</p>'
 
 
+def _poem_attr_html(title: str, name: str, tumblr: str) -> str:
+    """Build '<em>Title</em> by Author' attribution for the poem prefix, or empty string."""
+    title_part = f'<em>{title}</em>' if title else ''
+    if name or tumblr:
+        display = name or f'@{tumblr}'
+        author_part = f'<a href="https://www.tumblr.com/{tumblr}">{display}</a>' if tumblr else display
+        if title_part:
+            return f'<p>{title_part} by {author_part}</p>'
+        return f'<p>by {author_part}</p>'
+    return f'<p>{title_part}</p>' if title_part else ''
+
+
 @app.template_filter('datefmt')
 def datefmt(ts):
     return datetime.fromtimestamp(ts).strftime('%b %d %H:%M')
@@ -492,9 +504,6 @@ def submit_poem_public():
     from flask import jsonify
     data   = request.get_json()
     lines  = data.get('lines', [])
-    prefix = data.get('prefix', '')
-    suffix = data.get('suffix', POEM_SUFFIX)
-    tags   = data.get('tags', '')
 
     if not any(lines):
         return jsonify({'ok': False, 'error': 'Poem is empty'})
@@ -502,7 +511,6 @@ def submit_poem_public():
     flat             = [h for line in lines for h in line]
     horse_count      = len(flat)
     poem_html        = build_poem_html(lines)
-    linked_html      = prefix + poem_html + suffix
     total_words      = sum(len(h['name'].split()) for h in flat)
     submitter_name   = _sanitize_name(data.get('submitter_name', ''))
     submitter_tumblr = _sanitize_tumblr(data.get('submitter_tumblr', ''))
@@ -511,8 +519,7 @@ def submit_poem_public():
     save_submission('poem', {
         'post_data':        {},
         'horse_count':      horse_count,
-        'linked_html':      linked_html,
-        'poem_tags':        tags,
+        'linked_html':      poem_html,
         'poem_title':       poem_title,
         'stats':            {
             'horse_density': 100.0,
@@ -561,23 +568,30 @@ def approve_submission():
     })
     update_status(sub_id, 'approved')
 
-    # Pre-populate mid: optional title then attribution (admin can edit before posting)
-    title      = sub.get('poem_title', '')
-    title_html = f'<p><em>{title}</em></p>' if title else ''
-    mid        = title_html + _attribution_html(submitter_name, submitter_tumblr)
-
-    # Tag ordering: request → by name → tumblr → rest
-    base_tags  = sub.get('poem_tags', '')
-    name_tag   = f'by {submitter_name}' if submitter_name else ''
+    is_poem   = sub.get('type') == 'poem'
+    count_pre = format_prefix(horse_count, False, density)
+    name_tag  = f'by {submitter_name}' if submitter_name else ''
     tumblr_tag = submitter_tumblr if submitter_tumblr else ''
-    extra_tags = order_request_tags(base_tags, name_tag, tumblr_tag)
+
+    if is_poem:
+        # Poem: "Title by Author" line goes above the count line in pre; mid is empty
+        attr = _poem_attr_html(sub.get('poem_title', ''), submitter_name, submitter_tumblr)
+        pre  = (attr + '\n' + count_pre) if attr else count_pre
+        mid  = ''
+        base_tags  = sub.get('poem_tags', '')
+        extra_tags = order_request_tags(base_tags, name_tag, tumblr_tag)
+    else:
+        # URL/text: "Requested by Name" goes in mid; no poem tags
+        pre  = count_pre
+        mid  = _attribution_html(submitter_name, submitter_tumblr, prefix='Requested by')
+        extra_tags = order_request_tags('', name_tag, tumblr_tag)
 
     return render_template('review.html',
         draft_id=draft_id,
         horse_count=horse_count,
         stats=stats,
         content=sub.get('linked_html', ''),
-        pre=format_prefix(horse_count, False, density),
+        pre=pre,
         mid=mid,
         suf=POST_SUFFIX,
         default_tags=build_default_tags(horse_count, density),
