@@ -33,6 +33,7 @@ from functools import wraps
 from config import (
     SECRET_KEY, SESSION_LIFETIME_SECONDS,
     TUMBLR_BLOG_NAME, HORSES_RICH_FILE, HORSES_LEGACY_FILE, HORSE_OVERRIDES_FILE,
+    FAMOUS_HORSES_FILE,
     check_pin, get_horse_emoji, build_default_tags,
     OPTIONAL_TAGS, POST_SUFFIX, format_prefix,
 )
@@ -42,6 +43,7 @@ from matcher import (
     find_horses_in_text, render_chain_item, compute_stats,
 )
 from post_builder import extract_post
+from famous import FamousHorses
 from poetry import (
     search_dictionary, load_pasture, add_to_pasture,
     remove_from_pasture, clear_pasture,
@@ -65,8 +67,9 @@ app.permanent_session_lifetime = SESSION_LIFETIME_SECONDS
 # ── Initialise singletons ─────────────────────────────────────────────────────
 
 print("Initialising Horse Counter...")
-dictionary = HorseDictionary(HORSES_RICH_FILE, HORSES_LEGACY_FILE, HORSE_OVERRIDES_FILE)
-tumblr     = TumblrManager()
+dictionary     = HorseDictionary(HORSES_RICH_FILE, HORSES_LEGACY_FILE, HORSE_OVERRIDES_FILE)
+famous_horses  = FamousHorses(FAMOUS_HORSES_FILE)
+tumblr         = TumblrManager()
 print(f"Ready. Dictionary: {dictionary.source}, "
       f"Tumblr: {'connected' if tumblr.authenticated else 'not connected'}")
 
@@ -294,8 +297,25 @@ def _process_chain(post_data: dict, active_tab: str, form: dict, is_admin: bool 
     rendered_parts     = []
     total_linked_words = 0
 
+    # Collect famous horses found across all chain items (deduplicated, ordered)
+    famous_found = []
+    famous_seen_keys: set = set()
+    famous_tags: list = []
+    famous_tags_seen: set = set()
+    for matches in chain_matches:
+        for m in matches:
+            info = famous_horses.lookup(m['name'])
+            if info:
+                if m['name'] not in famous_seen_keys:
+                    famous_seen_keys.add(m['name'])
+                    famous_found.append(info)
+                for tag in info['tags']:
+                    if tag not in famous_tags_seen:
+                        famous_tags_seen.add(tag)
+                        famous_tags.append(tag)
+
     for item, matches in zip(chain, chain_matches):
-        html, linked_words = render_chain_item(item['text'], matches, counter)
+        html, linked_words = render_chain_item(item['text'], matches, counter, famous=famous_horses)
         total_linked_words += linked_words
         rendered_parts.append({'username': item['username'], 'html': html})
 
@@ -340,6 +360,10 @@ def _process_chain(post_data: dict, active_tab: str, form: dict, is_admin: bool 
         default_tags = build_default_tags(horse_count, stats['horse_density'])
         prefix       = format_prefix(horse_count, post_data.get('is_multi', False), stats['horse_density'])
 
+        # Famous tags go first so they're visible at the top of the custom field
+        username_tags = sorted(usernames)
+        all_custom_tags = famous_tags + username_tags
+
         draft_id = save_draft({
             'post_data':    post_data,
             'horse_count':  horse_count,
@@ -360,9 +384,10 @@ def _process_chain(post_data: dict, active_tab: str, form: dict, is_admin: bool 
             suf=POST_SUFFIX,
             default_tags=default_tags,
             optional_tags=OPTIONAL_TAGS,
-            custom_tags=','.join(sorted(usernames)),
+            custom_tags=','.join(all_custom_tags),
             auto_check_tags=_auto_check_tags(post_data),
             is_fallback=post_data.get('is_fallback', False),
+            famous_found=famous_found,
             error=None,
         )
 

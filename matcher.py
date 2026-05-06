@@ -391,6 +391,7 @@ def render_chain_item(
     text: str,
     matches: List[Dict],
     counter: ChainCounter,
+    famous=None,
 ) -> Tuple[str, int]:
     """
     Given the raw text of one chain item and its pre-found matches,
@@ -415,7 +416,10 @@ def render_chain_item(
         original_text = result[start:end]
 
         if registration:
-            link = f'<a class="horse-link" href="{registration["url"]}">{original_text}</a>'
+            is_famous = famous is not None and famous.lookup(m['name']) is not None
+            cls = 'horse-link famous-horse' if is_famous else 'horse-link'
+            crown = '<span class="famous-crown" aria-hidden="true">&#9812;</span>' if is_famous else ''
+            link = f'<a class="{cls}" href="{registration["url"]}">{crown}{original_text}</a>'
             linked_words += len(m['name'].split())
         else:
             link = original_text  # exhausted registrations — plain text

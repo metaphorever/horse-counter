@@ -1,0 +1,1522 @@
+{
+  "golden tempo": {
+    "display": "Golden Tempo",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Golden Tempo"
+    ]
+  },
+  "sovereignty": {
+    "display": "Sovereignty",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Sovereignty"
+    ]
+  },
+  "mystik dan": {
+    "display": "Mystik Dan",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Mystik Dan"
+    ]
+  },
+  "mage": {
+    "display": "Mage",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Mage"
+    ]
+  },
+  "rich strike": {
+    "display": "Rich Strike",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Rich Strike"
+    ]
+  },
+  "mandaloun": {
+    "display": "Mandaloun",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Mandaloun"
+    ]
+  },
+  "authentic": {
+    "display": "Authentic",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Authentic"
+    ]
+  },
+  "country house": {
+    "display": "Country House",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Country House"
+    ]
+  },
+  "justify": {
+    "display": "Justify",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Justify"
+    ]
+  },
+  "always dreaming": {
+    "display": "Always Dreaming",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Always Dreaming"
+    ]
+  },
+  "nyquist": {
+    "display": "Nyquist",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Nyquist"
+    ]
+  },
+  "american pharoah": {
+    "display": "American Pharoah",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "American Pharoah"
+    ]
+  },
+  "california chrome": {
+    "display": "California Chrome",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "California Chrome"
+    ]
+  },
+  "orb": {
+    "display": "Orb",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Orb"
+    ]
+  },
+  "ill have another": {
+    "display": "I'll Have Another",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "I'll Have Another"
+    ]
+  },
+  "animal kingdom": {
+    "display": "Animal Kingdom",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Animal Kingdom"
+    ]
+  },
+  "super saver": {
+    "display": "Super Saver",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Super Saver"
+    ]
+  },
+  "mine that bird": {
+    "display": "Mine That Bird",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Mine That Bird"
+    ]
+  },
+  "big brown": {
+    "display": "Big Brown",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Big Brown"
+    ]
+  },
+  "street sense": {
+    "display": "Street Sense",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Street Sense"
+    ]
+  },
+  "barbaro": {
+    "display": "Barbaro",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Barbaro"
+    ]
+  },
+  "giacomo": {
+    "display": "Giacomo",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Giacomo"
+    ]
+  },
+  "smarty jones": {
+    "display": "Smarty Jones",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Smarty Jones"
+    ]
+  },
+  "funny cide": {
+    "display": "Funny Cide",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Funny Cide"
+    ]
+  },
+  "war emblem": {
+    "display": "War Emblem",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "War Emblem"
+    ]
+  },
+  "monarchos": {
+    "display": "Monarchos",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Monarchos"
+    ]
+  },
+  "fusaichi pegasus": {
+    "display": "Fusaichi Pegasus",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Fusaichi Pegasus"
+    ]
+  },
+  "charismatic": {
+    "display": "Charismatic",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Charismatic"
+    ]
+  },
+  "real quiet": {
+    "display": "Real Quiet",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Real Quiet"
+    ]
+  },
+  "silver charm": {
+    "display": "Silver Charm",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Silver Charm"
+    ]
+  },
+  "grindstone": {
+    "display": "Grindstone",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Grindstone"
+    ]
+  },
+  "thunder gulch": {
+    "display": "Thunder Gulch",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Thunder Gulch"
+    ]
+  },
+  "go for gin": {
+    "display": "Go for Gin",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Go for Gin"
+    ]
+  },
+  "sea hero": {
+    "display": "Sea Hero",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Sea Hero"
+    ]
+  },
+  "lil e tee": {
+    "display": "Lil E. Tee",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Lil E. Tee"
+    ]
+  },
+  "strike the gold": {
+    "display": "Strike the Gold",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Strike the Gold"
+    ]
+  },
+  "unbridled": {
+    "display": "Unbridled",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Unbridled"
+    ]
+  },
+  "sunday silence": {
+    "display": "Sunday Silence",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Sunday Silence"
+    ]
+  },
+  "winning colors": {
+    "display": "Winning Colors",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Winning Colors"
+    ]
+  },
+  "alysheba": {
+    "display": "Alysheba",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Alysheba"
+    ]
+  },
+  "ferdinand": {
+    "display": "Ferdinand",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Ferdinand"
+    ]
+  },
+  "spend a buck": {
+    "display": "Spend A Buck",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Spend A Buck"
+    ]
+  },
+  "swale": {
+    "display": "Swale",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Swale"
+    ]
+  },
+  "sunnys halo": {
+    "display": "Sunny's Halo",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Sunny's Halo"
+    ]
+  },
+  "gato del sol": {
+    "display": "Gato Del Sol",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Gato Del Sol"
+    ]
+  },
+  "pleasant colony": {
+    "display": "Pleasant Colony",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Pleasant Colony"
+    ]
+  },
+  "genuine risk": {
+    "display": "Genuine Risk",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Genuine Risk"
+    ]
+  },
+  "spectacular bid": {
+    "display": "Spectacular Bid",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Spectacular Bid"
+    ]
+  },
+  "affirmed": {
+    "display": "Affirmed",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Affirmed"
+    ]
+  },
+  "seattle slew": {
+    "display": "Seattle Slew",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Seattle Slew"
+    ]
+  },
+  "bold forbes": {
+    "display": "Bold Forbes",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Bold Forbes"
+    ]
+  },
+  "foolish pleasure": {
+    "display": "Foolish Pleasure",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Foolish Pleasure"
+    ]
+  },
+  "cannonade": {
+    "display": "Cannonade",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Cannonade"
+    ]
+  },
+  "secretariat": {
+    "display": "Secretariat",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Secretariat"
+    ]
+  },
+  "riva ridge": {
+    "display": "Riva Ridge",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Riva Ridge"
+    ]
+  },
+  "canonero ii": {
+    "display": "Canonero II",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Canonero II"
+    ]
+  },
+  "dust commander": {
+    "display": "Dust Commander",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Dust Commander"
+    ]
+  },
+  "majestic prince": {
+    "display": "Majestic Prince",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Majestic Prince"
+    ]
+  },
+  "forward pass": {
+    "display": "Forward Pass",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Forward Pass"
+    ]
+  },
+  "proud clarion": {
+    "display": "Proud Clarion",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Proud Clarion"
+    ]
+  },
+  "kauai king": {
+    "display": "Kauai King",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Kauai King"
+    ]
+  },
+  "lucky debonair": {
+    "display": "Lucky Debonair",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Lucky Debonair"
+    ]
+  },
+  "northern dancer": {
+    "display": "Northern Dancer",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Northern Dancer"
+    ]
+  },
+  "chateaugay": {
+    "display": "Chateaugay",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Chateaugay"
+    ]
+  },
+  "decidedly": {
+    "display": "Decidedly",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Decidedly"
+    ]
+  },
+  "carry back": {
+    "display": "Carry Back",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Carry Back"
+    ]
+  },
+  "venetian way": {
+    "display": "Venetian Way",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Venetian Way"
+    ]
+  },
+  "tomy lee": {
+    "display": "Tomy Lee",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Tomy Lee"
+    ]
+  },
+  "tim tam": {
+    "display": "Tim Tam",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Tim Tam"
+    ]
+  },
+  "iron liege": {
+    "display": "Iron Liege",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Iron Liege"
+    ]
+  },
+  "needles": {
+    "display": "Needles",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Needles"
+    ]
+  },
+  "swaps": {
+    "display": "Swaps",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Swaps"
+    ]
+  },
+  "determine": {
+    "display": "Determine",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Determine"
+    ]
+  },
+  "dark star": {
+    "display": "Dark Star",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Dark Star"
+    ]
+  },
+  "hill gail": {
+    "display": "Hill Gail",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Hill Gail"
+    ]
+  },
+  "count turf": {
+    "display": "Count Turf",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Count Turf"
+    ]
+  },
+  "middleground": {
+    "display": "Middleground",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Middleground"
+    ]
+  },
+  "ponder": {
+    "display": "Ponder",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Ponder"
+    ]
+  },
+  "citation": {
+    "display": "Citation",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Citation"
+    ]
+  },
+  "jet pilot": {
+    "display": "Jet Pilot",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Jet Pilot"
+    ]
+  },
+  "assault": {
+    "display": "Assault",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Assault"
+    ]
+  },
+  "hoop jr": {
+    "display": "Hoop Jr.",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Hoop Jr."
+    ]
+  },
+  "pensive": {
+    "display": "Pensive",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Pensive"
+    ]
+  },
+  "count fleet": {
+    "display": "Count Fleet",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Count Fleet"
+    ]
+  },
+  "shut out": {
+    "display": "Shut Out",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Shut Out"
+    ]
+  },
+  "whirlaway": {
+    "display": "Whirlaway",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Whirlaway"
+    ]
+  },
+  "gallahadion": {
+    "display": "Gallahadion",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Gallahadion"
+    ]
+  },
+  "johnstown": {
+    "display": "Johnstown",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Johnstown"
+    ]
+  },
+  "lawrin": {
+    "display": "Lawrin",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Lawrin"
+    ]
+  },
+  "war admiral": {
+    "display": "War Admiral",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "War Admiral"
+    ]
+  },
+  "bold venture": {
+    "display": "Bold Venture",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Bold Venture"
+    ]
+  },
+  "omaha": {
+    "display": "Omaha",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Omaha"
+    ]
+  },
+  "cavalcade": {
+    "display": "Cavalcade",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Cavalcade"
+    ]
+  },
+  "broker tip": {
+    "display": "Broker Tip",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Broker Tip"
+    ]
+  },
+  "burgoo king": {
+    "display": "Burgoo King",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Burgoo King"
+    ]
+  },
+  "twenty grand": {
+    "display": "Twenty Grand",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Twenty Grand"
+    ]
+  },
+  "gallant fox": {
+    "display": "Gallant Fox",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Gallant Fox"
+    ]
+  },
+  "clyde van dusen": {
+    "display": "Clyde Van Dusen",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Clyde Van Dusen"
+    ]
+  },
+  "reigh count": {
+    "display": "Reigh Count",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Reigh Count"
+    ]
+  },
+  "whiskery": {
+    "display": "Whiskery",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Whiskery"
+    ]
+  },
+  "bubbling over": {
+    "display": "Bubbling Over",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Bubbling Over"
+    ]
+  },
+  "flying ebony": {
+    "display": "Flying Ebony",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Flying Ebony"
+    ]
+  },
+  "black gold": {
+    "display": "Black Gold",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Black Gold"
+    ]
+  },
+  "zev": {
+    "display": "Zev",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Zev"
+    ]
+  },
+  "morvich": {
+    "display": "Morvich",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Morvich"
+    ]
+  },
+  "behave yourself": {
+    "display": "Behave Yourself",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Behave Yourself"
+    ]
+  },
+  "paul jones": {
+    "display": "Paul Jones",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Paul Jones"
+    ]
+  },
+  "sir barton": {
+    "display": "Sir Barton",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Sir Barton"
+    ]
+  },
+  "exterminator": {
+    "display": "Exterminator",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Exterminator"
+    ]
+  },
+  "omar khayyam": {
+    "display": "Omar Khayyam",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Omar Khayyam"
+    ]
+  },
+  "george smith": {
+    "display": "George Smith",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "George Smith"
+    ]
+  },
+  "regret": {
+    "display": "Regret",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Regret"
+    ]
+  },
+  "old rosebud": {
+    "display": "Old Rosebud",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Old Rosebud"
+    ]
+  },
+  "donerail": {
+    "display": "Donerail",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Donerail"
+    ]
+  },
+  "worth": {
+    "display": "Worth",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Worth"
+    ]
+  },
+  "meridian": {
+    "display": "Meridian",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Meridian"
+    ]
+  },
+  "donau": {
+    "display": "Donau",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Donau"
+    ]
+  },
+  "wintergreen": {
+    "display": "Wintergreen",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Wintergreen"
+    ]
+  },
+  "stone street": {
+    "display": "Stone Street",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Stone Street"
+    ]
+  },
+  "pink star": {
+    "display": "Pink Star",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Pink Star"
+    ]
+  },
+  "sir huon": {
+    "display": "Sir Huon",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Sir Huon"
+    ]
+  },
+  "agile": {
+    "display": "Agile",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Agile"
+    ]
+  },
+  "elwood": {
+    "display": "Elwood",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Elwood"
+    ]
+  },
+  "judge himes": {
+    "display": "Judge Himes",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Judge Himes"
+    ]
+  },
+  "alan a dale": {
+    "display": "Alan-a-Dale",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Alan-a-Dale"
+    ]
+  },
+  "his eminence": {
+    "display": "His Eminence",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "His Eminence"
+    ]
+  },
+  "lieut gibson": {
+    "display": "Lieut. Gibson",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Lieut. Gibson"
+    ]
+  },
+  "manuel": {
+    "display": "Manuel",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Manuel"
+    ]
+  },
+  "plaudit": {
+    "display": "Plaudit",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Plaudit"
+    ]
+  },
+  "typhoon ii": {
+    "display": "Typhoon II",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Typhoon II"
+    ]
+  },
+  "ben brush": {
+    "display": "Ben Brush",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Ben Brush"
+    ]
+  },
+  "halma": {
+    "display": "Halma",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Halma"
+    ]
+  },
+  "chant": {
+    "display": "Chant",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Chant"
+    ]
+  },
+  "lookout": {
+    "display": "Lookout",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Lookout"
+    ]
+  },
+  "azra": {
+    "display": "Azra",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Azra"
+    ]
+  },
+  "kingman": {
+    "display": "Kingman",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Kingman"
+    ]
+  },
+  "riley": {
+    "display": "Riley",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Riley"
+    ]
+  },
+  "spokane": {
+    "display": "Spokane",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Spokane"
+    ]
+  },
+  "macbeth ii": {
+    "display": "Macbeth II",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Macbeth II"
+    ]
+  },
+  "montrose": {
+    "display": "Montrose",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Montrose"
+    ]
+  },
+  "ben ali": {
+    "display": "Ben Ali",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Ben Ali"
+    ]
+  },
+  "joe cotton": {
+    "display": "Joe Cotton",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Joe Cotton"
+    ]
+  },
+  "buchanan": {
+    "display": "Buchanan",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Buchanan"
+    ]
+  },
+  "leonatus": {
+    "display": "Leonatus",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Leonatus"
+    ]
+  },
+  "apollo": {
+    "display": "Apollo",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Apollo"
+    ]
+  },
+  "hindoo": {
+    "display": "Hindoo",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Hindoo"
+    ]
+  },
+  "fonso": {
+    "display": "Fonso",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Fonso"
+    ]
+  },
+  "lord murphy": {
+    "display": "Lord Murphy",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Lord Murphy"
+    ]
+  },
+  "day star": {
+    "display": "Day Star",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Day Star"
+    ]
+  },
+  "baden baden": {
+    "display": "Baden-Baden",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Baden-Baden"
+    ]
+  },
+  "vagrant": {
+    "display": "Vagrant",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Vagrant"
+    ]
+  },
+  "aristides": {
+    "display": "Aristides",
+    "races": [
+      "Kentucky Derby"
+    ],
+    "tags": [
+      "Kentucky Derby Winner",
+      "Aristides"
+    ]
+  }
+}

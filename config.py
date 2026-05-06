@@ -47,6 +47,7 @@ SUBMISSIONS_FILE = os.path.join(BASE_DIR, 'submissions.json')
 HORSES_RICH_FILE      = os.path.join(BASE_DIR, 'data', 'horses.json.gz')
 HORSES_LEGACY_FILE    = os.path.join(BASE_DIR, 'horses_compressed.json.gz')
 HORSE_OVERRIDES_FILE  = os.path.join(BASE_DIR, 'data', 'horse_overrides.json')
+FAMOUS_HORSES_FILE    = os.path.join(BASE_DIR, 'data', 'famous_horses.json')
 
 # ── Session ───────────────────────────────────────────────────────────────────
 SESSION_LIFETIME_SECONDS = 86400  # 24 hours

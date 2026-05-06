@@ -314,6 +314,36 @@ button[type="submit"]:active { transform: translate(2px, 2px); box-shadow: none;
 }
 .tag-item input[type="checkbox"] { margin: 0; }
 
+/* ── Famous horse links ── */
+.horse-link.famous-horse {
+  outline: 2px solid #c8a000;
+  outline-offset: 2px;
+  position: relative;
+}
+.famous-crown {
+  font-size: 9px;
+  color: #c8a000;
+  vertical-align: super;
+  margin-right: 2px;
+  line-height: 1;
+}
+.famous-callout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+}
+.famous-badge {
+  display: inline-block;
+  background: #fff9ee;
+  border: 1px solid #c8a000;
+  border-radius: 2px;
+  padding: 1px 6px;
+  font: 12px 'Courier Prime', 'Courier New', monospace;
+  color: #5a3e00;
+  margin: 0 2px;
+}
+
 /* ── Horse density stat ── */
 .density { color: #8a7050; font: 12px 'Courier Prime', 'Courier New', monospace; margin-left: 6px; }
 
