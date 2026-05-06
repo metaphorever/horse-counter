@@ -46,7 +46,7 @@ from poetry import (
     search_dictionary, load_pasture, add_to_pasture,
     remove_from_pasture, clear_pasture,
     build_poem_html, compute_poem_stats, format_poem_prefix,
-    POEM_SUFFIX, build_poem_tags,
+    POEM_SUFFIX, build_poem_tags, order_poem_tags, order_request_tags,
 )
 from queue_handler import (
     save_draft, load_draft, delete_draft,
@@ -105,6 +105,29 @@ def _attribution_html(name: str, tumblr: str, prefix: str = 'Submitted by') -> s
 @app.template_filter('datefmt')
 def datefmt(ts):
     return datetime.fromtimestamp(ts).strftime('%b %d %H:%M')
+
+
+def _auto_check_tags(post_data: dict) -> set:
+    """Tags to pre-check on the review page based on post content."""
+    auto = set()
+    all_text = ' '.join(
+        item.get('text', '') for item in post_data.get('chain', [])
+    )
+    has_media = bool(re.search(r'\[{3}(?:IMAGE|GIF|VIDEO)', all_text))
+    if re.search(r'\[{3}(?:IMAGE|GIF)', all_text):
+        auto.add('horse image')
+        auto.add('image')
+    if re.search(r'\[{3}GIF', all_text):
+        auto.add('animated gif')
+    if '[[[VIDEO]]]' in all_text:
+        auto.add('video')
+    if not has_media:
+        auto.add('text post')
+    if re.search(r'\bhorse\b', all_text, re.IGNORECASE):
+        auto.add('horse mention')
+    if post_data.get('is_reply'):
+        auto.add('reply')
+    return auto
 
 
 # ── Auth guard ────────────────────────────────────────────────────────────────
@@ -326,6 +349,7 @@ def _process_chain(post_data: dict, active_tab: str, form: dict, is_admin: bool 
             default_tags=default_tags,
             optional_tags=OPTIONAL_TAGS,
             custom_tags=','.join(sorted(usernames)),
+            auto_check_tags=_auto_check_tags(post_data),
             is_fallback=post_data.get('is_fallback', False),
             error=None,
         )
@@ -417,6 +441,7 @@ def queue_post():
         default_tags=request.form.getlist('tag_default'),
         optional_tags=OPTIONAL_TAGS,
         custom_tags=request.form.get('tags_custom', ''),
+        auto_check_tags=_auto_check_tags(draft.get('post_data', {})),
         is_fallback=draft.get('is_fallback', False),
         error=err_msg,
     )
@@ -481,12 +506,14 @@ def submit_poem_public():
     total_words      = sum(len(h['name'].split()) for h in flat)
     submitter_name   = _sanitize_name(data.get('submitter_name', ''))
     submitter_tumblr = _sanitize_tumblr(data.get('submitter_tumblr', ''))
+    poem_title       = _sanitize_name(data.get('poem_title', ''))
 
     save_submission('poem', {
         'post_data':        {},
         'horse_count':      horse_count,
         'linked_html':      linked_html,
         'poem_tags':        tags,
+        'poem_title':       poem_title,
         'stats':            {
             'horse_density': 100.0,
             'total_words':   total_words,
@@ -534,14 +561,16 @@ def approve_submission():
     })
     update_status(sub_id, 'approved')
 
-    # Pre-populate mid with attribution HTML (admin can edit before posting)
-    mid = _attribution_html(submitter_name, submitter_tumblr)
+    # Pre-populate mid: optional title then attribution (admin can edit before posting)
+    title      = sub.get('poem_title', '')
+    title_html = f'<p><em>{title}</em></p>' if title else ''
+    mid        = title_html + _attribution_html(submitter_name, submitter_tumblr)
 
-    # Add submitter name to custom tags so it appears on the post
-    base_tags   = sub.get('poem_tags', '')
-    name_tag    = f'submitted by {submitter_name}' if submitter_name else ''
-    tumblr_tag  = submitter_tumblr if submitter_tumblr else ''
-    extra_tags  = ','.join(t for t in [base_tags, name_tag, tumblr_tag] if t)
+    # Tag ordering: request → by name → tumblr → rest
+    base_tags  = sub.get('poem_tags', '')
+    name_tag   = f'by {submitter_name}' if submitter_name else ''
+    tumblr_tag = submitter_tumblr if submitter_tumblr else ''
+    extra_tags = order_request_tags(base_tags, name_tag, tumblr_tag)
 
     return render_template('review.html',
         draft_id=draft_id,
@@ -554,6 +583,7 @@ def approve_submission():
         default_tags=build_default_tags(horse_count, density),
         optional_tags=OPTIONAL_TAGS,
         custom_tags=extra_tags,
+        auto_check_tags=_auto_check_tags(sub.get('post_data', {})),
         is_fallback=sub.get('is_fallback', False),
         error=None,
     )
@@ -704,15 +734,18 @@ def poetry_post():
 
     submitter_name   = _sanitize_name(data.get('submitter_name', ''))
     submitter_tumblr = _sanitize_tumblr(data.get('submitter_tumblr', ''))
+    poem_title       = _sanitize_name(data.get('poem_title', ''))
+    title_html       = f'<p><em>{poem_title}</em></p>' if poem_title else ''
     attribution      = _attribution_html(submitter_name, submitter_tumblr, prefix='by')
 
     poem_html = build_poem_html(lines)
-    body      = prefix + poem_html + suffix + attribution
+    body      = prefix + poem_html + suffix + title_html + attribution
 
-    if submitter_name:
-        tags = ','.join(filter(None, [tags, f'by {submitter_name}']))
-    if submitter_tumblr:
-        tags = ','.join(filter(None, [tags, submitter_tumblr]))
+    tags = order_poem_tags(
+        tags,
+        f'by {submitter_name}' if submitter_name else '',
+        submitter_tumblr,
+    )
 
     state     = _post_state(action)
 

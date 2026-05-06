@@ -49,7 +49,8 @@
       <div class="tag-grid">
         {% for tag in optional_tags %}
         <label class="tag-item">
-          <input type="checkbox" name="tag_optional" value="{{ tag }}">
+          <input type="checkbox" name="tag_optional" value="{{ tag }}"
+                 {% if auto_check_tags and tag in auto_check_tags %}checked{% endif %}>
           <span>{{ tag }}</span>
         </label>
         {% endfor %}
@@ -77,5 +78,18 @@
 
   </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const preview = document.querySelector('.content-preview');
+  if (preview) {
+    const charCount = (preview.textContent || '').trim().length;
+    if (charCount > 2500) {
+      const cb = document.querySelector('input[value="long post"]');
+      if (cb && !cb.checked) cb.checked = true;
+    }
+  }
+});
+</script>
 
 {% endblock %}

@@ -75,11 +75,20 @@ def _blocks_to_text(blocks: List[Dict]) -> str:
             parts.append(block.get('text', ''))
         elif btype == 'image':
             alt = block.get('alt_text', '').strip()
+            media = block.get('media', [])
+            is_gif = any(
+                m.get('type', '') == 'image/gif' or
+                str(m.get('url', '')).lower().endswith('.gif')
+                for m in media
+            )
+            prefix = 'GIF' if is_gif else 'IMAGE'
             if alt:
-                parts.append(f'\n\n[[[IMAGE_DESC:{alt}]]]\n\n')
+                parts.append(f'\n\n[[[{prefix}_DESC:{alt}]]]\n\n')
             else:
-                parts.append('\n\n[[[IMAGE]]]\n\n')
-        # Other block types (video, audio, link) are intentionally ignored
+                parts.append(f'\n\n[[[{prefix}]]]\n\n')
+        elif btype == 'video':
+            parts.append('\n\n[[[VIDEO]]]\n\n')
+        # Other block types (audio, link) are intentionally ignored
     return '\n\n'.join(p for p in parts if p.strip())
 
 

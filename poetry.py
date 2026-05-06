@@ -23,7 +23,7 @@ POEM_SUFFIX = (
     "You can send a link or text to be counted to my ask box.</small></p>"
 )
 POEM_TAGS = [
-    "{count} horses",
+    "{count} horse{plural}",
     "{density}% horse",
     "horse poetry",
     "poetry",
@@ -34,10 +34,32 @@ POEM_TAGS = [
 
 
 def build_poem_tags(count: int, density: float) -> List[str]:
+    plural = 's' if count != 1 else ''
     return [
-        t.replace('{count}', str(count)).replace('{density}', str(density))
+        t.replace('{count}', str(count))
+         .replace('{plural}', plural)
+         .replace('{density}', str(density))
         for t in POEM_TAGS
     ]
+
+
+def order_poem_tags(tags_str: str, *prepend: str) -> str:
+    """Order: 'horse poetry' first, then prepend items, then rest."""
+    parts = [t.strip() for t in tags_str.split(',') if t.strip()]
+    pinned = [t for t in prepend if t]
+    pinned_set = {'horse poetry'} | set(pinned)
+    rest = [t for t in parts if t not in pinned_set]
+    front = (['horse poetry'] if 'horse poetry' in parts else []) + pinned
+    return ','.join(front + rest)
+
+
+def order_request_tags(tags_str: str, *prepend: str) -> str:
+    """Order: 'request' always first, then prepend items (attribution), then rest."""
+    parts = [t.strip() for t in tags_str.split(',') if t.strip()]
+    pinned = [t for t in prepend if t]
+    pinned_set = {'request'} | set(pinned)
+    rest = [t for t in parts if t not in pinned_set]
+    return ','.join(['request'] + pinned + rest)
 
 
 def format_poem_prefix(count: int, density: float) -> str:

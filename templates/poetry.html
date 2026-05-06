@@ -279,6 +279,8 @@
     <div id="modal-tags" style="display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 10px;padding:10px;background:#f0ead8;border:1px solid #c4a96b;border-radius:2px"></div>
     <label>Extra tags <span style="font-weight:normal;color:#888;font-size:12px">(comma-separated)</span>:</label>
     <input type="text" id="modal-custom">
+    <label>Title <span style="font-weight:normal;color:#888;font-size:12px">(optional)</span>:</label>
+    <input type="text" id="modal-title" placeholder="Poem title" maxlength="120">
     <label>{% if is_admin %}Sign as{% else %}Credit{% endif %} <span style="font-weight:normal;color:#888;font-size:12px">(optional — for attribution on the post)</span>:</label>
     <div style="display:flex;gap:6px;margin-bottom:4px">
       <input type="text" id="modal-submitter-name"   placeholder="Your name"        maxlength="60" style="flex:1;margin:0">
@@ -693,7 +695,7 @@ function openModal(){
   document.getElementById('modal-suf').value =
     `<p><small>This poem was written by a human, processed automatically and queued to post. Click any name for more information about that horse. You can send a link or text to be counted to my ask box.</small></p>`;
 
-  const defaultTags = [`${count} horses`,'100% horse','horse poetry','poetry','gimmick account','counting-horses','horseblr'];
+  const defaultTags = [`${count} horse${plural}`,'100% horse','horse poetry','poetry','gimmick account','counting-horses','horseblr'];
   document.getElementById('modal-tags').innerHTML = [
     ...defaultTags.map(t=>({t,on:true})),
     ...OPTIONAL_TAGS.map(t=>({t,on:false}))
@@ -707,6 +709,7 @@ function openModal(){
   const tumblrEl = document.getElementById('modal-submitter-tumblr');
   if (nameEl)   nameEl.value   = localStorage.getItem('horse-submitter-name')   || '';
   if (tumblrEl) tumblrEl.value = localStorage.getItem('horse-submitter-tumblr') || '';
+  // Title is per-poem, don't persist it
   document.getElementById('post-modal').classList.add('open');
 }
 function closeModal(){ document.getElementById('post-modal').classList.remove('open'); }
@@ -722,13 +725,15 @@ async function submitPoemPublic(){
 
   const submitterName   = (document.getElementById('modal-submitter-name')?.value   || '').trim();
   const submitterTumblr = (document.getElementById('modal-submitter-tumblr')?.value || '').trim().replace(/^@/, '');
+  const poemTitle       = (document.getElementById('modal-title')?.value            || '').trim();
   localStorage.setItem('horse-submitter-name',   submitterName);
   localStorage.setItem('horse-submitter-tumblr', submitterTumblr);
-  const d = await apiPost('/submit/poem', {lines, prefix, suffix, tags, submitter_name: submitterName, submitter_tumblr: submitterTumblr});
+  const d = await apiPost('/submit/poem', {lines, prefix, suffix, tags, submitter_name: submitterName, submitter_tumblr: submitterTumblr, poem_title: poemTitle});
   if(!d) return;
   if(d.ok){
     closeModal();
     lines=[[]]; renderPoem();
+    const t=document.getElementById('modal-title'); if(t) t.value='';
     showToast(d.message || 'Poem submitted for review!');
   } else {
     const el=document.getElementById('modal-err');
@@ -748,15 +753,17 @@ async function submitPoem(action){
 
   const submitterName   = (document.getElementById('modal-submitter-name')?.value   || '').trim();
   const submitterTumblr = (document.getElementById('modal-submitter-tumblr')?.value || '').trim().replace(/^@/, '');
+  const poemTitle       = (document.getElementById('modal-title')?.value            || '').trim();
   localStorage.setItem('horse-submitter-name',   submitterName);
   localStorage.setItem('horse-submitter-tumblr', submitterTumblr);
 
-  const d = await apiPost('/poetry/post', {lines, prefix, suffix, tags, action, submitter_name: submitterName, submitter_tumblr: submitterTumblr});
+  const d = await apiPost('/poetry/post', {lines, prefix, suffix, tags, action, submitter_name: submitterName, submitter_tumblr: submitterTumblr, poem_title: poemTitle});
   if(!d) return;  // apiPost already showed a toast for network/session errors
 
   if(d.ok){
     closeModal();
     lines=[[]]; renderPoem();
+    const t=document.getElementById('modal-title'); if(t) t.value='';
     showToast(d.message);
   } else {
     const el=document.getElementById('modal-err');

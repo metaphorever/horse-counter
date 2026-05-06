@@ -287,7 +287,7 @@ def _is_in_marker_prefix(text: str, start: int, end: int) -> bool:
     Matches inside the alt-text (after the colon) are fine.
     """
     horse_text = text[start:end]
-    if horse_text in {'IMAGE', 'IMAGE_DESC', 'DESC'}:
+    if horse_text in {'IMAGE', 'IMAGE_DESC', 'GIF', 'GIF_DESC', 'VIDEO', 'DESC'}:
         return True
     if '[[[' in horse_text or ']]]' in horse_text:
         return True
@@ -342,9 +342,12 @@ def render_chain_item(
 
         result = result[:start] + link + result[end:]
 
-    # Replace image markers
+    # Replace content markers
     result = result.replace('[[[IMAGE]]]', '[Image]')
     result = re.sub(r'\[\[\[IMAGE_DESC:(.*?)\]\]\]', r'[Image: \1]', result)
+    result = result.replace('[[[GIF]]]', '[Animated GIF]')
+    result = re.sub(r'\[\[\[GIF_DESC:(.*?)\]\]\]', r'[Animated GIF: \1]', result)
+    result = result.replace('[[[VIDEO]]]', '[Video]')
 
     # Preserve formatting
     result = _preserve_formatting(result)
