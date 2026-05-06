@@ -388,21 +388,21 @@ def _is_in_marker_prefix(text: str, start: int, end: int) -> bool:
 # ── Horse tile appearance ─────────────────────────────────────────────────────
 
 _COATS = [
-    ('#7a3520', '#f5ecd7'),  # bay
-    ('#1c1c1c', '#e8d5b0'),  # black
-    ('#7a7a7a', '#f0ead6'),  # dapple grey
-    ('#8b3a1f', '#fae8c8'),  # chestnut
-    ('#c8961a', '#2a1800'),  # palomino
-    ('#c8bfaa', '#1c1008'),  # grey/white
-    ('#4a2812', '#ead8b8'),  # liver
-    ('#8a6a5a', '#f0e4d0'),  # roan
+    ('bay',       '#7a3520', '#f5ecd7'),
+    ('black',     '#1c1c1c', '#e8d5b0'),
+    ('grey',      '#7a7a7a', '#f0ead6'),
+    ('chestnut',  '#8b3a1f', '#fae8c8'),
+    ('palomino',  '#c8961a', '#2a1800'),
+    ('greywhite', '#c8bfaa', '#1c1008'),
+    ('liver',     '#4a2812', '#ead8b8'),
+    ('roan',      '#8a6a5a', '#f0e4d0'),
 ]
 
-def _tile_appearance(name: str) -> Tuple[str, str, bool]:
-    """Return (bg, fg, is_reversed) for a normalized horse name."""
+def _tile_appearance(name: str) -> Tuple[str, str, str, bool]:
+    """Return (coat_name, bg, fg, is_reversed) for a normalized horse name."""
     h = sum(ord(c) for c in name)
-    bg, fg = _COATS[h % len(_COATS)]
-    return bg, fg, h % 2 == 0
+    coat, bg, fg = _COATS[h % len(_COATS)]
+    return coat, bg, fg, h % 2 == 0
 
 
 # ── HTML rendering ────────────────────────────────────────────────────────────
@@ -436,9 +436,9 @@ def render_chain_item(
         original_text = result[start:end]
 
         if registration:
-            bg, fg, rev = _tile_appearance(m['name'])
+            coat, bg, fg, rev = _tile_appearance(m['name'])
             is_famous = famous is not None and famous.lookup(m['name']) is not None
-            cls = 'horse-link'
+            cls = f'horse-link coat-{coat}'
             if rev:
                 cls += ' rev'
             if is_famous:

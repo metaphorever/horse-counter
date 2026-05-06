@@ -175,18 +175,10 @@ a { color: {color:Accent}; }
   color: var(--bg); font-size: 32px; line-height: 1;
   left: 0; top: -20px;
 }
+/* ::after used for leg stubs — Tumblr strips child <span> elements so we
+   can't use the .legs span approach; tail glyph is omitted on Tumblr. */
 .post-body .horse-link::after {
-  content: '∫'; position: absolute; pointer-events: none;
-  color: var(--bg); font-size: 22px; line-height: 1;
-  right: -10px; top: 50%;
-  transform: translateY(-50%) scaleY(-1);
-}
-/* Direction: .rev class set by the horse counter app based on name hash */
-.post-body .horse-link.rev::before { left: auto; right: 0; transform: scaleX(-1); }
-.post-body .horse-link.rev::after  { right: auto; left: -10px; transform: translateY(-50%) scaleY(-1) scaleX(-1); }
-/* Leg stubs */
-.post-body .horse-link .legs {
-  position: absolute; pointer-events: none;
+  content: ''; position: absolute; pointer-events: none;
   bottom: -6px; left: 0; right: 0; height: 6px;
   background:
     linear-gradient(var(--bg),var(--bg))  4px 0 / 2px 100% no-repeat,
@@ -194,19 +186,22 @@ a { color: {color:Accent}; }
     linear-gradient(var(--bg),var(--bg)) calc(100% - 10px) 0 / 2px 100% no-repeat,
     linear-gradient(var(--bg),var(--bg)) calc(100% -  4px) 0 / 2px 100% no-repeat;
 }
+/* Direction: .rev class set by the horse counter app based on name hash */
+.post-body .horse-link.rev::before { left: auto; right: 0; transform: scaleX(-1); }
 .post-body .horse-link:hover {
   transform: scale(1.06) rotate(0deg) !important;
   box-shadow: 3px 3px 6px rgba(0,0,0,.28);
 }
-/* Coat color fallbacks (used when Tumblr strips inline --bg/--fg vars) */
-.post-body .horse-link:nth-of-type(8n+1) { --bg:#7a3520; --fg:#f5ecd7; transform:rotate(-1.5deg); } /* bay */
-.post-body .horse-link:nth-of-type(8n+2) { --bg:#1c1c1c; --fg:#e8d5b0; transform:rotate( 1.0deg); } /* black */
-.post-body .horse-link:nth-of-type(8n+3) { --bg:#7a7a7a; --fg:#f0ead6; transform:rotate(-0.7deg); } /* grey */
-.post-body .horse-link:nth-of-type(8n+4) { --bg:#8b3a1f; --fg:#fae8c8; transform:rotate( 1.3deg); } /* chestnut */
-.post-body .horse-link:nth-of-type(8n+5) { --bg:#c8961a; --fg:#2a1800; transform:rotate(-1.0deg); } /* palomino */
-.post-body .horse-link:nth-of-type(8n+6) { --bg:#c8bfaa; --fg:#1c1008; transform:rotate( 0.5deg); } /* grey/white */
-.post-body .horse-link:nth-of-type(8n+7) { --bg:#4a2812; --fg:#ead8b8; transform:rotate(-1.3deg); } /* liver */
-.post-body .horse-link:nth-of-type(8n+8) { --bg:#8a6a5a; --fg:#f0e4d0; transform:rotate( 0.8deg); } /* roan */
+/* Coat colors via class — Tumblr strips inline styles but preserves classes.
+   coat-* class set by the horse counter app based on name hash. */
+.post-body .horse-link.coat-bay       { --bg:#7a3520; --fg:#f5ecd7; transform:rotate(-1.5deg); }
+.post-body .horse-link.coat-black     { --bg:#1c1c1c; --fg:#e8d5b0; transform:rotate( 1.0deg); }
+.post-body .horse-link.coat-grey      { --bg:#7a7a7a; --fg:#f0ead6; transform:rotate(-0.7deg); }
+.post-body .horse-link.coat-chestnut  { --bg:#8b3a1f; --fg:#fae8c8; transform:rotate( 1.3deg); }
+.post-body .horse-link.coat-palomino  { --bg:#c8961a; --fg:#2a1800; transform:rotate(-1.0deg); }
+.post-body .horse-link.coat-greywhite { --bg:#c8bfaa; --fg:#1c1008; transform:rotate( 0.5deg); }
+.post-body .horse-link.coat-liver     { --bg:#4a2812; --fg:#ead8b8; transform:rotate(-1.3deg); }
+.post-body .horse-link.coat-roan      { --bg:#8a6a5a; --fg:#f0e4d0; transform:rotate( 0.8deg); }
 /* Famous horse shimmer — .famous-horse class set by the horse counter app */
 @keyframes famous-shimmer {
   0%   { background-position: -200% 0; }
