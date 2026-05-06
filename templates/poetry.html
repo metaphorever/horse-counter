@@ -60,13 +60,15 @@
   white-space: nowrap; touch-action: none; position: relative;
   border: none;
 }
-/* Pasture tiles get the rainbow magnet treatment */
-.pasture-tiles .horse-tile:nth-child(6n+1) { background: #ffe082; color: #5a3e00; transform: rotate(-1.8deg); }
-.pasture-tiles .horse-tile:nth-child(6n+2) { background: #b5ead7; color: #0a3d2a; transform: rotate( 1.2deg); }
-.pasture-tiles .horse-tile:nth-child(6n+3) { background: #d4b8f5; color: #2d0a5a; transform: rotate(-0.7deg); }
-.pasture-tiles .horse-tile:nth-child(6n+4) { background: #a8d4f7; color: #0a2d5a; transform: rotate( 1.5deg); }
-.pasture-tiles .horse-tile:nth-child(6n+5) { background: #ffcdd2; color: #5a0a0a; transform: rotate(-1.1deg); }
-.pasture-tiles .horse-tile:nth-child(6n+6) { background: #fff;    color: #333;    transform: rotate( 0.6deg); border: 1px solid #ddd; }
+/* Pasture tiles: horse coat colors */
+.pasture-tiles .horse-tile:nth-child(8n+1) { background: #7a3520; color: #f5ecd7; transform: rotate(-1.8deg); } /* bay */
+.pasture-tiles .horse-tile:nth-child(8n+2) { background: #1c1c1c; color: #e8d5b0; transform: rotate( 1.2deg); } /* black */
+.pasture-tiles .horse-tile:nth-child(8n+3) { background: #7a7a7a; color: #f0ead6; transform: rotate(-0.7deg); } /* dapple grey */
+.pasture-tiles .horse-tile:nth-child(8n+4) { background: #8b3a1f; color: #fae8c8; transform: rotate( 1.5deg); } /* chestnut */
+.pasture-tiles .horse-tile:nth-child(8n+5) { background: #c8961a; color: #2a1800; transform: rotate(-1.1deg); } /* palomino */
+.pasture-tiles .horse-tile:nth-child(8n+6) { background: #c8bfaa; color: #1c1008; transform: rotate( 0.6deg); border: 1px solid #9e9080; } /* grey/white */
+.pasture-tiles .horse-tile:nth-child(8n+7) { background: #4a2812; color: #ead8b8; transform: rotate(-1.4deg); } /* liver/dark brown */
+.pasture-tiles .horse-tile:nth-child(8n+8) { background: #8a6a5a; color: #f0e4d0; transform: rotate( 0.9deg); } /* roan */
 /* Poem canvas tiles are always post-it yellow so position doesn't change color */
 .line-tiles .horse-tile { background: #ffe082; color: #5a3e00; transform: rotate(-0.5deg); }
 .horse-tile.is-dragging { opacity: 0.35; }
