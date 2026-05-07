@@ -98,20 +98,24 @@
   </div>
   {% endif %}
 
-  {# Submit option for public users #}
-  {% if not is_admin and result.draft_id %}
+  {# Submit option — all users #}
+  {% if result.draft_id %}
   <div style="margin-top:10px;padding:14px;background:#eaf5e0;border:2px solid #6dbf4a;border-radius:2px">
+    {% if is_admin %}
+    <p style="margin:0 0 10px;font:13px 'Courier Prime','Courier New',monospace;color:#3a5a1a">Add attribution (optional), then submit to queue.</p>
+    {% else %}
     <p style="margin:0 0 10px;font:13px 'Courier Prime','Courier New',monospace;color:#3a5a1a">Want this posted to the blog? Submit it for review!</p>
+    {% endif %}
     <form method="post" action="/submit">
       <input type="hidden" name="draft_id" value="{{ result.draft_id }}">
       <div style="display:flex;gap:6px;margin-bottom:10px">
         <input type="text" name="submitter_name" placeholder="Your name (optional)"
-               maxlength="60" style="flex:1;margin:0">
+               maxlength="60" autocomplete="off" style="flex:1;margin:0">
         <input type="text" name="submitter_tumblr" placeholder="Tumblr @ (optional)"
-               maxlength="32" style="flex:1;margin:0">
+               maxlength="32" autocomplete="off" style="flex:1;margin:0">
       </div>
       <div style="display:flex;gap:8px">
-        <button type="submit" class="btn-primary">Submit for review</button>
+        <button type="submit" class="btn-primary">{% if is_admin %}Submit to queue{% else %}Submit for review{% endif %}</button>
         <a href="/" class="btn-sec btn-link">Cancel</a>
       </div>
     </form>
@@ -139,16 +143,5 @@ function switchTab(id, btn) {
   btn.classList.add('on');
 }
 
-// Pre-fill attribution fields from localStorage; save as the user types.
-// The fields only exist in the DOM when a countable result is shown.
-(function(){
-  const nameEl   = document.querySelector('input[name="submitter_name"]');
-  const tumblrEl = document.querySelector('input[name="submitter_tumblr"]');
-  if (!nameEl) return;
-  nameEl.value   = localStorage.getItem('horse-submitter-name')   || '';
-  tumblrEl.value = localStorage.getItem('horse-submitter-tumblr') || '';
-  nameEl.addEventListener('input',   () => localStorage.setItem('horse-submitter-name',   nameEl.value));
-  tumblrEl.addEventListener('input', () => localStorage.setItem('horse-submitter-tumblr', tumblrEl.value));
-})();
 </script>
 {% endblock %}

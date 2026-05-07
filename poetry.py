@@ -14,34 +14,37 @@ from config import BASE_DIR, OPTIONAL_TAGS
 PASTURE_FILE    = os.path.join(BASE_DIR, 'pasture.json')
 SEARCH_HARD_CAP = 500
 
-POEM_PREFIX_TEMPLATE = (
-    "<p><b>This poem contains {count} horse{plural} "
-    "({density}% of the poem)</b></p>"
-)
 POEM_SUFFIX = (
-    "<p><small>This poem was written by a human, processed automatically "
-    "and queued to post. Click any name for more information about that horse. "
-    "You can send a link or text to be counted to my ask box.</small></p>"
+    "<p><small>This poem was written by a human, processed automatically, "
+    "and queued to post. Click the links for more information about each horse. "
+    "You can write and submit your own horse poetry at "
+    "<a href=\"https://horsecounterbot.pythonanywhere.com/poetry\">"
+    "horsecounterbot.pythonanywhere.com/poetry</a>.</small></p>"
 )
-POEM_TAGS = [
+POEM_SEO_TAGS = [
     "{count} horse{plural}",
-    "{density}% horse",
-    "horse poetry",
+    "100% horse",
+    "how many horses?",
     "poetry",
     "gimmick account",
     "counting-horses",
     "horseblr",
+    "text post",
 ]
 
 
-def build_poem_tags(count: int, density: float) -> List[str]:
+def build_poem_tags(count: int, name: str = '', tumblr: str = '', is_admin: bool = False) -> List[str]:
     plural = 's' if count != 1 else ''
-    return [
-        t.replace('{count}', str(count))
-         .replace('{plural}', plural)
-         .replace('{density}', str(density))
-        for t in POEM_TAGS
-    ]
+    tags = ['horse poetry']
+    if name:
+        tags.append(f'by {name}')
+    if tumblr:
+        tags.append(tumblr)
+    for t in POEM_SEO_TAGS:
+        tags.append(t.replace('{count}', str(count)).replace('{plural}', plural))
+    if not is_admin or (name or tumblr):
+        tags.append('user submission')
+    return tags
 
 
 def order_tags(tags_str: str, first: str, *prepend: str, force_first: bool = True) -> str:
@@ -56,14 +59,29 @@ def order_tags(tags_str: str, first: str, *prepend: str, force_first: bool = Tru
     extra = [t for t in prepend if t]
     excluded = {first} | set(extra)
     rest = [t for t in parts if t not in excluded]
-    include_first = force_first or (first in parts)
+    include_first = first and (force_first or (first in parts))
     front = ([first] if include_first else []) + extra
     return ','.join(front + rest)
 
 
-def format_poem_prefix(count: int, density: float) -> str:
+def format_poem_prefix(count: int, title: str = '', name: str = '', tumblr: str = '') -> str:
     plural = 's' if count != 1 else ''
-    return POEM_PREFIX_TEMPLATE.format(count=count, plural=plural, density=density)
+    display = name or (f'@{tumblr}' if tumblr else '')
+    if display and tumblr:
+        author_html = f'<a href="https://www.tumblr.com/{tumblr}">{display}</a>'
+    elif display:
+        author_html = display
+    else:
+        author_html = ''
+    if title and author_html:
+        subject = f'<em>{title}</em> by {author_html}'
+    elif title:
+        subject = f'<em>{title}</em>'
+    elif author_html:
+        subject = f'This poem by {author_html}'
+    else:
+        subject = 'This poem'
+    return f'<p><b>{subject} contains {count} horse{plural}</b></p>'
 
 
 # ── Search ────────────────────────────────────────────────────────────────────

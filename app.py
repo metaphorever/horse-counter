@@ -4,8 +4,8 @@ app.py - Flask routes for Horse Counter
 Public routes (no login required):
   GET  /               main input page (URL + text tabs)
   POST /               process URL or text, show count + submit option
-  POST /submit         save a counted post as a public submission
-  POST /submit/poem    save a public poem submission
+  POST /submit         save a counted post submission (public or admin)
+  POST /submit/poem    save a poem submission (public or admin)
   GET  /poetry         poetry editor
   POST /poetry/search  horse name search
 
@@ -14,11 +14,11 @@ Admin routes (login required):
   POST /queue          post/queue/draft a reviewed post
   GET  /auth           start Tumblr OAuth
   GET  /callback       OAuth callback
-  GET  /submissions    review pending public submissions
+  GET  /submissions    review pending submissions
   POST /submissions/approve  move a submission to the review page
+  POST /submissions/post     fast-track post/queue/draft from queue
   POST /submissions/reject   discard a submission
   POST /poetry/pasture/*     server-persisted pasture (admin only)
-  POST /poetry/post          post a poem directly (admin only)
 """
 
 import os
@@ -49,7 +49,7 @@ from poetry import (
     search_dictionary, random_horses, load_pasture, add_to_pasture,
     remove_from_pasture, clear_pasture,
     build_poem_html, compute_poem_stats, format_poem_prefix,
-    POEM_SUFFIX, POEM_TAGS, build_poem_tags, order_tags,
+    POEM_SUFFIX, build_poem_tags, order_tags,
 )
 from queue_handler import (
     save_draft, load_draft, delete_draft,
@@ -350,59 +350,19 @@ def _process_chain(post_data: dict, active_tab: str, form: dict, is_admin: bool 
         else:
             linked_html = part['html']
 
-    # ── Admin + Tumblr + horses → direct review/post flow ──
-    if is_admin and tumblr.authenticated and horse_count > 0:
-        usernames = set()
-        for item in post_data.get('reply_chain', post_data['chain']):
-            u = item.get('username', '')
-            if u and u not in ('unknown', 'reply', ''):
-                usernames.add(u)
-
-        default_tags = build_default_tags(horse_count, stats['horse_density'])
-        prefix       = format_prefix(horse_count, post_data.get('is_multi', False), stats['horse_density'])
-
-        # Famous tags go first so they're visible at the top of the custom field
-        username_tags = sorted(usernames)
-        all_custom_tags = famous_tags + username_tags
-
+    # ── All users with horses → save draft and route to queue ──
+    draft_id = None
+    if horse_count > 0:
         draft_id = save_draft({
             'post_data':    post_data,
             'horse_count':  horse_count,
             'linked_html':  linked_html,
             'stats':        stats,
+            'famous_tags':  famous_tags,
             'is_text_post': post_data.get('is_text_post', False),
             'is_reply':     post_data.get('is_reply', False),
             'is_fallback':  post_data.get('is_fallback', False),
-        })
-
-        return render_template('review.html',
-            draft_id=draft_id,
-            horse_count=horse_count,
-            stats=stats,
-            content=linked_html,
-            pre=prefix,
-            mid='',
-            suf=POST_SUFFIX,
-            default_tags=default_tags,
-            optional_tags=OPTIONAL_TAGS,
-            custom_tags=','.join(all_custom_tags),
-            auto_check_tags=_auto_check_tags(post_data),
-            is_fallback=post_data.get('is_fallback', False),
-            famous_found=famous_found,
-            error=None,
-        )
-
-    # ── Public user with horses → save draft so they can submit it ──
-    draft_id = None
-    if not is_admin and horse_count > 0:
-        draft_id = save_draft({
-            'post_data':    post_data,
-            'horse_count':  horse_count,
-            'linked_html':  linked_html,
-            'stats':        stats,
-            'is_text_post': post_data.get('is_text_post', False),
-            'is_reply':     False,
-            'is_fallback':  post_data.get('is_fallback', False),
+            'is_admin':     is_admin,
         })
 
     return render_template('index.html',
@@ -489,7 +449,7 @@ def queue_post():
 
 @app.route('/submit', methods=['POST'])
 def public_submit():
-    """Accept a counted post submission from a public user."""
+    """Accept a counted post submission (public or admin)."""
     draft_id = request.form.get('draft_id', '')
     draft    = load_draft(draft_id)
 
@@ -501,6 +461,7 @@ def public_submit():
             error='Submission timed out — please count again and try again',
         )
 
+    is_admin         = bool(session.get('logged_in'))
     sub_type         = 'text' if draft.get('is_text_post') else 'url'
     submitter_name   = _sanitize_name(request.form.get('submitter_name', ''))
     submitter_tumblr = _sanitize_tumblr(request.form.get('submitter_tumblr', ''))
@@ -509,8 +470,10 @@ def public_submit():
         'horse_count':      draft['horse_count'],
         'linked_html':      draft['linked_html'],
         'stats':            draft.get('stats', {}),
+        'famous_tags':      draft.get('famous_tags', []),
         'is_text_post':     draft.get('is_text_post', False),
         'is_fallback':      draft.get('is_fallback', False),
+        'is_admin':         is_admin,
         'submitter_name':   submitter_name,
         'submitter_tumblr': submitter_tumblr,
     })
@@ -526,7 +489,7 @@ def public_submit():
 
 @app.route('/submit/poem', methods=['POST'])
 def submit_poem_public():
-    """Accept a poem submission from a public user."""
+    """Accept a poem submission (public or admin)."""
     from flask import jsonify
     data   = request.get_json()
     lines  = data.get('lines', [])
@@ -534,6 +497,7 @@ def submit_poem_public():
     if not any(lines):
         return jsonify({'ok': False, 'error': 'Poem is empty'})
 
+    is_admin         = bool(session.get('logged_in'))
     flat             = [h for line in lines for h in line]
     horse_count      = len(flat)
     poem_html        = build_poem_html(lines)
@@ -554,6 +518,7 @@ def submit_poem_public():
         },
         'is_text_post':     True,
         'is_fallback':      False,
+        'is_admin':         is_admin,
         'submitter_name':   submitter_name,
         'submitter_tumblr': submitter_tumblr,
     })
@@ -601,23 +566,30 @@ def approve_submission():
     })
     update_status(sub_id, 'approved')
 
-    is_poem   = sub.get('type') == 'poem'
-    count_pre = format_prefix(horse_count, False, density)
-    name_tag  = f'by {submitter_name}' if submitter_name else ''
-    tumblr_tag = submitter_tumblr if submitter_tumblr else ''
+    is_poem    = sub.get('type') == 'poem'
+    sub_is_admin = sub.get('is_admin', False)
+    is_user_sub  = not sub_is_admin or bool(submitter_name or submitter_tumblr)
+    name_tag     = f'by {submitter_name}' if submitter_name else ''
+    tumblr_tag   = submitter_tumblr if submitter_tumblr else ''
 
     if is_poem:
-        # Poem: "Title by Author" line goes above the count line in pre; mid is empty
-        attr = _attribution_html(submitter_name, submitter_tumblr, title=sub.get('poem_title', ''))
-        pre  = (attr + '\n' + count_pre) if attr else count_pre
+        # Poem: new prefix format with graceful degradation; body = prefix + html + suffix
+        pre  = format_poem_prefix(horse_count, sub.get('poem_title', ''), submitter_name, submitter_tumblr)
         mid  = ''
-        base_tags  = sub.get('poem_tags', '')
-        extra_tags = order_tags(base_tags, 'request', name_tag, tumblr_tag)
+        suf  = POEM_SUFFIX
+        poem_tag_list  = build_poem_tags(horse_count, submitter_name, submitter_tumblr, is_admin=sub_is_admin)
+        extra_tags = ','.join(poem_tag_list)
     else:
-        # URL/text: "Requested by Name" goes in mid; no poem tags
+        # URL/text: standard count prefix; "Submitted by Name" in mid
+        count_pre  = format_prefix(horse_count, False, density)
         pre  = count_pre
-        mid  = _attribution_html(submitter_name, submitter_tumblr, prefix='Requested by')
-        extra_tags = order_tags('', 'request', name_tag, tumblr_tag)
+        mid  = _attribution_html(submitter_name, submitter_tumblr, prefix='Submitted by')
+        suf  = POST_SUFFIX
+        famous_tags_list = sub.get('famous_tags', [])
+        extra_tags = order_tags('', 'user submission' if is_user_sub else '', name_tag, tumblr_tag)
+        if famous_tags_list:
+            existing = extra_tags.split(',') if extra_tags else []
+            extra_tags = ','.join(famous_tags_list + [t for t in existing if t])
 
     return render_template('review.html',
         draft_id=draft_id,
@@ -626,7 +598,7 @@ def approve_submission():
         content=sub.get('linked_html', ''),
         pre=pre,
         mid=mid,
-        suf=POST_SUFFIX,
+        suf=suf,
         default_tags=build_default_tags(horse_count, density),
         optional_tags=OPTIONAL_TAGS,
         custom_tags=extra_tags,
@@ -723,7 +695,6 @@ def poetry_editor():
     return render_template('poetry.html',
         pasture_json=json.dumps(pasture),
         optional_tags_json=json.dumps(OPTIONAL_TAGS),
-        poem_tags_json=json.dumps(POEM_TAGS),
     )
 
 
@@ -770,56 +741,76 @@ def pasture_clear():
     return jsonify({'ok': True})
 
 
-@app.route('/poetry/post', methods=['POST'])
+@app.route('/submissions/post', methods=['POST'])
 @login_required
-def poetry_post():
+def post_submission():
+    """Fast-track: post/queue/draft a submission directly without full review."""
     from flask import jsonify
     if not tumblr.authenticated:
-        return jsonify({'ok': False, 'error': 'Not connected to Tumblr'})
+        flash('Not connected to Tumblr', 'err')
+        return redirect(url_for('submissions'))
 
-    data   = request.get_json()
-    lines  = data.get('lines', [])
-    prefix = data.get('prefix', '')
-    suffix = data.get('suffix', POEM_SUFFIX)
-    tags   = data.get('tags', '')
-    action = data.get('action', 'queue')
+    sub_id = request.form.get('id', '')
+    action = request.form.get('action', 'queue')
+    sub    = load_submission(sub_id)
+    if not sub:
+        flash('Submission not found', 'err')
+        return redirect(url_for('submissions'))
 
-    if not any(lines):
-        return jsonify({'ok': False, 'error': 'Poem is empty'})
+    horse_count      = sub.get('horse_count', 0)
+    stats            = sub.get('stats') or {}
+    density          = stats.get('horse_density', 0.0)
+    submitter_name   = sub.get('submitter_name', '')
+    submitter_tumblr = sub.get('submitter_tumblr', '')
+    sub_is_admin     = sub.get('is_admin', False)
+    is_user_sub      = not sub_is_admin or bool(submitter_name or submitter_tumblr)
 
-    submitter_name   = _sanitize_name(data.get('submitter_name', ''))
-    submitter_tumblr = _sanitize_tumblr(data.get('submitter_tumblr', ''))
-    poem_title       = _sanitize_name(data.get('poem_title', ''))
-    attribution      = _attribution_html(submitter_name, submitter_tumblr, title=poem_title, prefix='by')
+    is_poem = sub.get('type') == 'poem'
+    if is_poem:
+        pre  = format_poem_prefix(horse_count, sub.get('poem_title', ''), submitter_name, submitter_tumblr)
+        mid  = ''
+        suf  = POEM_SUFFIX
+        tags = ','.join(build_poem_tags(horse_count, submitter_name, submitter_tumblr, is_admin=sub_is_admin))
+    else:
+        pre  = format_prefix(horse_count, False, density)
+        mid  = _attribution_html(submitter_name, submitter_tumblr, prefix='Submitted by')
+        suf  = POST_SUFFIX
+        name_tag    = f'by {submitter_name}' if submitter_name else ''
+        tumblr_tag  = submitter_tumblr if submitter_tumblr else ''
+        famous_tags = sub.get('famous_tags', [])
+        extra       = order_tags('', 'user submission' if is_user_sub else '', name_tag, tumblr_tag)
+        if famous_tags:
+            existing = extra.split(',') if extra else []
+            extra = ','.join(famous_tags + [t for t in existing if t])
+        tags = assemble_tags(
+            default_tags=build_default_tags(horse_count, density),
+            optional_tags=[],
+            custom_tags=extra,
+        )
 
-    poem_html = build_poem_html(lines)
-    body      = prefix + poem_html + suffix + attribution
+    body = build_post_body(pre, sub.get('linked_html', ''), mid, suf)
 
-    tags = order_tags(
-        tags, 'horse poetry',
-        f'by {submitter_name}' if submitter_name else '',
-        submitter_tumblr,
-        force_first=False,
-    )
-
+    draft = {
+        'post_data':    sub.get('post_data', {}),
+        'is_text_post': sub.get('is_text_post', False),
+        'is_reply':     False,
+    }
     success, err = submit_post(
-        draft={'is_text_post': True, 'post_data': {}},
+        draft=draft,
         action=action,
         body=body,
         tags=tags,
         make_request=tumblr.make_request,
     )
+
     if success:
-        store_poem(
-            lines=lines,
-            title=poem_title,
-            author_name=submitter_name,
-            author_tumblr=submitter_tumblr,
-            status='posted' if action in ('post', 'queue') else 'draft',
-        )
-        label = {'post': 'published', 'queue': 'queued', 'draft': 'saved as draft'}.get(action, 'queued')
-        return jsonify({'ok': True, 'message': f'Poem {label}!'})
-    return jsonify({'ok': False, 'error': err})
+        update_status(sub_id, 'posted')
+        action_label = {'post': 'published', 'queue': 'queued', 'draft': 'saved as draft'}.get(action, 'queued')
+        flash(f'Post {action_label}!', 'ok')
+    else:
+        flash(f'Post failed: {err}', 'err')
+
+    return redirect(url_for('submissions'))
 
 
 # ── Admin: dictionary editor ──────────────────────────────────────────────────

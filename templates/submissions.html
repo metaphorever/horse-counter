@@ -11,16 +11,25 @@
 
   <h1>Pending Submissions</h1>
 
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    <div class="msg {{ 'ok' if category == 'ok' else 'err' }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
   {% if not submissions %}
   <div class="msg ok">No pending submissions — all caught up!</div>
   {% endif %}
 
   {% for sub in submissions %}
-  <div class="sub-card">
+  <div class="sub-card{% if sub.is_admin %} sub-admin{% endif %}">
 
     <div class="sub-card-header">
       <div class="sub-card-meta">
-        <span class="type-badge">{{ sub.type }}</span>
+        <span class="type-badge">{{ sub.type }}{% if sub.is_admin %} (admin){% endif %}</span>
+        {% if sub.type == 'poem' and sub.poem_title %}
+        <strong><em>{{ sub.poem_title }}</em></strong>
+        {% endif %}
         <strong>{{ sub.horse_count }} horse{{ 's' if sub.horse_count != 1 else '' }}</strong>
         {% if sub.stats %}
         <span class="sub-stat">{{ sub.stats.horse_density }}% horse</span>
@@ -39,6 +48,14 @@
         {% endif %}
       </div>
       <div class="sub-card-actions">
+        {% if sub.is_admin and tumblr_auth %}
+        <form method="post" action="/submissions/post" style="display:inline">
+          <input type="hidden" name="id" value="{{ sub.id }}">
+          <button type="submit" name="action" value="post"  class="btn-primary btn-fast">Post Now</button>
+          <button type="submit" name="action" value="queue" class="btn-sec btn-fast">Queue</button>
+          <button type="submit" name="action" value="draft" class="btn-sec btn-fast">Draft</button>
+        </form>
+        {% endif %}
         <form method="post" action="/submissions/approve" style="display:inline">
           <input type="hidden" name="id" value="{{ sub.id }}">
           <button type="submit" class="btn-primary">Review &amp; post →</button>
@@ -56,6 +73,16 @@
       <div class="sub-preview-content">
         {{ sub.linked_html | safe }}
       </div>
+      {% if not sub.is_admin and tumblr_auth %}
+      <div class="sub-fast-track">
+        <form method="post" action="/submissions/post" style="display:inline">
+          <input type="hidden" name="id" value="{{ sub.id }}">
+          <button type="submit" name="action" value="post"  class="btn-primary btn-fast">Post Now</button>
+          <button type="submit" name="action" value="queue" class="btn-sec btn-fast">Queue</button>
+          <button type="submit" name="action" value="draft" class="btn-sec btn-fast">Draft</button>
+        </form>
+      </div>
+      {% endif %}
     </details>
 
   </div>

@@ -96,32 +96,16 @@
 <!-- POST MODAL -->
 <div class="modal-overlay" id="post-modal">
   <div class="modal">
-    <h3>{% if is_admin %}Post Poem{% else %}Submit Poem{% endif %}</h3>
-    {% if is_admin %}
-    <label>Prefix:</label>
-    <textarea id="modal-pre" rows="2"></textarea>
-    <label>Footer:</label>
-    <textarea id="modal-suf" rows="3"></textarea>
-    <label>Tags:</label>
-    <div id="modal-tags" class="modal-tags-row"></div>
-    <label>Extra tags <span class="opt">(comma-separated)</span>:</label>
-    <input type="text" id="modal-custom">
-    {% endif %}
+    <h3>Submit Poem</h3>
     <label>Title <span class="opt">(optional)</span>:</label>
     <input type="text" id="modal-title" placeholder="Poem title" maxlength="120">
-    <label>{% if is_admin %}Sign as{% else %}Your name{% endif %} <span class="opt">(optional — for attribution on the post)</span>:</label>
+    <label>Your name <span class="opt">(optional — for attribution on the post)</span>:</label>
     <div class="modal-name-row">
       <input type="text" id="modal-submitter-name"   placeholder="Your name"       maxlength="60">
       <input type="text" id="modal-submitter-tumblr" placeholder="Tumblr @ (no @)" maxlength="32">
     </div>
     <div class="modal-actions">
-      {% if is_admin %}
-      <button class="btn-primary" onclick="submitPoem('post')">Post Now</button>
-      <button class="btn-primary" onclick="submitPoem('queue')">Queue</button>
-      <button class="btn-sec"     onclick="submitPoem('draft')">Save Draft</button>
-      {% else %}
-      <button class="btn-primary" onclick="submitPoemPublic()">Submit for review</button>
-      {% endif %}
+      <button class="btn-primary" onclick="submitPoemPublic()">{% if is_admin %}Submit to queue{% else %}Submit for review{% endif %}</button>
       <button class="btn-sec" onclick="closeModal()">Cancel</button>
     </div>
     <div id="modal-err" class="msg err modal-err" style="display:none"></div>
@@ -135,7 +119,6 @@ let pasture         = {{ pasture_json|safe }};
 let lines           = [[], [], []];
 let history         = [];
 const OPTIONAL_TAGS = {{ optional_tags_json|safe }};
-const POEM_TAG_TEMPLATES = {{ poem_tags_json|safe }};
 
 // ── Horse tile appearance ─────────────────────────────────────────────────────
 const COATS = [
@@ -582,38 +565,12 @@ function attachLineDrop(zone){
 
 // ── Post modal ────────────────────────────────────────────────────────────────
 function openModal(){
-  const flat  = lines.flat();
-  const count = flat.length;
-  const words = flat.reduce((s,h)=>s+h.name.split(' ').length,0);
-  const plural = count!==1?'s':'';
-
-  const preEl = document.getElementById('modal-pre');
-  if(preEl) preEl.value =
-    `<p><b>This poem contains ${count} horse${plural} (100% of the poem)</b></p>`;
-  const sufEl = document.getElementById('modal-suf');
-  if(sufEl) sufEl.value =
-    `<p><small>This poem was written by a human, processed automatically and queued to post. Click any name for more information about that horse. You can send a link or text to be counted to my ask box.</small></p>`;
-
-  const tagsEl = document.getElementById('modal-tags');
-  if(tagsEl){
-    const defaultTags = POEM_TAG_TEMPLATES.map(t =>
-      t.replace('{count}', count).replace('{plural}', plural).replace('{density}', '100')
-    );
-    tagsEl.innerHTML = [
-      ...defaultTags.map(t=>({t,on:true})),
-      ...OPTIONAL_TAGS.map(t=>({t,on:false}))
-    ].map(({t,on})=>`<label class="tag-item">
-      <input type="checkbox" name="ptag" value="${esc(t)}" ${on?'checked':''}>
-      <span>${esc(t)}</span></label>`).join('');
-  }
-
   document.getElementById('modal-err').style.display='none';
-  // Pre-fill attribution from localStorage (fields only exist for public users)
+  // Pre-fill attribution from localStorage (persisted across sessions for both admin and public)
   const nameEl   = document.getElementById('modal-submitter-name');
   const tumblrEl = document.getElementById('modal-submitter-tumblr');
-  if (nameEl)   nameEl.value   = localStorage.getItem('horse-submitter-name')   || '';
-  if (tumblrEl) tumblrEl.value = localStorage.getItem('horse-submitter-tumblr') || '';
-  // Title is per-poem, don't persist it
+  if (nameEl)   nameEl.value   = localStorage.getItem('horse-poem-name')   || '';
+  if (tumblrEl) tumblrEl.value = localStorage.getItem('horse-poem-tumblr') || '';
   document.getElementById('post-modal').classList.add('open');
 }
 function closeModal(){ document.getElementById('post-modal').classList.remove('open'); }
@@ -625,8 +582,8 @@ async function submitPoemPublic(){
   const submitterName   = (document.getElementById('modal-submitter-name')?.value   || '').trim();
   const submitterTumblr = (document.getElementById('modal-submitter-tumblr')?.value || '').trim().replace(/^@/, '');
   const poemTitle       = (document.getElementById('modal-title')?.value            || '').trim();
-  localStorage.setItem('horse-submitter-name',   submitterName);
-  localStorage.setItem('horse-submitter-tumblr', submitterTumblr);
+  localStorage.setItem('horse-poem-name',   submitterName);
+  localStorage.setItem('horse-poem-tumblr', submitterTumblr);
   const d = await apiPost('/submit/poem', {lines, submitter_name: submitterName, submitter_tumblr: submitterTumblr, poem_title: poemTitle});
   if(!d) return;
   if(d.ok){
@@ -634,36 +591,6 @@ async function submitPoemPublic(){
     lines=[[]]; renderPoem();
     const t=document.getElementById('modal-title'); if(t) t.value='';
     showToast(d.message || 'Poem submitted for review!');
-  } else {
-    const el=document.getElementById('modal-err');
-    el.textContent=d.error; el.style.display='';
-  }
-}
-
-async function submitPoem(action){
-  const flat = lines.flat();
-  if(!flat.length) return;
-
-  const prefix = document.getElementById('modal-pre').value;
-  const suffix = document.getElementById('modal-suf').value;
-  const custom = document.getElementById('modal-custom').value;
-  const checked = [...document.querySelectorAll('#modal-tags input:checked')].map(el=>el.value);
-  const tags = [...checked, ...custom.split(',').map(t=>t.trim()).filter(Boolean)].join(',');
-
-  const submitterName   = (document.getElementById('modal-submitter-name')?.value   || '').trim();
-  const submitterTumblr = (document.getElementById('modal-submitter-tumblr')?.value || '').trim().replace(/^@/, '');
-  const poemTitle       = (document.getElementById('modal-title')?.value            || '').trim();
-  localStorage.setItem('horse-submitter-name',   submitterName);
-  localStorage.setItem('horse-submitter-tumblr', submitterTumblr);
-
-  const d = await apiPost('/poetry/post', {lines, prefix, suffix, tags, action, submitter_name: submitterName, submitter_tumblr: submitterTumblr, poem_title: poemTitle});
-  if(!d) return;  // apiPost already showed a toast for network/session errors
-
-  if(d.ok){
-    closeModal();
-    lines=[[]]; renderPoem();
-    const t=document.getElementById('modal-title'); if(t) t.value='';
-    showToast(d.message);
   } else {
     const el=document.getElementById('modal-err');
     el.textContent=d.error; el.style.display='';
