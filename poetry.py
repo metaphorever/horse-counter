@@ -16,9 +16,13 @@ from config import BASE_DIR, OPTIONAL_TAGS
 STABLE_FILE        = os.path.join(BASE_DIR, 'stable.json')
 _PASTURE_LEGACY    = os.path.join(BASE_DIR, 'pasture.json')  # migrated on first load
 SEARCH_HARD_CAP    = 500
-RHYME_TERMS_MAX    = 50   # max terms to fetch from Datamuse
-RHYME_DEFAULT_ON   = 6    # how many chips are checked by default
-RHYME_CAP_PER_TERM = 200  # max horse matches per rhyme word (before dedup)
+RHYME_TERMS_MAX      = 50   # max terms to fetch from Datamuse
+RHYME_DEFAULT_ON     = 6    # how many chips are checked by default
+RHYME_CAP_PER_TERM   = 200  # max horse matches per rhyme word (before dedup)
+
+THESAURUS_TERMS_MAX    = 50   # max related words from Datamuse
+THESAURUS_DEFAULT_ON   = 6    # how many chips are checked by default
+THESAURUS_CAP_PER_TERM = 200  # max horse matches per synonym (before dedup)
 
 _datamuse_cache: Dict = {}
 
@@ -67,6 +71,53 @@ def search_by_rhyme_terms(terms: List[str], dictionary) -> List[Dict]:
                 if count >= RHYME_CAP_PER_TERM:
                     break
     return results
+
+
+def get_synonyms(word: str) -> List[Dict]:
+    """Fetch semantically related words from Datamuse 'means like'. Returns [{word, score}]."""
+    key = ('ml', word.lower().strip())
+    if key in _datamuse_cache:
+        return _datamuse_cache[key]
+    url = f'https://api.datamuse.com/words?ml={urllib.parse.quote(word)}&max={THESAURUS_TERMS_MAX}'
+    try:
+        r = _requests.get(url, timeout=4, headers={'User-Agent': 'horse-counter/1.0'})
+        r.raise_for_status()
+        results = [{'word': item['word'], 'score': item.get('score', 0)} for item in r.json()]
+    except Exception:
+        results = []
+    _datamuse_cache[key] = results
+    return results
+
+
+def search_by_synonym_terms(terms: List[str], dictionary) -> List[Dict]:
+    """For each term, find horses whose name contains that term anywhere. Deduplicates across terms."""
+    results = []
+    seen: set = set()
+    for term in terms:
+        if len(term) < 3:
+            continue
+        matcher, err = _compile_search(f'*{term}*')
+        if err or matcher is None:
+            continue
+        count = 0
+        for name, registrations in dictionary.horses.items():
+            if name in seen:
+                continue
+            if matcher(name):
+                reg = registrations[0]
+                results.append({
+                    'name':         name,
+                    'display':      reg.get('display_name', ' '.join(w.capitalize() for w in name.split())),
+                    'url':          reg.get('url', ''),
+                    'count':        len(registrations),
+                    'matched_term': term,
+                })
+                seen.add(name)
+                count += 1
+                if count >= THESAURUS_CAP_PER_TERM:
+                    break
+    return results
+
 
 POEM_SUFFIX = (
     "<p><small>This poem was written by a human, processed automatically, "

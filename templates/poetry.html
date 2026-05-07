@@ -41,8 +41,10 @@
           <div id="rhyme-chips" class="rhyme-chips"></div>
           <button class="find-horses-btn" id="find-horses-btn" onclick="doFindRhymeHorses()">Find horses</button>
         </div>
-        <div id="thesaurus-stub" class="thesaurus-stub" style="display:none">
-          Thesaurus search is coming soon. In the meantime, try searching for synonyms directly using Wildcard mode — e.g. <code>*joyful*</code> or <code>* dancer</code>.
+        <div id="thesaurus-panel" class="rhyme-panel" style="display:none">
+          <div id="thesaurus-label" class="rhyme-label"></div>
+          <div id="thesaurus-chips" class="rhyme-chips"></div>
+          <button class="find-horses-btn" id="find-thesaurus-btn" onclick="doFindThesaurusHorses()">Find horses</button>
         </div>
         <div id="search-results" class="search-results"></div>
         <div class="search-pager" id="search-pager">
@@ -238,10 +240,10 @@ function setMode(mode){
     document.getElementById('smt-'+m).classList.toggle('on', m===mode);
   });
   document.getElementById('q').placeholder = MODE_PLACEHOLDER[mode];
-  document.getElementById('search-hint').style.display     = mode==='wildcard' ? '' : 'none';
-  document.getElementById('page-size-row').style.display   = mode==='wildcard' ? '' : 'none';
-  document.getElementById('thesaurus-stub').style.display  = mode==='thesaurus' ? '' : 'none';
-  document.getElementById('rhyme-panel').style.display     = 'none';
+  document.getElementById('search-hint').style.display      = mode==='wildcard' ? '' : 'none';
+  document.getElementById('page-size-row').style.display    = mode==='wildcard' ? '' : 'none';
+  document.getElementById('rhyme-panel').style.display      = 'none';
+  document.getElementById('thesaurus-panel').style.display  = 'none';
   document.getElementById('search-mode').textContent       = '';
   document.getElementById('search-meta').textContent       = '';
   document.getElementById('search-error').textContent      = '';
@@ -366,7 +368,7 @@ function renderSearchPage(){
 
 async function doSearch(q){
   if(searchMode === 'rhyme')     { doRhymeSearch(q); return; }
-  if(searchMode === 'thesaurus') { return; }
+  if(searchMode === 'thesaurus') { doThesaurusSearch(q); return; }
 
   q = q || document.getElementById('q').value.trim();
   if(!q) return;
@@ -471,6 +473,96 @@ function toggleRhymeChip(i){
   document.getElementById('search-pager').style.display = 'none';
   document.getElementById('search-meta').textContent = '';
   document.getElementById('search-mode').textContent = '';
+}
+
+// ── Thesaurus search ──────────────────────────────────────────────────────────
+let thesaurusTerms         = [];
+let thesaurusWord          = '';
+let thesaurusChipsExpanded = false;
+
+async function doThesaurusSearch(q){
+  q = (q || document.getElementById('q').value.trim());
+  if(!q) return;
+  document.getElementById('q').value = q;
+  document.getElementById('thesaurus-panel').style.display = 'none';
+  document.getElementById('search-results').innerHTML      = '';
+  document.getElementById('search-pager').style.display   = 'none';
+  document.getElementById('search-mode').textContent      = '';
+  document.getElementById('search-error').textContent     = '';
+  document.getElementById('search-meta').textContent      = 'Finding related words…';
+
+  const d = await apiPost('/poetry/thesaurus/terms', {word: q});
+  if(!d) return;
+  if(d.error){
+    document.getElementById('search-meta').textContent  = '';
+    document.getElementById('search-error').textContent = d.error;
+    return;
+  }
+
+  thesaurusWord          = d.word;
+  thesaurusTerms         = d.terms;
+  thesaurusChipsExpanded = false;
+  document.getElementById('search-meta').textContent = '';
+  renderThesaurusChips();
+}
+
+function renderThesaurusChips(){
+  const total     = thesaurusTerms.length;
+  const remainder = total - CHIPS_PREVIEW;
+  const visible   = (thesaurusChipsExpanded || remainder <= 0)
+                      ? thesaurusTerms
+                      : thesaurusTerms.slice(0, CHIPS_PREVIEW);
+
+  document.getElementById('thesaurus-label').textContent = `Related to "${thesaurusWord}":`;
+  document.getElementById('thesaurus-chips').innerHTML =
+    visible.map((t,i)=>
+      `<span class="rhyme-chip${t.on?' on':''}" data-idx="${i}" onclick="toggleThesaurusChip(${i})">${esc(t.word)}</span>`
+    ).join('') +
+    (!thesaurusChipsExpanded && remainder > 0
+      ? `<span class="chips-show-more" onclick="expandThesaurusChips()">${remainder} more less common ↓</span>`
+      : '');
+
+  document.getElementById('find-thesaurus-btn').disabled = !thesaurusTerms.some(t=>t.on);
+  document.getElementById('thesaurus-panel').style.display = '';
+}
+
+function toggleThesaurusChip(i){
+  thesaurusTerms[i].on = !thesaurusTerms[i].on;
+  renderThesaurusChips();
+  searchResults  = [];
+  showVia        = false;
+  expandedGroups = new Set();
+  document.getElementById('search-results').innerHTML      = '';
+  document.getElementById('search-pager').style.display   = 'none';
+  document.getElementById('search-meta').textContent      = '';
+  document.getElementById('search-mode').textContent      = '';
+}
+
+function expandThesaurusChips(){
+  thesaurusChipsExpanded = true;
+  renderThesaurusChips();
+}
+
+async function doFindThesaurusHorses(){
+  const selected = thesaurusTerms.filter(t=>t.on).map(t=>t.word);
+  if(!selected.length){ showToast('Select at least one related word'); return; }
+
+  document.getElementById('find-thesaurus-btn').disabled   = true;
+  document.getElementById('search-meta').textContent       = 'Searching…';
+  document.getElementById('search-results').innerHTML      = '';
+  document.getElementById('search-pager').style.display    = 'none';
+
+  const d = await apiPost('/poetry/thesaurus/horses', {terms: selected});
+  document.getElementById('find-thesaurus-btn').disabled = false;
+  if(!d) return;
+
+  document.getElementById('search-mode').textContent = `Related to "${thesaurusWord}" — contains: ${selected.join(', ')}`;
+  showVia        = true;
+  searchResults  = d.results;
+  searchCapped   = false;
+  searchPage     = 0;
+  expandedGroups = new Set();
+  renderSearchPage();
 }
 
 async function doFindRhymeHorses(){

@@ -51,6 +51,7 @@ from poetry import (
     build_poem_html, compute_poem_stats, format_poem_prefix,
     POEM_SUFFIX, build_poem_tags, order_tags,
     get_rhymes, search_by_rhyme_terms, RHYME_DEFAULT_ON,
+    get_synonyms, search_by_synonym_terms, THESAURUS_DEFAULT_ON,
 )
 from queue_handler import (
     save_draft, load_draft, delete_draft,
@@ -746,6 +747,32 @@ def poetry_rhyme_horses():
     if not terms:
         return jsonify({'results': [], 'total': 0})
     results = search_by_rhyme_terms(terms, dictionary)
+    return jsonify({'results': results, 'total': len(results)})
+
+
+@app.route('/poetry/thesaurus/terms', methods=['POST'])
+def poetry_thesaurus_terms():
+    from flask import jsonify
+    data = request.get_json(silent=True) or {}
+    word = (data.get('word') or '').strip()
+    if not word:
+        return jsonify({'terms': [], 'error': 'No word provided'})
+    terms = get_synonyms(word)
+    if not terms:
+        return jsonify({'terms': [], 'error': f'No related words found for "{word}"'})
+    for i, t in enumerate(terms):
+        t['on'] = i < THESAURUS_DEFAULT_ON
+    return jsonify({'terms': terms, 'word': word, 'error': None})
+
+
+@app.route('/poetry/thesaurus/horses', methods=['POST'])
+def poetry_thesaurus_horses():
+    from flask import jsonify
+    data  = request.get_json(silent=True) or {}
+    terms = [t for t in (data.get('terms') or []) if isinstance(t, str)]
+    if not terms:
+        return jsonify({'results': [], 'total': 0})
+    results = search_by_synonym_terms(terms, dictionary)
     return jsonify({'results': results, 'total': len(results)})
 
 
