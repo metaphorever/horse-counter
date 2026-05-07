@@ -21,18 +21,6 @@ POEM_SUFFIX = (
     "<a href=\"https://horsecounterbot.pythonanywhere.com/poetry\">"
     "horsecounterbot.pythonanywhere.com/poetry</a>.</small></p>"
 )
-POEM_SEO_TAGS = [
-    "{count} horse{plural}",
-    "100% horse",
-    "how many horses?",
-    "poetry",
-    "gimmick account",
-    "counting-horses",
-    "horseblr",
-    "text post",
-]
-
-
 def build_poem_tags(count: int, name: str = '', tumblr: str = '', is_admin: bool = False) -> List[str]:
     plural = 's' if count != 1 else ''
     tags = ['horse poetry']
@@ -40,10 +28,10 @@ def build_poem_tags(count: int, name: str = '', tumblr: str = '', is_admin: bool
         tags.append(f'by {name}')
     if tumblr:
         tags.append(tumblr)
-    for t in POEM_SEO_TAGS:
-        tags.append(t.replace('{count}', str(count)).replace('{plural}', plural))
+    tags += ['how many horses?', f'{count} horse{plural}', '100% horse']
     if not is_admin or (name or tumblr):
         tags.append('user submission')
+    tags += ['poetry', 'text post', 'counting-horses', 'gimmick account', 'horseblr']
     return tags
 
 

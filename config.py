@@ -73,14 +73,17 @@ def format_prefix(count: int, is_multi: bool, density: float = 0.0) -> str:
 
 
 # ── Tags ──────────────────────────────────────────────────────────────────────
-DEFAULT_TAGS = [
+COUNT_TAGS = [
     "how many horses?",
     "{count} horse{plural}",
     "{density}% horse",
+]
+SEO_TAGS = [
     "gimmick account",
     "counting-horses",
     "horseblr",
 ]
+DEFAULT_TAGS = COUNT_TAGS + SEO_TAGS  # kept for any legacy callers
 
 OPTIONAL_TAGS = [
     "request",
@@ -119,7 +122,7 @@ def get_horse_emoji(username: str) -> str:
 def build_default_tags(count: int, density: float = 0.0) -> list[str]:
     plural = 's' if count != 1 else ''
     tags = []
-    for t in DEFAULT_TAGS:
+    for t in COUNT_TAGS:
         t = t.replace('{count}', str(count))
         t = t.replace('{plural}', plural)
         t = t.replace('{density}', str(density))

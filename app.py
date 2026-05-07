@@ -35,7 +35,7 @@ from config import (
     TUMBLR_BLOG_NAME, HORSES_RICH_FILE, HORSES_LEGACY_FILE, HORSE_OVERRIDES_FILE,
     FAMOUS_HORSES_FILE,
     check_pin, get_horse_emoji, build_default_tags,
-    OPTIONAL_TAGS, POST_SUFFIX, format_prefix,
+    OPTIONAL_TAGS, POST_SUFFIX, SEO_TAGS, format_prefix,
 )
 from auth import TumblrManager
 from matcher import (
@@ -402,10 +402,12 @@ def queue_post():
     middle = request.form.get('mid', '')
     suffix = request.form.get('suf', POST_SUFFIX)
 
+    prefix_tags = [t.strip() for t in request.form.get('prefix_tags', '').split(',') if t.strip()]
     tags = assemble_tags(
-        default_tags=request.form.getlist('tag_default'),
+        default_tags=prefix_tags + request.form.getlist('tag_default'),
         optional_tags=request.form.getlist('tag_optional'),
         custom_tags=request.form.get('tags_custom', ''),
+        seo_tags=SEO_TAGS,
     )
 
     body = build_post_body(prefix, draft['linked_html'], middle, suffix)
@@ -571,6 +573,8 @@ def approve_submission():
     is_user_sub  = not sub_is_admin or bool(submitter_name or submitter_tumblr)
     name_tag     = f'by {submitter_name}' if submitter_name else ''
     tumblr_tag   = submitter_tumblr if submitter_tumblr else ''
+    prefix_tags  = ''
+    extra_tags   = ''
 
     if is_poem:
         # Poem: new prefix format with graceful degradation; body = prefix + html + suffix
@@ -581,15 +585,17 @@ def approve_submission():
         extra_tags = ','.join(poem_tag_list)
     else:
         # URL/text: standard count prefix; "Submitted by Name" in mid
-        count_pre  = format_prefix(horse_count, False, density)
-        pre  = count_pre
+        pre  = format_prefix(horse_count, False, density)
         mid  = _attribution_html(submitter_name, submitter_tumblr, prefix='Submitted by')
         suf  = POST_SUFFIX
         famous_tags_list = sub.get('famous_tags', [])
-        extra_tags = order_tags('', 'user submission' if is_user_sub else '', name_tag, tumblr_tag)
-        if famous_tags_list:
-            existing = extra_tags.split(',') if extra_tags else []
-            extra_tags = ','.join(famous_tags_list + [t for t in existing if t])
+        # Attribution as prefix (always first), famous tags in custom field
+        attr_parts = [t for t in [
+            'user submission' if is_user_sub else '',
+            name_tag, tumblr_tag,
+        ] if t]
+        prefix_tags = ','.join(attr_parts)
+        extra_tags  = ','.join(famous_tags_list)
 
     return render_template('review.html',
         draft_id=draft_id,
@@ -599,6 +605,7 @@ def approve_submission():
         pre=pre,
         mid=mid,
         suf=suf,
+        prefix_tags=prefix_tags,
         default_tags=build_default_tags(horse_count, density),
         optional_tags=OPTIONAL_TAGS,
         custom_tags=extra_tags,
@@ -778,14 +785,16 @@ def post_submission():
         name_tag    = f'by {submitter_name}' if submitter_name else ''
         tumblr_tag  = submitter_tumblr if submitter_tumblr else ''
         famous_tags = sub.get('famous_tags', [])
-        extra       = order_tags('', 'user submission' if is_user_sub else '', name_tag, tumblr_tag)
-        if famous_tags:
-            existing = extra.split(',') if extra else []
-            extra = ','.join(famous_tags + [t for t in existing if t])
+        # Attribution first, then count tags, then famous, then SEO
+        attr_parts = [t for t in [
+            'user submission' if is_user_sub else '',
+            name_tag, tumblr_tag,
+        ] if t]
         tags = assemble_tags(
-            default_tags=build_default_tags(horse_count, density),
+            default_tags=attr_parts + build_default_tags(horse_count, density),
             optional_tags=[],
-            custom_tags=extra,
+            custom_tags=','.join(famous_tags),
+            seo_tags=SEO_TAGS,
         )
 
     body = build_post_body(pre, sub.get('linked_html', ''), mid, suf)

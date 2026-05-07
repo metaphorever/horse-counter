@@ -65,12 +65,15 @@ def assemble_tags(
     default_tags:  list,
     optional_tags: list,
     custom_tags:   str,
+    seo_tags:      list = None,
 ) -> str:
     """Combine all tag sources into a comma-separated string."""
     tags = list(default_tags) + list(optional_tags)
     if custom_tags:
         extras = [t.strip() for t in custom_tags.split(',') if t.strip()]
         tags.extend(extras)
+    if seo_tags:
+        tags.extend(seo_tags)
     return ','.join(tags)
 
 

@@ -26,6 +26,7 @@
 
   <form method="post" action="/queue">
     <input type="hidden" name="id" value="{{ draft_id }}">
+    <input type="hidden" name="prefix_tags" value="{{ prefix_tags or '' }}">
 
     <label>Count text:</label>
     <textarea name="pre">{{ pre }}</textarea>
