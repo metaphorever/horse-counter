@@ -16,11 +16,16 @@
   <div class="left-col">
       <!-- Search -->
       <div class="panel">
+        <div class="search-mode-toggle">
+          <button class="smt-btn on" id="smt-wildcard" onclick="setMode('wildcard')">Wildcard</button>
+          <button class="smt-btn"    id="smt-rhyme"    onclick="setMode('rhyme')">Rhyme</button>
+          <button class="smt-btn"    id="smt-thesaurus" onclick="setMode('thesaurus')">Thesaurus</button>
+        </div>
         <div class="search-row">
           <input type="text" id="q" placeholder="e.g. *dance* or dance *" autocomplete="off">
-          <button onclick="doSearch()">Go</button>
+          <button id="go-btn" onclick="doSearch()">Go</button>
         </div>
-        <div class="page-size-row">
+        <div class="page-size-row" id="page-size-row">
           <label for="page-size">Per page</label>
           <select id="page-size" onchange="changePageSize(this.value)">
             <option value="10">10</option>
@@ -31,13 +36,21 @@
         <div id="search-mode" class="search-mode"></div>
         <div id="search-meta" class="search-meta"></div>
         <div id="search-error" class="search-error"></div>
+        <div id="rhyme-panel" class="rhyme-panel" style="display:none">
+          <div id="rhyme-label" class="rhyme-label"></div>
+          <div id="rhyme-chips" class="rhyme-chips"></div>
+          <button class="find-horses-btn" id="find-horses-btn" onclick="doFindRhymeHorses()">Find horses</button>
+        </div>
+        <div id="thesaurus-stub" class="thesaurus-stub" style="display:none">
+          Thesaurus search is coming soon. In the meantime, try searching for synonyms directly using Wildcard mode — e.g. <code>*joyful*</code> or <code>* dancer</code>.
+        </div>
         <div id="search-results" class="search-results"></div>
         <div class="search-pager" id="search-pager">
           <button id="pager-prev" onclick="movePage(-1)">←</button>
           <span class="pager-info" id="pager-info"></span>
           <button id="pager-next" onclick="movePage(1)">→</button>
         </div>
-        <div class="search-hint">
+        <div class="search-hint" id="search-hint">
           <code>dance</code> exact &nbsp;
           <code>dance*</code> starts &nbsp;
           <code>*dance</code> ends<br>
@@ -157,6 +170,12 @@ document.addEventListener('DOMContentLoaded', () => {
   renderPoem();
   document.getElementById('q').addEventListener('keydown', e => { if (e.key==='Enter') doSearch(); });
 
+  // Delegated handler for "no results" suggestion links
+  document.getElementById('search-meta').addEventListener('click', e => {
+    const a = e.target.closest('.suggest-search');
+    if(a) doSearch(a.dataset.q);
+  });
+
   // Event delegation for "+ pasture" buttons rendered inside search results.
   // Using delegation instead of inline onclick avoids the HTML-entity-decode
   // trap: browsers decode &#39; → ' inside event attributes before JS runs,
@@ -200,11 +219,40 @@ async function apiPost(url, body=null){
   }
 }
 
+// ── Search mode ───────────────────────────────────────────────────────────────
+let searchMode = 'wildcard'; // 'wildcard' | 'rhyme' | 'thesaurus'
+
+const MODE_PLACEHOLDER = {
+  wildcard:   'e.g. *dance* or dance *',
+  rhyme:      'e.g. lute, boot, grace…',
+  thesaurus:  'e.g. happy, fast, bold…',
+};
+
+function setMode(mode){
+  searchMode = mode;
+  ['wildcard','rhyme','thesaurus'].forEach(m=>{
+    document.getElementById('smt-'+m).classList.toggle('on', m===mode);
+  });
+  document.getElementById('q').placeholder = MODE_PLACEHOLDER[mode];
+  document.getElementById('search-hint').style.display     = mode==='wildcard' ? '' : 'none';
+  document.getElementById('page-size-row').style.display   = mode==='wildcard' ? '' : 'none';
+  document.getElementById('thesaurus-stub').style.display  = mode==='thesaurus' ? '' : 'none';
+  document.getElementById('rhyme-panel').style.display     = 'none';
+  document.getElementById('search-mode').textContent       = '';
+  document.getElementById('search-meta').textContent       = '';
+  document.getElementById('search-error').textContent      = '';
+  document.getElementById('search-results').innerHTML      = '';
+  document.getElementById('search-pager').style.display    = 'none';
+  rhymeTerms = [];
+  rhymeWord  = '';
+}
+
 // ── Search ────────────────────────────────────────────────────────────────────
 let searchResults = [];
 let searchCapped  = false;
 let searchPage    = 0;
 let pageSize      = parseInt(localStorage.getItem('horse-page-size') || '25', 10);
+let showVia       = false; // true when results carry a matched_term
 
 (function(){ // restore saved page-size on load
   const sel = document.getElementById('page-size');
@@ -249,6 +297,7 @@ function renderSearchPage(){
         <span class="legs"></span>
         <span class="tile-label">${esc(h.display)}${h.count>1?` <span class="multi-badge">${h.count}</span>`:''}</span>
       </span>
+      ${showVia && h.matched_term ? `<span class="via-tag">${esc(h.matched_term)}</span>` : ''}
       <button class="add-btn"
         data-name="${esc(h.name)}"
         data-display="${esc(h.display)}"
@@ -271,6 +320,9 @@ function renderSearchPage(){
 }
 
 async function doSearch(q){
+  if(searchMode === 'rhyme')     { doRhymeSearch(q); return; }
+  if(searchMode === 'thesaurus') { return; }
+
   q = q || document.getElementById('q').value.trim();
   if(!q) return;
   document.getElementById('q').value = q;
@@ -287,11 +339,94 @@ async function doSearch(q){
   document.getElementById('search-error').textContent = d.error || '';
   if(d.error) return;
 
+  showVia = false;
   searchResults = d.results;
   searchCapped  = d.capped;
   searchPage    = 0;
+
+  // If no results and query has no wildcards, suggest expanded searches
+  if(d.total === 0 && !q.includes('*')){
+    document.getElementById('search-meta').innerHTML =
+      `No exact matches. Try: ` +
+      `<a class="suggest-search" data-q="${esc('*'+q+'*')}">*${esc(q)}*</a> &nbsp;` +
+      `<a class="suggest-search" data-q="${esc(q+'*')}">${esc(q)}*</a> &nbsp;` +
+      `<a class="suggest-search" data-q="${esc('*'+q)}">*${esc(q)}</a>`;
+    return;
+  }
+
   renderSearchPage();
   addHistory(q);
+}
+
+// ── Rhyme search ──────────────────────────────────────────────────────────────
+let rhymeTerms = []; // [{word, score, on}]
+let rhymeWord  = '';
+
+async function doRhymeSearch(q){
+  q = (q || document.getElementById('q').value.trim()).toLowerCase().replace(/\s+/g,'');
+  if(!q) return;
+  document.getElementById('q').value = q;
+  document.getElementById('rhyme-panel').style.display  = 'none';
+  document.getElementById('search-results').innerHTML   = '';
+  document.getElementById('search-pager').style.display = 'none';
+  document.getElementById('search-mode').textContent    = '';
+  document.getElementById('search-error').textContent   = '';
+  document.getElementById('search-meta').textContent    = 'Finding rhymes…';
+
+  const d = await apiPost('/poetry/rhyme/terms', {word: q});
+  if(!d) return;
+  if(d.error){
+    document.getElementById('search-meta').textContent  = '';
+    document.getElementById('search-error').textContent = d.error;
+    return;
+  }
+
+  rhymeWord  = d.word;
+  rhymeTerms = d.terms;
+  document.getElementById('search-meta').textContent = '';
+  renderRhymeChips();
+}
+
+function renderRhymeChips(){
+  document.getElementById('rhyme-label').textContent = `Words that rhyme with "${rhymeWord}":`;
+  document.getElementById('rhyme-chips').innerHTML = rhymeTerms.map((t,i)=>
+    `<span class="rhyme-chip${t.on?' on':''}" data-idx="${i}" onclick="toggleRhymeChip(${i})">${esc(t.word)}</span>`
+  ).join('');
+  document.getElementById('find-horses-btn').disabled = !rhymeTerms.some(t=>t.on);
+  document.getElementById('rhyme-panel').style.display = '';
+}
+
+function toggleRhymeChip(i){
+  rhymeTerms[i].on = !rhymeTerms[i].on;
+  renderRhymeChips();
+  // Clear previous results when chip selection changes
+  searchResults = [];
+  showVia = false;
+  document.getElementById('search-results').innerHTML = '';
+  document.getElementById('search-pager').style.display = 'none';
+  document.getElementById('search-meta').textContent = '';
+  document.getElementById('search-mode').textContent = '';
+}
+
+async function doFindRhymeHorses(){
+  const selected = rhymeTerms.filter(t=>t.on).map(t=>t.word);
+  if(!selected.length){ showToast('Select at least one rhyme word'); return; }
+
+  document.getElementById('find-horses-btn').disabled  = true;
+  document.getElementById('search-meta').textContent   = 'Searching…';
+  document.getElementById('search-results').innerHTML  = '';
+  document.getElementById('search-pager').style.display = 'none';
+
+  const d = await apiPost('/poetry/rhyme/horses', {terms: selected});
+  document.getElementById('find-horses-btn').disabled = false;
+  if(!d) return;
+
+  document.getElementById('search-mode').textContent = `Rhymes with "${rhymeWord}" — ends with: ${selected.join(', ')}`;
+  showVia       = true;
+  searchResults = d.results;
+  searchCapped  = false;
+  searchPage    = 0;
+  renderSearchPage();
 }
 
 async function doRandom(){

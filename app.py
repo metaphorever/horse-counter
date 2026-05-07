@@ -50,6 +50,7 @@ from poetry import (
     remove_from_pasture, clear_pasture,
     build_poem_html, compute_poem_stats, format_poem_prefix,
     POEM_SUFFIX, build_poem_tags, order_tags,
+    get_rhymes, search_by_rhyme_terms, RHYME_DEFAULT_ON,
 )
 from queue_handler import (
     save_draft, load_draft, delete_draft,
@@ -720,6 +721,32 @@ def poetry_random():
     data = request.get_json(silent=True) or {}
     n    = min(int(data.get('n', 5)), 20)
     return jsonify({'ok': True, 'results': random_horses(dictionary, n)})
+
+
+@app.route('/poetry/rhyme/terms', methods=['POST'])
+def poetry_rhyme_terms():
+    from flask import jsonify
+    data = request.get_json(silent=True) or {}
+    word = (data.get('word') or '').strip()
+    if not word:
+        return jsonify({'terms': [], 'error': 'No word provided'})
+    terms = get_rhymes(word)
+    if not terms:
+        return jsonify({'terms': [], 'error': f'No rhymes found for "{word}"'})
+    for i, t in enumerate(terms):
+        t['on'] = i < RHYME_DEFAULT_ON
+    return jsonify({'terms': terms, 'word': word, 'error': None})
+
+
+@app.route('/poetry/rhyme/horses', methods=['POST'])
+def poetry_rhyme_horses():
+    from flask import jsonify
+    data  = request.get_json(silent=True) or {}
+    terms = [t for t in (data.get('terms') or []) if isinstance(t, str)]
+    if not terms:
+        return jsonify({'results': [], 'total': 0})
+    results = search_by_rhyme_terms(terms, dictionary)
+    return jsonify({'results': results, 'total': len(results)})
 
 
 @app.route('/poetry/pasture/add', methods=['POST'])
