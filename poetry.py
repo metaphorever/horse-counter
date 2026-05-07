@@ -18,7 +18,7 @@ _PASTURE_LEGACY    = os.path.join(BASE_DIR, 'pasture.json')  # migrated on first
 SEARCH_HARD_CAP    = 500
 RHYME_TERMS_MAX    = 15   # max terms to fetch from Datamuse
 RHYME_DEFAULT_ON   = 6    # how many chips are checked by default
-RHYME_CAP_PER_TERM = 60   # max horse matches per rhyme word (before dedup)
+RHYME_CAP_PER_TERM = 200  # max horse matches per rhyme word (before dedup)
 
 _datamuse_cache: Dict = {}
 

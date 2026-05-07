@@ -252,11 +252,12 @@ function setMode(mode){
 }
 
 // ── Search ────────────────────────────────────────────────────────────────────
-let searchResults = [];
-let searchCapped  = false;
-let searchPage    = 0;
-let pageSize      = parseInt(localStorage.getItem('horse-page-size') || '25', 10);
-let showVia       = false; // true when results carry a matched_term
+let searchResults  = [];
+let searchCapped   = false;
+let searchPage     = 0;
+let pageSize       = parseInt(localStorage.getItem('horse-page-size') || '25', 10);
+let showVia        = false;        // true when results carry a matched_term
+let expandedGroups = new Set();    // which rhyme-group terms are fully expanded
 
 (function(){ // restore saved page-size on load
   const sel = document.getElementById('page-size');
@@ -286,12 +287,19 @@ function renderSearchPage(){
 
   if(total === 0){
     document.getElementById('search-meta').textContent = 'No results';
+  } else if(showVia){
+    document.getElementById('search-meta').textContent = `${total} horse${total!==1?'s':''} found`;
   } else {
     const cap = searchCapped ? '+' : '';
     document.getElementById('search-meta').textContent =
       total === 1 ? '1 result'
       : pages > 1 ? `${start+1}–${end} of ${total}${cap}`
       : `${total}${cap} result${total!==1?'s':''}`;
+  }
+
+  // Rhyme mode uses per-group expand instead of pagination
+  if(showVia){
+    document.getElementById('search-pager').style.display = 'none';
   }
 
   const pNames = new Set(stable.map(h=>h.name));
@@ -316,17 +324,31 @@ function renderSearchPage(){
   }
 
   if(showVia){
-    // Group results by matched_term with a header for each group
+    // Group ALL results by matched_term; pagination replaced by per-group expand
     const groups = [], seen = {};
-    for(const h of slice){
+    for(const h of searchResults){
       const term = h.matched_term || '';
       if(!seen[term]){ seen[term] = true; groups.push({term, items:[]}); }
       groups[groups.length-1].items.push(h);
     }
-    document.getElementById('search-results').innerHTML = groups.map((g,gi)=>
-      `<div class="rhyme-group-header${gi===0?' first':''}">${esc(g.term)}</div>` +
-      g.items.map(renderResultItem).join('')
-    ).join('');
+    const GROUP_PREVIEW = 15;
+    document.getElementById('search-results').innerHTML = groups.map((g,gi)=>{
+      const preview   = g.items.slice(0, GROUP_PREVIEW);
+      const remainder = g.items.length - GROUP_PREVIEW;
+      const expanded  = expandedGroups.has(g.term);
+      const shown     = expanded ? g.items : preview;
+      return (
+        `<div class="rhyme-group-header${gi===0?' first':''}">${esc(g.term)}</div>` +
+        shown.map(renderResultItem).join('') +
+        (remainder > 0 && !expanded
+          ? `<div class="group-show-all" data-term="${esc(g.term)}">show ${remainder} more ↓</div>`
+          : '')
+      );
+    }).join('');
+    // Delegated click for "show more" buttons
+    document.getElementById('search-results').querySelectorAll('.group-show-all').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ expandedGroups.add(btn.dataset.term); renderSearchPage(); });
+    });
   } else {
     document.getElementById('search-results').innerHTML = slice.map(renderResultItem).join('');
   }
@@ -423,8 +445,9 @@ function toggleRhymeChip(i){
   rhymeTerms[i].on = !rhymeTerms[i].on;
   renderRhymeChips();
   // Clear previous results when chip selection changes
-  searchResults = [];
-  showVia = false;
+  searchResults  = [];
+  showVia        = false;
+  expandedGroups = new Set();
   document.getElementById('search-results').innerHTML = '';
   document.getElementById('search-pager').style.display = 'none';
   document.getElementById('search-meta').textContent = '';
@@ -445,10 +468,11 @@ async function doFindRhymeHorses(){
   if(!d) return;
 
   document.getElementById('search-mode').textContent = `Rhymes with "${rhymeWord}" — ends with: ${selected.join(', ')}`;
-  showVia       = true;
-  searchResults = d.results;
-  searchCapped  = false;
-  searchPage    = 0;
+  showVia        = true;
+  searchResults  = d.results;
+  searchCapped   = false;
+  searchPage     = 0;
+  expandedGroups = new Set();
   renderSearchPage();
 }
 
