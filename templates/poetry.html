@@ -404,8 +404,10 @@ async function doSearch(q){
 }
 
 // ── Rhyme search ──────────────────────────────────────────────────────────────
-let rhymeTerms = []; // [{word, score, on}]
-let rhymeWord  = '';
+let rhymeTerms         = []; // [{word, score, on}]
+let rhymeWord          = '';
+let rhymeChipsExpanded = false;
+const CHIPS_PREVIEW    = 15;
 
 async function doRhymeSearch(q){
   q = (q || document.getElementById('q').value.trim()).toLowerCase().replace(/\s+/g,'');
@@ -426,19 +428,36 @@ async function doRhymeSearch(q){
     return;
   }
 
-  rhymeWord  = d.word;
-  rhymeTerms = d.terms;
+  rhymeWord          = d.word;
+  rhymeTerms         = d.terms;
+  rhymeChipsExpanded = false;
   document.getElementById('search-meta').textContent = '';
   renderRhymeChips();
 }
 
 function renderRhymeChips(){
+  const total     = rhymeTerms.length;
+  const remainder = total - CHIPS_PREVIEW;
+  const visible   = (rhymeChipsExpanded || remainder <= 0)
+                      ? rhymeTerms
+                      : rhymeTerms.slice(0, CHIPS_PREVIEW);
+
   document.getElementById('rhyme-label').textContent = `Words that rhyme with "${rhymeWord}":`;
-  document.getElementById('rhyme-chips').innerHTML = rhymeTerms.map((t,i)=>
-    `<span class="rhyme-chip${t.on?' on':''}" data-idx="${i}" onclick="toggleRhymeChip(${i})">${esc(t.word)}</span>`
-  ).join('');
+  document.getElementById('rhyme-chips').innerHTML =
+    visible.map((t,i)=>
+      `<span class="rhyme-chip${t.on?' on':''}" data-idx="${i}" onclick="toggleRhymeChip(${i})">${esc(t.word)}</span>`
+    ).join('') +
+    (!rhymeChipsExpanded && remainder > 0
+      ? `<span class="chips-show-more" onclick="expandRhymeChips()">${remainder} more less likely ↓</span>`
+      : '');
+
   document.getElementById('find-horses-btn').disabled = !rhymeTerms.some(t=>t.on);
   document.getElementById('rhyme-panel').style.display = '';
+}
+
+function expandRhymeChips(){
+  rhymeChipsExpanded = true;
+  renderRhymeChips();
 }
 
 function toggleRhymeChip(i){

@@ -553,6 +553,8 @@ button[type="submit"]:active { transform: translate(2px, 2px); box-shadow: none;
 .rhyme-group-header.first { border-top: none; margin-top: 0; padding-top: 2px; }
 .group-show-all { font: 11px 'Courier Prime','Courier New',monospace; color: #5a7a2a; cursor: pointer; padding: 4px 4px 6px; text-decoration: underline; }
 .group-show-all:hover { color: #3a5a1a; }
+.chips-show-more { font: 11px 'Courier Prime','Courier New',monospace; color: #8a7050; border: 1px dashed #c4a96b; border-radius: 2px; padding: 3px 9px; cursor: pointer; }
+.chips-show-more:hover { color: #5a7a2a; border-color: #8aad60; }
 
 /* Thesaurus stub */
 .thesaurus-stub { font: 12px 'Courier Prime','Courier New',monospace; color: #8a7050; background: #f5f0e4; border: 1px dashed #c4a96b; border-radius: 2px; padding: 12px 10px; margin-top: 6px; line-height: 1.6; }
