@@ -405,3 +405,272 @@ button[type="submit"]:active { transform: translate(2px, 2px); box-shadow: none;
     font-size: 16px;
   }
 }
+
+/* ── Danger button (reject / destructive actions) ── */
+.btn-danger {
+  background: #fff0ef;
+  color: #7a2020;
+  border: 2px solid #e8b0a8;
+  box-shadow: 2px 2px 0 #e8b0a8;
+}
+.btn-danger:hover  { background: #ffe0de; }
+.btn-danger:active { transform: translate(2px, 2px); box-shadow: none; }
+
+/* ── Submission cards (submissions.html) ── */
+.sub-card {
+  background: #faf5e9;
+  border-radius: 2px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 2px 2px 6px rgba(0,0,0,.1), 0 0 0 1px rgba(139,105,20,.1);
+}
+.sub-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sub-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.sub-card-actions { display: flex; gap: 6px; }
+.type-badge {
+  font: 700 10px 'Courier Prime', 'Courier New', monospace;
+  background: #f0ead8;
+  border: 1px solid #c4a96b;
+  border-radius: 2px;
+  padding: 2px 7px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #6b5430;
+}
+.sub-stat   { font: 12px 'Courier Prime', 'Courier New', monospace; color: #8a7050; }
+.sub-date   { font: 12px 'Courier Prime', 'Courier New', monospace; color: #a08060; }
+.sub-author { font: 12px Georgia, serif; color: #6b5430; }
+.sub-author a { color: #5a7a2a; }
+.sub-preview-toggle {
+  cursor: pointer;
+  font: 13px 'Courier Prime', 'Courier New', monospace;
+  color: #5a7a2a;
+  user-select: none;
+}
+.sub-preview-content {
+  margin-top: 8px;
+  padding: 12px;
+  background: #fff9ee;
+  border: 1px solid #d9c88f;
+  border-radius: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+/* ── Poetry editor page ── */
+.container.wide { max-width: 1200px; }
+
+.poetry-wrap {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+.left-col  { display: flex; flex-direction: column; gap: 14px; }
+.right-col { display: flex; flex-direction: column; gap: 14px; }
+.panel {
+  background: #faf5e9;
+  border-radius: 2px;
+  padding: 16px;
+  box-shadow: 2px 3px 8px rgba(0,0,0,.1), 0 0 0 1px rgba(139,105,20,.1);
+}
+
+/* Search */
+.search-row { display: flex; gap: 6px; margin-bottom: 6px; }
+.search-row input  { flex: 1; margin: 0; }
+.search-row button { flex-shrink: 0; padding: 8px 14px; }
+.search-mode  { font: italic 11px 'Courier Prime','Courier New',monospace; color: #5a7a2a; margin-bottom: 4px; min-height: 16px; }
+.search-meta  { font: 12px 'Courier Prime','Courier New',monospace; color: #8a7050; margin-bottom: 6px; }
+.search-meta a { color: #5a7a2a; cursor: pointer; text-decoration: underline; }
+.search-hint  { font: 11px 'Courier Prime','Courier New',monospace; color: #a08060; line-height: 1.7; margin-top: 8px; border-top: 1px solid #e0d4b0; padding-top: 8px; }
+.search-hint code { background: #f0ead8; padding: 0 3px; border-radius: 2px; font-size: 11px; }
+.search-results { max-height: 240px; overflow-y: auto; }
+.search-error { font: 12px 'Courier Prime','Courier New',monospace; color: #7a2020; margin: 4px 0; }
+.result-item { display: flex; align-items: center; gap: 8px; padding: 10px 4px 8px; }
+.result-chip { flex: 1; min-width: 0; cursor: default; }
+.multi-badge { font: 10px 'Courier Prime','Courier New',monospace; color: #8a7050; background: #f0ead8; border-radius: 2px; padding: 1px 4px; flex-shrink: 0; }
+.add-btn { background: #eaf5e0; color: #3a5a1a; border: 1px solid #b5d68a; border-radius: 2px; padding: 2px 8px; cursor: pointer; font: 700 11px 'Courier Prime','Courier New',monospace; flex-shrink: 0; white-space: nowrap; }
+.add-btn:hover    { background: #d4ecb8; }
+.add-btn:disabled { background: #f0ead8; color: #b8a97a; border-color: #d9c88f; cursor: default; }
+
+/* History */
+.history-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.htag { font: 11px 'Courier Prime','Courier New',monospace; background: #f0ead8; border: 1px solid #c4a96b; border-radius: 2px; padding: 2px 7px; cursor: pointer; color: #6b5430; }
+.htag:hover { background: #eaf5e0; border-color: #8aad60; color: #3a5a1a; }
+
+/* Pasture */
+.pasture-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.pasture-head h3 { font: 700 13px 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .06em; color: #6b5430; margin: 0; }
+.clear-btn  { font: 11px 'Courier Prime','Courier New',monospace; padding: 3px 8px; background: #fff0ef; color: #7a2020; border: 1px solid #e8b0a8; border-radius: 2px; cursor: pointer; }
+.random-btn { font: 11px 'Courier Prime','Courier New',monospace; padding: 3px 8px; background: #f5e9c8; color: #6b5430; border: 1px solid #c4a96b; border-radius: 2px; cursor: pointer; }
+.pasture-tiles { display: flex; flex-wrap: wrap; gap: 8px; min-height: 44px; padding: 8px; background: #f0ead8; border: 2px dashed #c4a96b; border-radius: 2px; }
+.pasture-empty { color: #a08060; font: italic 12px Georgia,serif; }
+
+/* Horse tile — fridge magnet style (pasture + poem canvas) */
+.horse-tile {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 14px 5px 16px;
+  font: 700 12px 'Courier Prime','Courier New',monospace;
+  box-shadow: 2px 2px 4px rgba(0,0,0,.25);
+  border-radius: 6px;
+  cursor: grab; user-select: none;
+  white-space: nowrap; touch-action: none; position: relative;
+  border: none; overflow: visible;
+  background: var(--bg); color: var(--fg);
+}
+/* Pasture tile rotations by position */
+.pasture-tiles .horse-tile:nth-child(8n+1) { --rot:-1.8deg; transform:rotate(var(--rot)); }
+.pasture-tiles .horse-tile:nth-child(8n+2) { --rot: 1.2deg; transform:rotate(var(--rot)); }
+.pasture-tiles .horse-tile:nth-child(8n+3) { --rot:-0.7deg; transform:rotate(var(--rot)); }
+.pasture-tiles .horse-tile:nth-child(8n+4) { --rot: 1.5deg; transform:rotate(var(--rot)); }
+.pasture-tiles .horse-tile:nth-child(8n+5) { --rot:-1.1deg; transform:rotate(var(--rot)); }
+.pasture-tiles .horse-tile:nth-child(8n+6) { --rot: 0.6deg; transform:rotate(var(--rot)); }
+.pasture-tiles .horse-tile:nth-child(8n+7) { --rot:-1.4deg; transform:rotate(var(--rot)); }
+.pasture-tiles .horse-tile:nth-child(8n+8) { --rot: 0.9deg; transform:rotate(var(--rot)); }
+/* Poem canvas tiles get a subtle tilt */
+.line-tiles .horse-tile { --rot:-0.5deg; transform:rotate(var(--rot)); }
+/* Keep label text upright inside tilted tiles */
+.horse-tile .tile-label { display:inline-block; transform:rotate(calc(-1 * var(--rot, 0deg))); }
+/* Head */
+.horse-tile::before {
+  content:'♞'; position:absolute; pointer-events:none;
+  color:var(--bg); font-size:32px; line-height:1;
+  left:0; top:-20px;
+}
+/* Tail */
+.horse-tile::after {
+  content:'∫'; position:absolute; pointer-events:none;
+  color:var(--bg); font-size:22px; line-height:1;
+  right:-10px; top:50%;
+  transform:translateY(-50%) scaleY(-1);
+}
+/* Facing right */
+.horse-tile.rev::before { left:auto; right:0; transform:scaleX(-1); }
+.horse-tile.rev::after  { right:auto; left:-10px; transform:translateY(-50%) scaleY(-1) scaleX(-1); }
+/* Legs */
+.horse-tile .legs {
+  position:absolute; pointer-events:none;
+  bottom:-6px; left:0; right:0; height:6px;
+  background:
+    linear-gradient(var(--bg),var(--bg))  4px 0 / 2px 100% no-repeat,
+    linear-gradient(var(--bg),var(--bg)) 10px 0 / 2px 100% no-repeat,
+    linear-gradient(var(--bg),var(--bg)) calc(100% - 10px) 0 / 2px 100% no-repeat,
+    linear-gradient(var(--bg),var(--bg)) calc(100% -  4px) 0 / 2px 100% no-repeat;
+}
+.horse-tile.is-dragging { opacity: 0.35; }
+.horse-tile.drop-before,
+.horse-tile.drop-after  { outline: 3px solid #5a7a2a; outline-offset: 1px; }
+.tile-x { background: none; border: none; cursor: pointer; color: rgba(0,0,0,.3); font-size: 14px; padding: 0; line-height: 1; margin-left: 2px; box-shadow: none; }
+.tile-x:hover { color: #7a2020; }
+
+/* Poem canvas */
+.poem-panel   { display: flex; flex-direction: column; }
+.poem-head    { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.poem-head h2 { margin: 0; font: 700 1.05rem 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .06em; color: #6b5430; }
+.poem-actions { display: flex; gap: 6px; }
+.poem-canvas  {
+  display: flex; flex-direction: column;
+  min-height: 200px;
+  background: #fdf8f0;
+  border: 2px solid #c4a96b;
+  border-radius: 2px;
+  margin-bottom: 6px;
+}
+.poem-line { display: flex; align-items: center; gap: 6px; min-height: 46px; padding: 4px 10px; border-bottom: 1px solid #e8d9b0; }
+.poem-line:last-child { border-bottom: none; }
+.poem-line.drop-target { background: #eaf5e0; }
+.line-num  { font: 10px 'Courier Prime','Courier New',monospace; color: #c4a96b; min-width: 16px; flex-shrink: 0; user-select: none; }
+.line-tiles { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; align-items: center; min-height: 30px; }
+.line-tiles.drop-target { outline: 2px dashed #5a7a2a; border-radius: 2px; }
+.add-line { background: none; border: 2px dashed #c4a96b; border-radius: 2px; color: #a08060; padding: 7px; cursor: pointer; font: 12px 'Courier Prime','Courier New',monospace; width: 100%; margin-top: 4px; }
+.add-line:hover { border-color: #5a7a2a; color: #5a7a2a; }
+.poem-footer { margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0d4b0; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.poem-stat   { font: 12px 'Courier Prime','Courier New',monospace; color: #8a7050; }
+
+/* Drag ghost */
+#drag-ghost { display: none; }
+
+/* Post modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(45,35,22,.55); z-index: 100; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: #faf5e9; border-radius: 2px; padding: 24px; width: min(560px, 95vw); max-height: 90vh; overflow-y: auto; box-shadow: 2px 3px 16px rgba(0,0,0,.2); }
+.modal h3 { font: 700 1.1rem 'Playfair Display',Georgia,serif; color: #2d2316; margin-bottom: 14px; }
+.modal-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.modal-err { margin-top: 10px; }
+
+/* Toast */
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #3a5a1a; color: #fff; padding: 10px 22px; border-radius: 2px; z-index: 9999; font: 13px 'Courier Prime','Courier New',monospace; pointer-events: none; box-shadow: 2px 2px 6px rgba(0,0,0,.3); }
+
+/* Page-size selector */
+.page-size-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.page-size-row label {
+  font: 10px 'Courier Prime','Courier New',monospace;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #a08060;
+  margin: 0;
+}
+.page-size-row select {
+  font: 11px 'Courier Prime','Courier New',monospace;
+  background: #fff9ee;
+  border: 1px solid #c4a96b;
+  border-radius: 2px;
+  color: #2d2316;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+
+/* Search pager */
+.search-pager { display: none; align-items: center; gap: 6px; margin-top: 6px; }
+.search-pager button {
+  padding: 3px 10px;
+  font: 700 11px 'Courier Prime','Courier New',monospace;
+  background: #f5e9c8;
+  color: #6b5430;
+  border: 1px solid #c4a96b;
+  border-radius: 2px;
+  box-shadow: 1px 1px 0 #c4a96b;
+  cursor: pointer;
+  margin: 0;
+}
+.search-pager button:disabled { opacity: .4; cursor: default; box-shadow: none; }
+.search-pager button:not(:disabled):active { transform: translate(1px,1px); box-shadow: none; }
+.pager-info { font: 11px 'Courier Prime','Courier New',monospace; color: #8a7050; flex: 1; text-align: center; }
+
+/* History panel header */
+.history-head { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: .04em; }
+
+/* Modal tag row (poetry post modal) */
+.modal-tags-row { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 10px; padding: 10px; background: #f0ead8; border: 1px solid #c4a96b; border-radius: 2px; }
+
+/* Poetry page small utilities */
+.back-nav         { margin-bottom: 14px; }
+.pasture-count    { font-weight: normal; color: #a08060; font-size: 11px; }
+.pasture-controls { display: flex; gap: 4px; }
+.modal-name-row   { display: flex; gap: 6px; margin-bottom: 4px; }
+.modal-name-row input { flex: 1; margin: 0; }
+.text-muted       { color: #aaa; }
+
+/* Poetry-page wider layout */
+@media (min-width: 900px) {
+  .container.wide        { max-width: 1200px; }
+  .poetry-wrap           { grid-template-columns: 300px 1fr; }
+  .search-results        { max-height: 340px; }
+}
+@media (max-width: 640px) {
+  .poetry-wrap { grid-template-columns: 1fr; }
+}

@@ -11,36 +11,23 @@ Posting strategy:
 - Text-only post: POST /blog/{blog}/post          (for ask replies / standalone)
 """
 
-import json
-import os
 import secrets
 import time
 from typing import Optional, Dict, Any
 
-from config import DRAFTS_FILE, DRAFT_TTL_SECONDS, TUMBLR_BLOG_NAME
+from config import DRAFTS_FILE, DRAFT_TTL_SECONDS, TUMBLR_BLOG_NAME, read_json_file, write_json_file
 
 
 # ── Draft storage ─────────────────────────────────────────────────────────────
 
 def _read_drafts() -> Dict[str, Any]:
-    if not os.path.exists(DRAFTS_FILE):
-        return {}
-    try:
-        with open(DRAFTS_FILE) as f:
-            return json.load(f)
-    except Exception:
-        return {}
+    return read_json_file(DRAFTS_FILE, {})
 
 
 def _write_drafts(drafts: Dict[str, Any]):
-    # Prune expired drafts before writing
     now = time.time()
-    drafts = {k: v for k, v in drafts.items() if v.get('expires', 0) > now}
-    try:
-        with open(DRAFTS_FILE, 'w') as f:
-            json.dump(drafts, f)
-    except Exception as e:
-        print(f"Draft write error: {e}")
+    pruned = {k: v for k, v in drafts.items() if v.get('expires', 0) > now}
+    write_json_file(DRAFTS_FILE, pruned, 'drafts')
 
 
 def save_draft(payload: Dict[str, Any]) -> str:
@@ -109,6 +96,19 @@ def _post_state(action: str) -> str:
     return {'post': 'published', 'queue': 'queue', 'draft': 'draft'}.get(action, 'queue')
 
 
+def _api_ok(result) -> bool:
+    """Return True if the Tumblr API response indicates success."""
+    if not result:
+        return False
+    if result.get('meta', {}).get('status') in (200, 201):
+        return True
+    if result.get('status') in (200, 201):
+        return True
+    if result.get('response', {}).get('id'):
+        return True
+    return False
+
+
 def submit_post(
     draft:      Dict[str, Any],
     action:     str,
@@ -173,18 +173,8 @@ def _create_reblog(
         'tags':       tags,
     }
     result = make_request(f'blog/{TUMBLR_BLOG_NAME}/post/reblog', 'POST', data)
-
-    if result:
-        meta_status = result.get('meta', {}).get('status')
-        if meta_status in (200, 201):
-            return True, ''
-        # Some versions return status at top level
-        if result.get('status') in (200, 201):
-            return True, ''
-        # Check for response id (v2 style success)
-        if result.get('response', {}).get('id'):
-            return True, ''
-
+    if _api_ok(result):
+        return True, ''
     return False, f"Reblog API call failed. Response: {result}"
 
 
@@ -203,14 +193,6 @@ def _create_text_post(
         'tags':  tags,
     }
     result = make_request(f'blog/{TUMBLR_BLOG_NAME}/post', 'POST', data)
-
-    if result:
-        meta_status = result.get('meta', {}).get('status')
-        if meta_status in (200, 201):
-            return True, ''
-        if result.get('status') in (200, 201):
-            return True, ''
-        if result.get('response', {}).get('id'):
-            return True, ''
-
+    if _api_ok(result):
+        return True, ''
     return False, f"Text post API call failed. Response: {result}"

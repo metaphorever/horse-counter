@@ -44,23 +44,21 @@ def build_poem_tags(count: int, density: float) -> List[str]:
     ]
 
 
-def order_poem_tags(tags_str: str, *prepend: str) -> str:
-    """Order: 'horse poetry' first, then prepend items, then rest."""
+def order_tags(tags_str: str, first: str, *prepend: str, force_first: bool = True) -> str:
+    """
+    Re-order a comma-separated tag string so `first` leads, followed by any
+    `prepend` items, then the remaining tags.
+
+    force_first=True  — always include `first` even if not in tags_str (e.g. 'request')
+    force_first=False — only include `first` when it already appears (e.g. 'horse poetry')
+    """
     parts = [t.strip() for t in tags_str.split(',') if t.strip()]
-    pinned = [t for t in prepend if t]
-    pinned_set = {'horse poetry'} | set(pinned)
-    rest = [t for t in parts if t not in pinned_set]
-    front = (['horse poetry'] if 'horse poetry' in parts else []) + pinned
+    extra = [t for t in prepend if t]
+    excluded = {first} | set(extra)
+    rest = [t for t in parts if t not in excluded]
+    include_first = force_first or (first in parts)
+    front = ([first] if include_first else []) + extra
     return ','.join(front + rest)
-
-
-def order_request_tags(tags_str: str, *prepend: str) -> str:
-    """Order: 'request' always first, then prepend items (attribution), then rest."""
-    parts = [t.strip() for t in tags_str.split(',') if t.strip()]
-    pinned = [t for t in prepend if t]
-    pinned_set = {'request'} | set(pinned)
-    rest = [t for t in parts if t not in pinned_set]
-    return ','.join(['request'] + pinned + rest)
 
 
 def format_poem_prefix(count: int, density: float) -> str:

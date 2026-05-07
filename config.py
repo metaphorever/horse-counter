@@ -3,6 +3,7 @@ config.py - Central configuration for Horse Counter
 All env vars and constants live here. Never import from app.py.
 """
 
+import json
 import os
 import hashlib
 import secrets
@@ -124,3 +125,26 @@ def build_default_tags(count: int, density: float = 0.0) -> list[str]:
         t = t.replace('{density}', str(density))
         tags.append(t)
     return tags
+
+
+# ── Shared JSON file I/O ──────────────────────────────────────────────────────
+
+def read_json_file(path: str, default=None):
+    """Read JSON from path; return default on missing file or parse error."""
+    if not os.path.exists(path):
+        return default
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+
+def write_json_file(path: str, data, label: str = ''):
+    """Write data as JSON to path; log on error."""
+    try:
+        with open(path, 'w') as f:
+            json.dump(data, f)
+    except Exception as e:
+        tag = f'[{label}] ' if label else ''
+        print(f"{tag}write error: {e}")

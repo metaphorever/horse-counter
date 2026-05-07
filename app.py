@@ -49,7 +49,7 @@ from poetry import (
     search_dictionary, random_horses, load_pasture, add_to_pasture,
     remove_from_pasture, clear_pasture,
     build_poem_html, compute_poem_stats, format_poem_prefix,
-    POEM_SUFFIX, build_poem_tags, order_poem_tags, order_request_tags,
+    POEM_SUFFIX, POEM_TAGS, build_poem_tags, order_tags,
 )
 from queue_handler import (
     save_draft, load_draft, delete_draft,
@@ -96,26 +96,26 @@ def _sanitize_tumblr(raw: str) -> str:
     handle = (raw or '').lstrip('@').strip().lower()
     return re.sub(r'[^a-z0-9-]', '', handle)[:32]
 
-def _attribution_html(name: str, tumblr: str, prefix: str = 'Submitted by') -> str:
-    """Build an attribution line for the post body, or empty string if no credit given."""
+def _attribution_html(name: str, tumblr: str, prefix: str = 'Submitted by', title: str = '') -> str:
+    """
+    Build an attribution line for the post body, or empty string if nothing to show.
+
+    With title: produces '<em>title</em> by Author' (poem header format; prefix ignored).
+    Without title: produces 'prefix Author' (standard submission format).
+    """
+    if title:
+        title_html = f'<em>{title}</em>'
+        if name or tumblr:
+            display = name or f'@{tumblr}'
+            author = f'<a href="https://www.tumblr.com/{tumblr}">{display}</a>' if tumblr else display
+            return f'<p>{title_html} by {author}</p>'
+        return f'<p>{title_html}</p>'
     if not name and not tumblr:
         return ''
+    display = name or f'@{tumblr}'
     if tumblr:
-        display = name or f'@{tumblr}'
         return f'<p>{prefix} <a href="https://www.tumblr.com/{tumblr}">{display}</a></p>'
     return f'<p>{prefix} {name}</p>'
-
-
-def _poem_attr_html(title: str, name: str, tumblr: str) -> str:
-    """Build '<em>Title</em> by Author' attribution for the poem prefix, or empty string."""
-    title_part = f'<em>{title}</em>' if title else ''
-    if name or tumblr:
-        display = name or f'@{tumblr}'
-        author_part = f'<a href="https://www.tumblr.com/{tumblr}">{display}</a>' if tumblr else display
-        if title_part:
-            return f'<p>{title_part} by {author_part}</p>'
-        return f'<p>by {author_part}</p>'
-    return f'<p>{title_part}</p>' if title_part else ''
 
 
 @app.template_filter('datefmt')
@@ -608,16 +608,16 @@ def approve_submission():
 
     if is_poem:
         # Poem: "Title by Author" line goes above the count line in pre; mid is empty
-        attr = _poem_attr_html(sub.get('poem_title', ''), submitter_name, submitter_tumblr)
+        attr = _attribution_html(submitter_name, submitter_tumblr, title=sub.get('poem_title', ''))
         pre  = (attr + '\n' + count_pre) if attr else count_pre
         mid  = ''
         base_tags  = sub.get('poem_tags', '')
-        extra_tags = order_request_tags(base_tags, name_tag, tumblr_tag)
+        extra_tags = order_tags(base_tags, 'request', name_tag, tumblr_tag)
     else:
         # URL/text: "Requested by Name" goes in mid; no poem tags
         pre  = count_pre
         mid  = _attribution_html(submitter_name, submitter_tumblr, prefix='Requested by')
-        extra_tags = order_request_tags('', name_tag, tumblr_tag)
+        extra_tags = order_tags('', 'request', name_tag, tumblr_tag)
 
     return render_template('review.html',
         draft_id=draft_id,
@@ -723,6 +723,7 @@ def poetry_editor():
     return render_template('poetry.html',
         pasture_json=json.dumps(pasture),
         optional_tags_json=json.dumps(OPTIONAL_TAGS),
+        poem_tags_json=json.dumps(POEM_TAGS),
     )
 
 
@@ -773,7 +774,6 @@ def pasture_clear():
 @login_required
 def poetry_post():
     from flask import jsonify
-    from queue_handler import _post_state, _create_text_post
     if not tumblr.authenticated:
         return jsonify({'ok': False, 'error': 'Not connected to Tumblr'})
 
@@ -790,21 +790,25 @@ def poetry_post():
     submitter_name   = _sanitize_name(data.get('submitter_name', ''))
     submitter_tumblr = _sanitize_tumblr(data.get('submitter_tumblr', ''))
     poem_title       = _sanitize_name(data.get('poem_title', ''))
-    title_html       = f'<p><em>{poem_title}</em></p>' if poem_title else ''
-    attribution      = _attribution_html(submitter_name, submitter_tumblr, prefix='by')
+    attribution      = _attribution_html(submitter_name, submitter_tumblr, title=poem_title, prefix='by')
 
     poem_html = build_poem_html(lines)
-    body      = prefix + poem_html + suffix + title_html + attribution
+    body      = prefix + poem_html + suffix + attribution
 
-    tags = order_poem_tags(
-        tags,
+    tags = order_tags(
+        tags, 'horse poetry',
         f'by {submitter_name}' if submitter_name else '',
         submitter_tumblr,
+        force_first=False,
     )
 
-    state     = _post_state(action)
-
-    success, err = _create_text_post(tumblr.make_request, body, tags, state)
+    success, err = submit_post(
+        draft={'is_text_post': True, 'post_data': {}},
+        action=action,
+        body=body,
+        tags=tags,
+        make_request=tumblr.make_request,
+    )
     if success:
         store_poem(
             lines=lines,

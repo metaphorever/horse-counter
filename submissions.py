@@ -5,33 +5,22 @@ Submissions are stored in SUBMISSIONS_FILE (JSON on disk).
 Each entry has a status: 'pending', 'approved', or 'rejected'.
 """
 
-import json
 import os
 import secrets
 import time
 from typing import Optional, Dict, Any, List
 
-from config import BASE_DIR
+from config import BASE_DIR, read_json_file, write_json_file
 
 SUBMISSIONS_FILE = os.path.join(BASE_DIR, 'submissions.json')
 
 
 def _read() -> List[Dict]:
-    if not os.path.exists(SUBMISSIONS_FILE):
-        return []
-    try:
-        with open(SUBMISSIONS_FILE) as f:
-            return json.load(f).get('submissions', [])
-    except Exception:
-        return []
+    return read_json_file(SUBMISSIONS_FILE, {'submissions': []}).get('submissions', [])
 
 
 def _write(submissions: List[Dict]):
-    try:
-        with open(SUBMISSIONS_FILE, 'w') as f:
-            json.dump({'submissions': submissions}, f)
-    except Exception as e:
-        print(f"Submissions write error: {e}")
+    write_json_file(SUBMISSIONS_FILE, {'submissions': submissions}, 'submissions')
 
 
 def save_submission(sub_type: str, data: Dict[str, Any]) -> str:
