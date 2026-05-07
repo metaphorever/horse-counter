@@ -71,15 +71,15 @@
   <div class="right-col">
 
     <div class="panel">
-      <div class="pasture-head">
-        <h3>Pasture <span id="pasture-count" class="pasture-count"></span></h3>
-        <div class="pasture-controls">
+      <div class="stable-head">
+        <h3>Stable <span id="stable-count" class="stable-count"></span></h3>
+        <div class="stable-controls">
           <button class="random-btn" id="random-btn" onclick="doRandom()">+ random</button>
-          <button class="clear-btn" onclick="clearPasture()">Clear all</button>
+          <button class="clear-btn" onclick="clearStable()">Clear all</button>
         </div>
       </div>
-      <div class="pasture-tiles" id="pasture-tiles">
-        <span class="pasture-empty">Search and add horses</span>
+      <div class="stable-tiles" id="stable-tiles">
+        <span class="stable-empty">Search and add horses</span>
       </div>
     </div>
 
@@ -128,7 +128,7 @@
 <script>
 // ── State ─────────────────────────────────────────────────────────────────────
 const isAdmin       = {{ is_admin|tojson }};
-let pasture         = {{ pasture_json|safe }};
+let stable          = {{ stable_json|safe }};
 let lines           = [[], [], []];
 let history         = [];
 const OPTIONAL_TAGS = {{ optional_tags_json|safe }};
@@ -153,20 +153,24 @@ function tileStyle(name){
 
 // Drag state — used by both mouse and touch handlers
 let drag = null;
-// { horse:{name,display,url}, srcType:'pasture'|'poem', srcLine:int, srcIdx:int }
+// { horse:{name,display,url}, srcType:'stable'|'poem', srcLine:int, srcIdx:int }
 
 // ── localStorage helpers (public users only) ──────────────────────────────────
-function savePastureLocal(){
-  try { localStorage.setItem('horse-pasture', JSON.stringify(pasture)); } catch(e){}
+function saveStableLocal(){
+  try { localStorage.setItem('horse-stable', JSON.stringify(stable)); } catch(e){}
 }
-function loadPastureLocal(){
-  try { return JSON.parse(localStorage.getItem('horse-pasture') || '[]'); } catch{ return []; }
+function loadStableLocal(){
+  // Fall back to legacy 'horse-pasture' key on first visit after rename
+  try {
+    const v = localStorage.getItem('horse-stable') || localStorage.getItem('horse-pasture') || '[]';
+    return JSON.parse(v);
+  } catch{ return []; }
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  if(!isAdmin) pasture = loadPastureLocal();
-  renderPasture();
+  if(!isAdmin) stable = loadStableLocal();
+  renderStable();
   renderPoem();
   document.getElementById('q').addEventListener('keydown', e => { if (e.key==='Enter') doSearch(); });
 
@@ -176,21 +180,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if(a) doSearch(a.dataset.q);
   });
 
-  // Event delegation for "+ pasture" buttons rendered inside search results.
+  // Event delegation for "+ stable" buttons rendered inside search results.
   // Using delegation instead of inline onclick avoids the HTML-entity-decode
   // trap: browsers decode &#39; → ' inside event attributes before JS runs,
   // breaking string literals for horse names/display names with apostrophes.
   document.getElementById('search-results').addEventListener('click', e => {
     const btn = e.target.closest('.add-btn');
     if (!btn || btn.disabled) return;
-    addToPasture(btn.dataset.name, btn.dataset.display, btn.dataset.url, parseInt(btn.dataset.count||'1',10));
+    addToStable(btn.dataset.name, btn.dataset.display, btn.dataset.url, parseInt(btn.dataset.count||'1',10));
   });
 
-  // Event delegation for "×" remove buttons inside the pasture panel.
-  document.getElementById('pasture-tiles').addEventListener('click', e => {
+  // Event delegation for "×" remove buttons inside the stable panel.
+  document.getElementById('stable-tiles').addEventListener('click', e => {
     const btn = e.target.closest('.tile-x');
     if (!btn) return;
-    removeFromPasture(btn.dataset.name);
+    removeFromStable(btn.dataset.name);
   });
 });
 
@@ -290,23 +294,42 @@ function renderSearchPage(){
       : `${total}${cap} result${total!==1?'s':''}`;
   }
 
-  const pNames = new Set(pasture.map(h=>h.name));
-  document.getElementById('search-results').innerHTML = slice.map(h=>{ const t=tileStyle(h.name); return `
+  const pNames = new Set(stable.map(h=>h.name));
+
+  function renderResultItem(h){
+    const t = tileStyle(h.name);
+    return `
     <div class="result-item">
       <span class="horse-tile result-chip${t.cls}" style="${t.style}">
         <span class="legs"></span>
         <span class="tile-label">${esc(h.display)}${h.count>1?` <span class="multi-badge">${h.count}</span>`:''}</span>
       </span>
-      ${showVia && h.matched_term ? `<span class="via-tag">${esc(h.matched_term)}</span>` : ''}
       <button class="add-btn"
         data-name="${esc(h.name)}"
         data-display="${esc(h.display)}"
         data-url="${esc(h.url)}"
         data-count="${h.count||1}"
         ${pNames.has(h.name)?'disabled':''}>
-        ${pNames.has(h.name)?'✓':'+ pasture'}
+        ${pNames.has(h.name)?'✓':'+ stable'}
       </button>
-    </div>`; }).join('');
+    </div>`;
+  }
+
+  if(showVia){
+    // Group results by matched_term with a header for each group
+    const groups = [], seen = {};
+    for(const h of slice){
+      const term = h.matched_term || '';
+      if(!seen[term]){ seen[term] = true; groups.push({term, items:[]}); }
+      groups[groups.length-1].items.push(h);
+    }
+    document.getElementById('search-results').innerHTML = groups.map((g,gi)=>
+      `<div class="rhyme-group-header${gi===0?' first':''}">${esc(g.term)}</div>` +
+      g.items.map(renderResultItem).join('')
+    ).join('');
+  } else {
+    document.getElementById('search-results').innerHTML = slice.map(renderResultItem).join('');
+  }
 
   const pager = document.getElementById('search-pager');
   if(pages > 1){
@@ -438,7 +461,7 @@ async function doRandom(){
   btn.textContent = '+ random';
   if(!d || !d.results) return;
   for(const h of d.results){
-    await addToPasture(h.name, h.display, h.url, h.count||1);
+    await addToStable(h.name, h.display, h.url, h.count||1);
   }
 }
 
@@ -451,59 +474,59 @@ function addHistory(q){
     history.map(t=>`<span class="htag" onclick="doSearch(${JSON.stringify(t)})">${esc(t)}</span>`).join('');
 }
 
-// ── Pasture ───────────────────────────────────────────────────────────────────
-async function addToPasture(name, display, url, count=1){
-  if(pasture.find(h=>h.name===name)) return;
-  pasture.push({name, display, url, remaining: count});
-  renderPasture();
+// ── Stable ────────────────────────────────────────────────────────────────────
+async function addToStable(name, display, url, count=1){
+  if(stable.find(h=>h.name===name)) return;
+  stable.push({name, display, url, remaining: count});
+  renderStable();
   if(isAdmin){
-    const d = await apiPost('/poetry/pasture/add', {name, display, url, remaining: count});
-    if(d){ pasture = d.horses; renderPasture(); }
+    const d = await apiPost('/poetry/stable/add', {name, display, url, remaining: count});
+    if(d){ stable = d.horses; renderStable(); }
   } else {
-    savePastureLocal();
+    saveStableLocal();
   }
 }
 
-async function removeFromPasture(name){
-  pasture = pasture.filter(h=>h.name!==name);
-  renderPasture();
-  if(isAdmin) await apiPost('/poetry/pasture/remove', {name});
-  else        savePastureLocal();
+async function removeFromStable(name){
+  stable = stable.filter(h=>h.name!==name);
+  renderStable();
+  if(isAdmin) await apiPost('/poetry/stable/remove', {name});
+  else        saveStableLocal();
 }
 
-async function clearPasture(){
-  if(!confirm('Clear all horses from the pasture?')) return;
-  pasture = [];
-  renderPasture();
-  if(isAdmin) await apiPost('/poetry/pasture/clear');
-  else        savePastureLocal();
+async function clearStable(){
+  if(!confirm('Clear all horses from the stable?')) return;
+  stable = [];
+  renderStable();
+  if(isAdmin) await apiPost('/poetry/stable/clear');
+  else        saveStableLocal();
 }
 
-function renderPasture(){
-  const el  = document.getElementById('pasture-tiles');
-  const cnt = document.getElementById('pasture-count');
-  cnt.textContent = pasture.length ? `(${pasture.length})` : '';
+function renderStable(){
+  const el  = document.getElementById('stable-tiles');
+  const cnt = document.getElementById('stable-count');
+  cnt.textContent = stable.length ? `(${stable.length})` : '';
 
   // Sync add-button state for any currently visible search results
   document.querySelectorAll('#search-results .add-btn[data-name]').forEach(btn=>{
-    const inP = pasture.find(h=>h.name===btn.dataset.name);
-    btn.disabled    = !!inP;
-    btn.textContent = inP ? '✓' : '+ pasture';
+    const inS = stable.find(h=>h.name===btn.dataset.name);
+    btn.disabled    = !!inS;
+    btn.textContent = inS ? '✓' : '+ stable';
   });
 
-  if(!pasture.length){
-    el.innerHTML = '<span class="pasture-empty">Search and add horses</span>';
+  if(!stable.length){
+    el.innerHTML = '<span class="stable-empty">Search and add horses</span>';
     return;
   }
 
-  el.innerHTML = pasture.map(h=>{ const t=tileStyle(h.name); const rem=h.remaining||1; return `
+  el.innerHTML = stable.map(h=>{ const t=tileStyle(h.name); const rem=h.remaining||1; return `
     <div class="horse-tile${t.cls}" style="${t.style}" data-name="${esc(h.name)}" data-display="${esc(h.display)}" data-url="${esc(h.url)}">
       <span class="legs"></span>
       <span class="tile-label">${esc(h.display)}${rem>1?` <span class="multi-badge">(${rem})</span>`:''}</span>
       <button class="tile-x" data-name="${esc(h.name)}">×</button>
     </div>`; }).join('');
 
-  el.querySelectorAll('.horse-tile').forEach(tile=>attachTileDrag(tile,'pasture'));
+  el.querySelectorAll('.horse-tile').forEach(tile=>attachTileDrag(tile,'stable'));
 }
 
 // ── Poem ──────────────────────────────────────────────────────────────────────
@@ -534,19 +557,19 @@ function removeTile(li,hi){
   const horse = lines[li][hi];
   lines[li].splice(hi,1);
   pruneEmptyLines();
-  // Return horse to pasture — increment if already there, otherwise add fresh
-  const existing = pasture.find(h=>h.name===horse.name);
+  // Return horse to stable — increment if already there, otherwise add fresh
+  const existing = stable.find(h=>h.name===horse.name);
   if(existing){
     existing.remaining = (existing.remaining||1) + 1;
-    if(isAdmin) apiPost('/poetry/pasture/add', {name:existing.name, display:existing.display, url:existing.url, remaining:existing.remaining});
-    else savePastureLocal();
+    if(isAdmin) apiPost('/poetry/stable/add', {name:existing.name, display:existing.display, url:existing.url, remaining:existing.remaining});
+    else saveStableLocal();
   } else {
-    pasture.push({name:horse.name, display:horse.display, url:horse.url, remaining:1});
-    if(isAdmin) apiPost('/poetry/pasture/add', {name:horse.name, display:horse.display, url:horse.url, remaining:1});
-    else savePastureLocal();
+    stable.push({name:horse.name, display:horse.display, url:horse.url, remaining:1});
+    if(isAdmin) apiPost('/poetry/stable/add', {name:horse.name, display:horse.display, url:horse.url, remaining:1});
+    else saveStableLocal();
   }
   renderPoem();
-  renderPasture();
+  renderStable();
 }
 
 function pruneEmptyLines(){
@@ -569,17 +592,17 @@ function dropHorseOnLine(horse, li, refHi, insertAfter){
     const sl=drag.srcLine, si=drag.srcIdx;
     lines[sl].splice(si,1);
     if(sl===li && si<refHi) refHi--;
-  } else if(drag && drag.srcType==='pasture'){
-    const entry = pasture.find(h=>h.name===horse.name);
+  } else if(drag && drag.srcType==='stable'){
+    const entry = stable.find(h=>h.name===horse.name);
     if(entry){
       entry.remaining = (entry.remaining||1) - 1;
       if(entry.remaining <= 0){
-        pasture = pasture.filter(h=>h.name!==horse.name);
-        if(isAdmin) apiPost('/poetry/pasture/remove', {name:horse.name});
-        else savePastureLocal();
+        stable = stable.filter(h=>h.name!==horse.name);
+        if(isAdmin) apiPost('/poetry/stable/remove', {name:horse.name});
+        else saveStableLocal();
       } else {
-        if(isAdmin) apiPost('/poetry/pasture/add', {name:entry.name, display:entry.display, url:entry.url, remaining:entry.remaining});
-        else savePastureLocal();
+        if(isAdmin) apiPost('/poetry/stable/add', {name:entry.name, display:entry.display, url:entry.url, remaining:entry.remaining});
+        else saveStableLocal();
       }
     }
   }
@@ -591,7 +614,7 @@ function dropHorseOnLine(horse, li, refHi, insertAfter){
   lines[li].splice(insertIdx,0,horse);
   if(lines[lines.length-1].length>0) lines.push([]);
   renderPoem();
-  renderPasture();
+  renderStable();
 }
 
 // ── Drag — Mouse ──────────────────────────────────────────────────────────────
@@ -669,7 +692,7 @@ function endDrag(x,y){
   }
   // Dropped outside — no action, just re-render to restore
   renderPoem();
-  renderPasture();
+  renderStable();
   drag=null;
 }
 

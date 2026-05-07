@@ -13,7 +13,8 @@ from typing import List, Dict, Optional, Tuple, Callable
 
 from config import BASE_DIR, OPTIONAL_TAGS
 
-PASTURE_FILE       = os.path.join(BASE_DIR, 'pasture.json')
+STABLE_FILE        = os.path.join(BASE_DIR, 'stable.json')
+_PASTURE_LEGACY    = os.path.join(BASE_DIR, 'pasture.json')  # migrated on first load
 SEARCH_HARD_CAP    = 500
 RHYME_TERMS_MAX    = 15   # max terms to fetch from Datamuse
 RHYME_DEFAULT_ON   = 6    # how many chips are checked by default
@@ -247,45 +248,51 @@ def random_horses(dictionary, n: int = 5) -> List[Dict]:
     return results
 
 
-# ── Pasture ───────────────────────────────────────────────────────────────────
+# ── Stable ────────────────────────────────────────────────────────────────────
 
-def load_pasture() -> List[Dict]:
-    if not os.path.exists(PASTURE_FILE):
+def load_stable() -> List[Dict]:
+    # One-time migration: rename pasture.json → stable.json
+    if not os.path.exists(STABLE_FILE) and os.path.exists(_PASTURE_LEGACY):
+        try:
+            os.rename(_PASTURE_LEGACY, STABLE_FILE)
+        except Exception:
+            pass
+    if not os.path.exists(STABLE_FILE):
         return []
     try:
-        with open(PASTURE_FILE) as f:
+        with open(STABLE_FILE) as f:
             return json.load(f).get('horses', [])
     except Exception:
         return []
 
 
-def save_pasture(horses: List[Dict]):
+def save_stable(horses: List[Dict]):
     try:
-        with open(PASTURE_FILE, 'w') as f:
+        with open(STABLE_FILE, 'w') as f:
             json.dump({'horses': horses, 'updated': time.time()}, f)
     except Exception as e:
-        print(f"Pasture save error: {e}")
+        print(f"Stable save error: {e}")
 
 
-def add_to_pasture(name: str, display: str, url: str, remaining: int = 1) -> List[Dict]:
-    horses = load_pasture()
+def add_to_stable(name: str, display: str, url: str, remaining: int = 1) -> List[Dict]:
+    horses = load_stable()
     existing = next((h for h in horses if h['name'] == name), None)
     if existing:
         existing['remaining'] = remaining
     else:
         horses.append({'name': name, 'display': display, 'url': url, 'remaining': remaining})
-    save_pasture(horses)
+    save_stable(horses)
     return horses
 
 
-def remove_from_pasture(name: str) -> List[Dict]:
-    horses = [h for h in load_pasture() if h['name'] != name]
-    save_pasture(horses)
+def remove_from_stable(name: str) -> List[Dict]:
+    horses = [h for h in load_stable() if h['name'] != name]
+    save_stable(horses)
     return horses
 
 
-def clear_pasture():
-    save_pasture([])
+def clear_stable():
+    save_stable([])
 
 
 # ── Poem post building ────────────────────────────────────────────────────────

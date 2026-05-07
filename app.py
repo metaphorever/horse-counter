@@ -18,7 +18,7 @@ Admin routes (login required):
   POST /submissions/approve  move a submission to the review page
   POST /submissions/post     fast-track post/queue/draft from queue
   POST /submissions/reject   discard a submission
-  POST /poetry/pasture/*     server-persisted pasture (admin only)
+  POST /poetry/stable/*      server-persisted stable (admin only)
 """
 
 import os
@@ -46,8 +46,8 @@ from post_builder import extract_post
 from famous import FamousHorses
 from poem_store import save_poem as store_poem
 from poetry import (
-    search_dictionary, random_horses, load_pasture, add_to_pasture,
-    remove_from_pasture, clear_pasture,
+    search_dictionary, random_horses, load_stable, add_to_stable,
+    remove_from_stable, clear_stable,
     build_poem_html, compute_poem_stats, format_poem_prefix,
     POEM_SUFFIX, build_poem_tags, order_tags,
     get_rhymes, search_by_rhyme_terms, RHYME_DEFAULT_ON,
@@ -697,11 +697,11 @@ def callback():
 def poetry_editor():
     import json
     is_admin = bool(session.get('logged_in'))
-    # Admin uses server-persisted pasture; public starts from empty (loads
+    # Admin uses server-persisted stable; public starts from empty (loads
     # from localStorage on the client side).
-    pasture = load_pasture() if is_admin else []
+    stable = load_stable() if is_admin else []
     return render_template('poetry.html',
-        pasture_json=json.dumps(pasture),
+        stable_json=json.dumps(stable),
         optional_tags_json=json.dumps(OPTIONAL_TAGS),
     )
 
@@ -749,29 +749,29 @@ def poetry_rhyme_horses():
     return jsonify({'results': results, 'total': len(results)})
 
 
-@app.route('/poetry/pasture/add', methods=['POST'])
+@app.route('/poetry/stable/add', methods=['POST'])
 @login_required
-def pasture_add():
+def stable_add():
     from flask import jsonify
     data   = request.get_json()
-    horses = add_to_pasture(data['name'], data['display'], data['url'], int(data.get('remaining', 1)))
+    horses = add_to_stable(data['name'], data['display'], data['url'], int(data.get('remaining', 1)))
     return jsonify({'horses': horses})
 
 
-@app.route('/poetry/pasture/remove', methods=['POST'])
+@app.route('/poetry/stable/remove', methods=['POST'])
 @login_required
-def pasture_remove():
+def stable_remove():
     from flask import jsonify
     data   = request.get_json()
-    horses = remove_from_pasture(data['name'])
+    horses = remove_from_stable(data['name'])
     return jsonify({'horses': horses})
 
 
-@app.route('/poetry/pasture/clear', methods=['POST'])
+@app.route('/poetry/stable/clear', methods=['POST'])
 @login_required
-def pasture_clear():
+def stable_clear():
     from flask import jsonify
-    clear_pasture()
+    clear_stable()
     return jsonify({'ok': True})
 
 
