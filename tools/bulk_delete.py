@@ -35,7 +35,7 @@ import getpass
 import requests
 
 
-DEFAULT_URL = "https://horsecounter.pythonanywhere.com"
+DEFAULT_URL = "https://horsecounterbot.pythonanywhere.com"
 
 
 def load_names(path: str) -> list[str]:
