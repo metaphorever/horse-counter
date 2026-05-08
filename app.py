@@ -46,7 +46,7 @@ from post_builder import extract_post
 from famous import FamousHorses
 from poem_store import save_poem as store_poem
 from poetry import (
-    search_dictionary, random_horses, load_stable, add_to_stable,
+    search_dictionary, random_horses, short_horses, load_stable, add_to_stable,
     remove_from_stable, clear_stable,
     build_poem_html, compute_poem_stats, format_poem_prefix,
     POEM_SUFFIX, build_poem_tags, order_tags,
@@ -722,6 +722,13 @@ def poetry_random():
     data = request.get_json(silent=True) or {}
     n    = min(int(data.get('n', 5)), 20)
     return jsonify({'ok': True, 'results': random_horses(dictionary, n)})
+
+
+@app.route('/poetry/short', methods=['POST'])
+def poetry_short():
+    from flask import jsonify
+    results = short_horses(dictionary)
+    return jsonify({'ok': True, 'results': results, 'total': len(results)})
 
 
 @app.route('/poetry/rhyme/terms', methods=['POST'])

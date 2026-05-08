@@ -58,7 +58,8 @@
           <code>*dance</code> ends<br>
           <code>*dance*</code> anywhere &nbsp;
           <code>dance *</code> first word &nbsp;
-          <code>* dance</code> last word
+          <code>* dance</code> last word<br>
+          <a class="short-names-link" onclick="doShortNames()">Browse short names (A, Bo, Ace…)</a>
         </div>
       </div>
 
@@ -579,6 +580,24 @@ async function doFindRhymeHorses(){
   if(!d) return;
 
   document.getElementById('search-mode').textContent = `Rhymes with "${rhymeWord}" — ends with: ${selected.join(', ')}`;
+  showVia        = true;
+  searchResults  = d.results;
+  searchCapped   = false;
+  searchPage     = 0;
+  expandedGroups = new Set();
+  renderSearchPage();
+}
+
+async function doShortNames(){
+  document.getElementById('search-meta').textContent    = 'Loading…';
+  document.getElementById('search-error').textContent   = '';
+  document.getElementById('search-results').innerHTML   = '';
+  document.getElementById('search-pager').style.display = 'none';
+  document.getElementById('search-mode').textContent    = 'Short names (3 letters or fewer)';
+
+  const d = await apiPost('/poetry/short');
+  if(!d) return;
+
   showVia        = true;
   searchResults  = d.results;
   searchCapped   = false;

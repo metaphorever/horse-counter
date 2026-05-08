@@ -507,6 +507,7 @@ button[type="submit"]:active { transform: translate(2px, 2px); box-shadow: none;
 .search-meta a { color: #5a7a2a; cursor: pointer; text-decoration: underline; }
 .search-hint  { font: 11px 'Courier Prime','Courier New',monospace; color: #a08060; line-height: 1.7; margin-top: 8px; border-top: 1px solid #e0d4b0; padding-top: 8px; }
 .search-hint code { background: #f0ead8; padding: 0 3px; border-radius: 2px; font-size: 11px; }
+.short-names-link { color: #5a7a2a; cursor: pointer; text-decoration: underline; }
 .search-results { max-height: 240px; overflow-y: auto; }
 .search-error { font: 12px 'Courier Prime','Courier New',monospace; color: #7a2020; margin: 4px 0; }
 .result-item { display: flex; align-items: center; gap: 8px; padding: 10px 4px 8px; }

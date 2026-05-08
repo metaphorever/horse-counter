@@ -284,6 +284,22 @@ def search_dictionary(query: str, dictionary) -> Dict:
     }
 
 
+def short_horses(dictionary, max_len: int = 3) -> List[Dict]:
+    results = []
+    for name, registrations in dictionary.horses.items():
+        if len(name) <= max_len:
+            reg = registrations[0]
+            results.append({
+                'name':         name,
+                'display':      reg.get('display_name', ' '.join(w.capitalize() for w in name.split())),
+                'url':          reg.get('url', ''),
+                'count':        len(registrations),
+                'matched_term': f'{len(name)} letter{"s" if len(name) != 1 else ""}',
+            })
+    results.sort(key=lambda h: (len(h['name']), h['name']))
+    return results
+
+
 def random_horses(dictionary, n: int = 5) -> List[Dict]:
     items = list(dictionary.horses.items())
     sample = _random.sample(items, min(n, len(items)))
