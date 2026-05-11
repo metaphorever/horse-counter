@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ poem.title or 'A horse poem' }} — poet.horse{% endblock %}
+{% block content %}
+
+<div class="box">
+  <div class="nav-links">
+    <a href="/poetry">← Back to editor</a>
+  </div>
+
+  {% if poem.title %}<h1>{{ poem.title }}</h1>{% endif %}
+
+  <div style="margin:14px 0;padding:14px;background:#fff9ee;border:1px solid #d9c88f;border-radius:2px;line-height:1.9">
+    {% for line in poem.lines %}
+      <p>
+        {% for h in line %}<a href="{{ h.url }}">{{ h.display }}</a>{% if not loop.last %} {% endif %}{% endfor %}
+      </p>
+    {% endfor %}
+  </div>
+
+  <p style="font:12px 'Courier Prime', monospace; color:#5a4a2a; margin-top:14px">
+    {% if poem.author_display_name %}
+      by
+      {% if poem.author_link_url %}
+        <a href="{{ poem.author_link_url }}" target="_blank">{{ poem.author_display_name }}</a>
+      {% else %}
+        {{ poem.author_display_name }}
+      {% endif %}
+    {% else %}
+      anonymous
+    {% endif %}
+    · {{ poem.horse_count }} horse{{ 's' if poem.horse_count != 1 else '' }}
+    · status: {{ poem.status }}
+    · code: <code>{{ poem.short_code }}</code>
+  </p>
+
+  <p style="font:11px 'Courier Prime', monospace; color:#888; margin-top:8px">
+    Phase 0.3 stub renderer. Pasture/plain modes ship with Phase 1.5.
+  </p>
+</div>
+{% endblock %}

@@ -44,7 +44,14 @@ from matcher import (
 )
 from post_builder import extract_post
 from famous import FamousHorses
-from poem_store import save_poem as store_poem
+from poem_db import save_poem as save_poem_db, get_poem_by_short_code, list_published as list_published_poems
+from poem_submissions import (
+    create_for_poem      as create_poem_submission,
+    load_pending         as load_pending_poem_submissions,
+    load_submission      as load_poem_submission,
+    approve              as approve_poem_submission,
+    reject               as reject_poem_submission,
+)
 from poetry import (
     search_dictionary, random_horses, short_horses, load_stable, add_to_stable,
     remove_from_stable, clear_stable,
@@ -493,7 +500,14 @@ def public_submit():
 
 @app.route('/submit/poem', methods=['POST'])
 def submit_poem_public():
-    """Accept a poem submission (public or admin)."""
+    """
+    Accept a poem submission. New SQLite-backed flow:
+      1. Insert into poems with status='submitted'.
+      2. Insert into submissions with status='pending'.
+    Anonymous attribution: display_name + a single optional link URL. We
+    accept either a raw URL via `submitter_link` or fall back to converting
+    a Tumblr handle from `submitter_tumblr` (legacy clients).
+    """
     from flask import jsonify
     data   = request.get_json()
     lines  = data.get('lines', [])
@@ -501,39 +515,30 @@ def submit_poem_public():
     if not any(lines):
         return jsonify({'ok': False, 'error': 'Poem is empty'})
 
-    is_admin         = bool(session.get('logged_in'))
-    flat             = [h for line in lines for h in line]
-    horse_count      = len(flat)
-    poem_html        = build_poem_html(lines)
-    total_words      = sum(len(h['name'].split()) for h in flat)
     submitter_name   = _sanitize_name(data.get('submitter_name', ''))
-    submitter_tumblr = _sanitize_tumblr(data.get('submitter_tumblr', ''))
     poem_title       = _sanitize_name(data.get('poem_title', ''))
+    submitter_link   = (data.get('submitter_link') or '').strip()[:300]
+    submitter_tumblr = _sanitize_tumblr(data.get('submitter_tumblr', ''))
 
-    save_submission('poem', {
-        'post_data':        {},
-        'horse_count':      horse_count,
-        'linked_html':      poem_html,
-        'poem_title':       poem_title,
-        'stats':            {
-            'horse_density': 100.0,
-            'total_words':   total_words,
-            'linked_words':  total_words,
-        },
-        'is_text_post':     True,
-        'is_fallback':      False,
-        'is_admin':         is_admin,
-        'submitter_name':   submitter_name,
-        'submitter_tumblr': submitter_tumblr,
-    })
-    store_poem(
-        lines=lines,
-        title=poem_title,
-        author_name=submitter_name,
-        author_tumblr=submitter_tumblr,
-        status='submitted',
+    author_link_url = submitter_link
+    if not author_link_url and submitter_tumblr:
+        author_link_url = f'https://www.tumblr.com/{submitter_tumblr}'
+
+    poem = save_poem_db(
+        lines               = lines,
+        title               = poem_title,
+        author_user_id      = None,           # anonymous; logged-in flow lands later
+        author_display_name = submitter_name,
+        author_link_url     = author_link_url,
+        status              = 'submitted',
     )
-    return jsonify({'ok': True, 'message': 'Poem submitted for review!'})
+    create_poem_submission(poem['id'])
+
+    return jsonify({
+        'ok':         True,
+        'message':    'Poem submitted for review!',
+        'short_code': poem['short_code'],
+    })
 
 
 # ── Admin submission review ───────────────────────────────────────────────────
@@ -941,6 +946,58 @@ def admin_dictionary_delete():
     flash(f'Deleted: {name}', 'ok')
     q = request.form.get('q', name.split()[0])
     return redirect(f'/admin/dictionary?q={q}')
+
+
+# ── poet.horse: poem permalink (stub) ─────────────────────────────────────────
+
+@app.route('/p/<short_code>')
+def poem_permalink(short_code):
+    """
+    Public permalink for a poem. Phase 0.3 stub — full pasture/plain renderer
+    arrives in Phase 1.5. For now we just confirm the poem exists and dump
+    a minimal preview so we can verify the SQLite write path works.
+    """
+    poem = get_poem_by_short_code(short_code)
+    if not poem:
+        return render_template('index.html',
+            horses_loaded=dictionary.loaded,
+            active_tab='url',
+            form={},
+            error=f'No poem found with code "{short_code}"',
+        ), 404
+    return render_template('poem_stub.html', poem=poem)
+
+
+# ── poet.horse: admin poem-submissions queue ──────────────────────────────────
+
+@app.route('/admin/poem-queue')
+@login_required
+def admin_poem_queue():
+    pending = load_pending_poem_submissions()
+    return render_template('poem_queue.html', submissions=pending)
+
+
+@app.route('/admin/poem-queue/publish', methods=['POST'])
+@login_required
+def admin_poem_publish():
+    sub_id = int(request.form.get('id', '0') or 0)
+    notes  = request.form.get('notes', '').strip()
+    poem   = approve_poem_submission(sub_id, reviewer_user_id=None, review_notes=notes)
+    if poem:
+        flash(f'Published: /p/{poem["short_code"]}', 'ok')
+    else:
+        flash('Submission not found.', 'err')
+    return redirect(url_for('admin_poem_queue'))
+
+
+@app.route('/admin/poem-queue/reject', methods=['POST'])
+@login_required
+def admin_poem_reject():
+    sub_id = int(request.form.get('id', '0') or 0)
+    notes  = request.form.get('notes', '').strip()
+    reject_poem_submission(sub_id, reviewer_user_id=None, review_notes=notes)
+    flash('Rejected.', 'ok')
+    return redirect(url_for('admin_poem_queue'))
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

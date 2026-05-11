@@ -25,3 +25,12 @@ horses_compressed.json.gz
 # IDE
 .vscode/
 .idea/
+
+# Claude local settings (per-user)
+.claude/settings.local.json
+
+# SQLite database (poems, users, tags) — created at runtime
+data/poet.db
+data/poet.db-journal
+data/poet.db-wal
+data/poet.db-shm

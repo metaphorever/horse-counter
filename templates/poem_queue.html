@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Poem Queue — poet.horse{% endblock %}
+{% block content %}
+
+<div class="box">
+  <div class="nav-links">
+    <a href="/">← Back</a>
+    <a href="/poetry">Poetry editor →</a>
+    <a href="/submissions">Counter submissions →</a>
+    <a href="/admin/dictionary">Dictionary →</a>
+  </div>
+
+  <h1>Pending Poem Submissions</h1>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    <div class="msg {{ 'ok' if category == 'ok' else 'err' }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  {% if not submissions %}
+  <div class="msg ok">No pending poem submissions — all caught up!</div>
+  {% endif %}
+
+  {% for sub in submissions %}
+  <div class="sub-card">
+    <div class="sub-card-header">
+      <div class="sub-card-meta">
+        <span class="type-badge">poem</span>
+        {% if sub.title %}<strong><em>{{ sub.title }}</em></strong>{% endif %}
+        <strong>{{ sub.horse_count }} horse{{ 's' if sub.horse_count != 1 else '' }}</strong>
+        <span class="sub-date">{{ sub.submitted_at | datefmt }}</span>
+        {% if sub.author_display_name %}
+        <span class="sub-author">—
+          {% if sub.author_link_url %}
+            <a href="{{ sub.author_link_url }}" target="_blank">{{ sub.author_display_name }}</a>
+          {% else %}
+            {{ sub.author_display_name }}
+          {% endif %}
+        </span>
+        {% else %}
+        <span class="sub-author">— anonymous</span>
+        {% endif %}
+      </div>
+      <div class="sub-card-actions">
+        <form method="post" action="/admin/poem-queue/publish" style="display:inline">
+          <input type="hidden" name="id" value="{{ sub.submission_id }}">
+          <button type="submit" class="btn-primary">Publish to site</button>
+        </form>
+        <form method="post" action="/admin/poem-queue/reject" style="display:inline"
+              onsubmit="return confirm('Reject this poem?')">
+          <input type="hidden" name="id" value="{{ sub.submission_id }}">
+          <button type="submit" class="btn-sec btn-danger">Reject</button>
+        </form>
+      </div>
+    </div>
+
+    <details>
+      <summary class="sub-preview-toggle">Preview</summary>
+      <div class="sub-preview-content" style="line-height:1.9">
+        {% for line in sub.lines %}
+          <p>
+            {% for h in line %}<a href="{{ h.url }}">{{ h.display }}</a>{% if not loop.last %} {% endif %}{% endfor %}
+          </p>
+        {% endfor %}
+      </div>
+      <p style="font:11px 'Courier Prime', monospace; color:#888; margin-top:8px">
+        Once published it will live at <code>/p/{{ sub.short_code }}</code>.
+      </p>
+    </details>
+  </div>
+  {% endfor %}
+
+</div>
+{% endblock %}

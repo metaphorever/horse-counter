@@ -1,0 +1,149 @@
+"""
+poem_db.py - SQLite-backed poem storage for poet.horse.
+
+Replaces the JSON-file storage in the legacy poem_store.py. Poems live in
+the `poems` table; the public-facing identifier is `short_code` (used in
+permalinks at /p/<short_code>).
+
+Authorship model (mirrors db/schema.sql comments):
+    * Logged-in poems       → author_user_id is set; display name + links
+                              come from the user's profile.
+    * Anonymous poems       → author_user_id is NULL; author_display_name and
+                              author_link_url hold the per-poem attribution.
+    * Legacy import poems   → anonymous, author_link_url synthesised from the
+                              old submitter_tumblr handle.
+"""
+
+import json
+import secrets
+import time
+from typing import Dict, List, Optional
+
+from db.conn import get_db
+
+
+SHORT_CODE_BYTES = 8  # secrets.token_urlsafe(8) -> ~11 chars, ~64 bits entropy
+
+
+def _generate_short_code(conn) -> str:
+    """Generate a unique short_code, retrying on collision."""
+    for _ in range(8):
+        code = secrets.token_urlsafe(SHORT_CODE_BYTES)
+        # token_urlsafe can include '-' and '_' — fine for URLs, keep them
+        exists = conn.execute(
+            "SELECT 1 FROM poems WHERE short_code = ?", (code,)
+        ).fetchone()
+        if not exists:
+            return code
+    raise RuntimeError("Could not generate a unique short_code after 8 tries")
+
+
+def _compute_counts(lines: List[List[Dict]]) -> Dict[str, int]:
+    horse_count = sum(len(line) for line in lines)
+    word_count  = sum(len(h['name'].split()) for line in lines for h in line)
+    return {'horse_count': horse_count, 'word_count': word_count}
+
+
+def save_poem(
+    lines:                 List[List[Dict]],
+    title:                 str            = '',
+    author_user_id:        Optional[int]  = None,
+    author_display_name:   str            = '',
+    author_link_url:       str            = '',
+    status:                str            = 'submitted',
+    short_code:            Optional[str]  = None,
+) -> Dict:
+    """
+    Insert a poem and return its full row as a dict (including id and short_code).
+
+    `status` is typically 'submitted' for public flow, 'published' for direct
+    admin publish or for the legacy import. 'draft' for in-progress.
+
+    `short_code` is generated automatically unless provided (used by the
+    legacy import to preserve old IDs).
+    """
+    now = time.time()
+    counts = _compute_counts(lines)
+    lines_json = json.dumps(lines, ensure_ascii=False)
+
+    with get_db() as conn:
+        conn.execute("BEGIN")
+        try:
+            code = short_code or _generate_short_code(conn)
+            cur = conn.execute(
+                """INSERT INTO poems
+                   (short_code, title, lines_json, status,
+                    author_user_id, author_display_name, author_link_url,
+                    created_at, published_at, horse_count, word_count)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    code, title, lines_json, status,
+                    author_user_id, author_display_name, author_link_url,
+                    now,
+                    now if status == 'published' else None,
+                    counts['horse_count'], counts['word_count'],
+                ),
+            )
+            poem_id = cur.lastrowid
+            conn.execute("COMMIT")
+        except Exception:
+            conn.execute("ROLLBACK")
+            raise
+
+    return get_poem_by_id(poem_id)
+
+
+def _row_to_poem(row) -> Dict:
+    if row is None:
+        return None
+    d = dict(row)
+    d['lines'] = json.loads(d.pop('lines_json'))
+    return d
+
+
+def get_poem_by_id(poem_id: int) -> Optional[Dict]:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM poems WHERE id = ?", (poem_id,)
+        ).fetchone()
+    return _row_to_poem(row)
+
+
+def get_poem_by_short_code(short_code: str) -> Optional[Dict]:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM poems WHERE short_code = ?", (short_code,)
+        ).fetchone()
+    return _row_to_poem(row)
+
+
+def update_poem_status(
+    poem_id:    int,
+    status:     str,
+    published: bool = False,
+) -> None:
+    """Set status; if `published` is True also stamp published_at."""
+    now = time.time()
+    with get_db() as conn:
+        if published:
+            conn.execute(
+                "UPDATE poems SET status = ?, published_at = ?, edited_at = ? WHERE id = ?",
+                (status, now, now, poem_id),
+            )
+        else:
+            conn.execute(
+                "UPDATE poems SET status = ?, edited_at = ? WHERE id = ?",
+                (status, now, poem_id),
+            )
+
+
+def list_published(limit: int = 50, offset: int = 0) -> List[Dict]:
+    with get_db() as conn:
+        rows = conn.execute(
+            """SELECT * FROM poems
+               WHERE status = 'published'
+               ORDER BY published_at DESC
+               LIMIT ? OFFSET ?""",
+            (limit, offset),
+        ).fetchall()
+    return [_row_to_poem(r) for r in rows]
