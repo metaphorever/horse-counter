@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Signed out — poet.horse{% endblock %}
+
+{% block content %}
+<p class="sign-out-msg">You've been signed out.</p>
+<a href="{{ url_for('index') }}">back to the counter</a>
+
+<script>
+(async () => {
+  while (!window.Clerk) await new Promise(r => setTimeout(r, 30));
+  await Clerk.load();
+  if (Clerk.user) await Clerk.signOut();
+})();
+</script>
+{% endblock %}

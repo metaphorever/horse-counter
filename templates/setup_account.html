@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Choose your slug — poet.horse{% endblock %}
+
+{% block content %}
+<h1 class="page-title">one more thing</h1>
+
+<p class="setup-intro">
+  Pick a slug for your poet.horse URL.
+  This becomes <strong>poet.horse/u/your-slug</strong> and cannot be changed later.
+</p>
+
+<form method="post" class="setup-form" autocomplete="off">
+  <div class="form-group">
+    <label for="slug">Your slug</label>
+    <div class="slug-preview-wrap">
+      <span class="slug-prefix">poet.horse/u/</span>
+      <input
+        id="slug"
+        name="slug"
+        type="text"
+        required
+        minlength="3"
+        maxlength="32"
+        pattern="[a-z0-9][a-z0-9\-]{1,30}[a-z0-9]"
+        placeholder="your-slug"
+        autocorrect="off"
+        autocapitalize="none"
+        spellcheck="false"
+        oninput="this.value = this.value.toLowerCase().replace(/[^a-z0-9-]/g, '')"
+      >
+    </div>
+    <p class="field-hint">3–32 characters. Letters, numbers, and hyphens only.</p>
+    {% if error %}
+      <p class="field-error">{{ error }}</p>
+    {% endif %}
+  </div>
+
+  <div class="form-group">
+    <label for="display_name">Display name <span class="optional">(optional)</span></label>
+    <input
+      id="display_name"
+      name="display_name"
+      type="text"
+      maxlength="80"
+      value="{{ display_name }}"
+      placeholder="Your Name"
+    >
+    <p class="field-hint">Shown on your poems and profile. You can change this any time.</p>
+  </div>
+
+  <button type="submit" class="btn-primary">save and continue</button>
+</form>
+{% endblock %}

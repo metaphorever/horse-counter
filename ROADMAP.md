@@ -1,25 +1,47 @@
 # poet.horse — Roadmap & Design Doc
 
-> **Status:** drafted 2026-05-11, updated 2026-05-12. Living doc — every decision here was confirmed
+> **Status:** drafted 2026-05-11, updated 2026-05-13. Living doc — every decision here was confirmed
 > by the project owner. Items marked **[OPEN]** still need a call before that
 > task starts. Each task is independently executable; the suggested Claude
 > model + reasoning effort is a hint, not a hard requirement.
 
-## You are here — 2026-05-12
+## You are here — 2026-05-13
 
 **Done this session:**
 - Phase 0.2 ✅ — SQLite schema, `poem_db.py`, `poem_submissions.py`, admin poem queue, `/p/<short_code>` stub, tags seeded
 - Phase 0.3 ✅ — `short_code` on every poem, `/p/<short_code>` route live, stub permalink template
 - VPS deployment ✅ — gunicorn running on `127.0.0.1:8765` under a systemd user service on zap.rupture.net. Apache vhost request sent to Jon (rupture.net admin); DNS A record for `poet.horse` → `162.221.25.21` already set in Cloudflare.
 - Horse dictionary ✅ — `data/horses.json.gz` (~29 MB, properly compressed) committed and pushed; loads 2.1M horses on boot.
+- Phase 0.4 ✅ — Clerk integration wired up:
+  - `clerk_auth.py`: JWKS-cached RS256 JWT verification (PyJWT + Clerk's `/v1/jwks`)
+  - `db/users.py`: user lookups + slug validation helpers
+  - `requirements.txt` created (`Flask`, `gunicorn`, `requests`, `PyJWT`, `cryptography`)
+  - New routes: `GET /sign-in`, `GET /sign-out`, `POST /auth/clerk/verify`, `GET|POST /setup-account`, `GET /u/<slug>`
+  - First-login flow: Clerk JS → POST token → verify → slug picker → user row created
+  - Admin is now role-based (`users.role = 'admin'`); PIN login at `/login` remains as fallback
+  - `base.html` embeds Clerk JS CDN and shows sign-in/sign-out/user links in nav
 
 **Waiting on:**
 - Jon to create the Apache vhost for `poet.horse` → `127.0.0.1:8765`
+- Owner: set up `.env` on the VPS and wire it into the systemd service (see below)
+- Owner: after first Clerk login, run `UPDATE users SET role='admin' WHERE slug='your-slug';` in the SQLite DB to grant admin access
 
-**Next session start:** Phase 0.4 — Clerk integration `[sonnet · high]`
-- Owner has a Clerk account and app already created; keys not yet wired into the app.
-- Start by: getting publishable key + secret key from Clerk dashboard, adding them to `.env`, writing the JWT-verification middleware and `@require_login` decorator, replacing PIN-based admin with `users.role = 'admin'`.
-- Parallel quick wins while waiting on the vhost: `tools/migrate_json_to_sqlite.py` `[sonnet · medium]` and Phase 0.6 ToS placeholder routes `[haiku · low]` — both are pure backend, no UI needed.
+**VPS environment setup** (one-time, not yet done):
+- Service file: `/home/metaphorever/.config/systemd/user/poet-horse.service`
+- App directory: `/data/home/metaphorever/horse-counter`
+- Venv: `/home/metaphorever/.venv`
+- No `EnvironmentFile=` in the service yet — env vars are not set. Steps:
+  1. `nano /data/home/metaphorever/horse-counter/.env` — add `SECRET_KEY`, `APP_PINS`, `TUMBLR_CONSUMER_KEY`, `TUMBLR_CONSUMER_SECRET`, `TUMBLR_BLOG_NAME`, `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`
+  2. `systemctl --user edit poet-horse.service` — add `EnvironmentFile=/data/home/metaphorever/horse-counter/.env` under `[Service]`
+  3. `systemctl --user daemon-reload && systemctl --user restart poet-horse.service`
+  4. Install deps — the VPS uses `uv`, not pip:
+     ```bash
+     source $HOME/.local/bin/env && source ~/.venv/bin/activate
+     uv pip install -r /data/home/metaphorever/horse-counter/requirements.txt
+     ```
+
+**Next session start:** Phase 0.5 — localStorage → account sync `[sonnet · medium]`
+- Or parallel quick wins: `tools/migrate_json_to_sqlite.py` `[sonnet · medium]` and Phase 0.6 ToS routes `[haiku · low]`
 
 ---
 

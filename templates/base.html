@@ -9,10 +9,28 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Playfair+Display:wght@700&display=swap">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 {% block head %}{% endblock %}
+{% if clerk_publishable_key %}
+<script async crossorigin="anonymous"
+  data-clerk-publishable-key="{{ clerk_publishable_key }}"
+  src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"></script>
+{% endif %}
 </head>
 <body>
 <div class="fence"></div>
 <div class="container{% block container_class %}{% endblock %}">
+  <nav class="site-nav">
+    {% if current_user %}
+      <a href="{{ url_for('user_profile', slug=current_user.slug) }}" class="nav-user">{{ current_user.display_name }}</a>
+      <a href="{{ url_for('sign_out') }}">sign out</a>
+    {% elif not session.get('logged_in') %}
+      <a href="{{ url_for('sign_in') }}">sign in</a>
+    {% endif %}
+  </nav>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
   {% block content %}{% endblock %}
 </div>
 <div class="fence"></div>

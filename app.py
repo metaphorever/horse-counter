@@ -1,5 +1,5 @@
 """
-app.py - Flask routes for Horse Counter
+app.py - Flask routes for poet.horse / Horse Counter
 
 Public routes (no login required):
   GET  /               main input page (URL + text tabs)
@@ -8,25 +8,31 @@ Public routes (no login required):
   POST /submit/poem    save a poem submission (public or admin)
   GET  /poetry         poetry editor
   POST /poetry/search  horse name search
+  GET  /p/<short_code> poem permalink (stub)
+  GET  /sign-in        Clerk sign-in page
+  GET  /sign-out       clear session
+  POST /auth/clerk/verify  exchange Clerk JWT for Flask session
+  GET  /setup-account  pick a slug after first Clerk login
+  POST /setup-account  submit slug choice
+  GET  /u/<slug>       public poet profile (stub)
 
-Admin routes (login required):
-  POST /               reply mode
+Admin routes (login required — Clerk role='admin' OR PIN fallback):
   POST /queue          post/queue/draft a reviewed post
   GET  /auth           start Tumblr OAuth
   GET  /callback       OAuth callback
   GET  /submissions    review pending submissions
-  POST /submissions/approve  move a submission to the review page
-  POST /submissions/post     fast-track post/queue/draft from queue
-  POST /submissions/reject   discard a submission
-  POST /poetry/stable/*      server-persisted stable (admin only)
+  POST /submissions/*  submission actions
+  POST /poetry/stable/*  server-persisted stable
+  GET  /admin/*        admin management pages
+  GET  /login          PIN fallback (admin only)
 """
 
 import os
 import re
 from datetime import datetime
 from flask import (
-    Flask, request, redirect, session, url_for,
-    render_template, flash
+    Flask, g, request, redirect, session, url_for,
+    render_template, flash, jsonify,
 )
 from functools import wraps
 
@@ -36,6 +42,11 @@ from config import (
     FAMOUS_HORSES_FILE,
     check_pin, get_horse_emoji, build_default_tags,
     OPTIONAL_TAGS, POST_SUFFIX, SEO_TAGS, format_prefix,
+)
+from clerk_auth import verify_clerk_token, CLERK_PUBLISHABLE_KEY
+from db.users import (
+    get_user_by_id, get_user_by_clerk_id, get_user_by_slug,
+    create_user, validate_slug, slug_available,
 )
 from auth import TumblrManager
 from matcher import (
@@ -84,15 +95,39 @@ print(f"Ready. Dictionary: {dictionary.source}, "
       f"Tumblr: {'connected' if tumblr.authenticated else 'not connected'}")
 
 
+# ── Request lifecycle ─────────────────────────────────────────────────────────
+
+@app.before_request
+def load_current_user():
+    """Populate g.current_user from Flask session on every request."""
+    g.current_user = None
+    user_id = session.get('user_id')
+    if user_id:
+        g.current_user = get_user_by_id(user_id)
+        if g.current_user is None:
+            # Row was deleted — clear stale session
+            session.pop('user_id', None)
+
+
+def _is_admin() -> bool:
+    """True if the current request has admin privileges (Clerk role or PIN)."""
+    if session.get('logged_in'):
+        return True
+    user = g.get('current_user')
+    return user is not None and user.get('role') == 'admin'
+
+
 # ── Template globals ──────────────────────────────────────────────────────────
 
 @app.context_processor
 def inject_globals():
-    """Make is_admin and tumblr_auth available in every template."""
+    """Make is_admin, current_user, and Clerk key available in every template."""
     return {
-        'is_admin':    bool(session.get('logged_in')),
-        'tumblr_auth': tumblr.authenticated,
-        'blog_name':   TUMBLR_BLOG_NAME,
+        'is_admin':              _is_admin(),
+        'current_user':          g.get('current_user'),
+        'clerk_publishable_key': CLERK_PUBLISHABLE_KEY,
+        'tumblr_auth':           tumblr.authenticated,
+        'blog_name':             TUMBLR_BLOG_NAME,
     }
 
 
@@ -158,14 +193,12 @@ def _auto_check_tags(post_data: dict) -> set:
 # ── Auth guard ────────────────────────────────────────────────────────────────
 
 def login_required(f):
+    """Require Clerk auth (role=admin) OR PIN fallback session."""
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not session.get('logged_in'):
-            # Return JSON 401 for API/AJAX calls so the client can handle it
-            # gracefully instead of silently following a redirect to login HTML.
+        if not _is_admin():
             if (request.content_type or '').startswith('application/json') or \
                request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                from flask import jsonify
                 return jsonify({'error': 'Session expired — please reload the page'}), 401
             return redirect(url_for('login'))
         return f(*args, **kwargs)
@@ -190,6 +223,114 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
+
+# ── Clerk sign-in / sign-out ──────────────────────────────────────────────────
+
+@app.route('/sign-in')
+def sign_in():
+    """Render the Clerk-powered sign-in page."""
+    if g.get('current_user') or session.get('logged_in'):
+        return redirect(url_for('index'))
+    return render_template('sign_in.html')
+
+
+@app.route('/sign-out')
+def sign_out():
+    """Clear the Flask session; page JS will also call Clerk.signOut()."""
+    session.clear()
+    return render_template('sign_out.html')
+
+
+@app.route('/auth/clerk/verify', methods=['POST'])
+def clerk_verify():
+    """
+    Exchange a Clerk session JWT for a Flask session.
+
+    Called by the Clerk JS on the sign-in page after the user authenticates.
+    Expects: Authorization: Bearer <token>
+    Returns JSON: { redirect: <url> } or { error: <msg> }
+    """
+    token = request.headers.get('Authorization', '').removeprefix('Bearer ').strip()
+    if not token:
+        return jsonify({'error': 'No token provided'}), 400
+
+    clerk_user_id = verify_clerk_token(token)
+    if not clerk_user_id:
+        return jsonify({'error': 'Invalid or expired token'}), 401
+
+    user = get_user_by_clerk_id(clerk_user_id)
+    if user:
+        session.permanent = True
+        session['user_id'] = user['id']
+        return jsonify({'redirect': url_for('index')})
+
+    # First login — stash the Clerk ID and send to slug picker
+    session['pending_clerk_id'] = clerk_user_id
+    # Also carry the display name Clerk gave us if provided in the request body
+    body = request.get_json(silent=True) or {}
+    if body.get('display_name'):
+        session['pending_display_name'] = str(body['display_name'])[:80]
+    return jsonify({'redirect': url_for('setup_account')})
+
+
+@app.route('/setup-account', methods=['GET', 'POST'])
+def setup_account():
+    """
+    Slug-picker shown on first Clerk login.
+    Session must contain 'pending_clerk_id'; otherwise redirect to sign-in.
+    """
+    clerk_id = session.get('pending_clerk_id')
+    if not clerk_id:
+        # Not in the middle of a fresh sign-in — redirect appropriately
+        if g.get('current_user'):
+            return redirect(url_for('index'))
+        return redirect(url_for('sign_in'))
+
+    display_name = session.get('pending_display_name', '')
+    error = None
+
+    if request.method == 'POST':
+        slug         = request.form.get('slug', '').strip().lower()
+        display_name = request.form.get('display_name', '').strip()[:80] or display_name
+
+        error = validate_slug(slug)
+        if error is None and not slug_available(slug):
+            error = f'"{slug}" is already taken — please choose another.'
+
+        if error is None:
+            user = create_user(
+                clerk_id     = clerk_id,
+                slug         = slug,
+                display_name = display_name or slug,
+            )
+            session.pop('pending_clerk_id',    None)
+            session.pop('pending_display_name', None)
+            session.permanent = True
+            session['user_id'] = user['id']
+            flash('Welcome to poet.horse!', 'ok')
+            return redirect(url_for('index'))
+
+    return render_template('setup_account.html',
+        display_name=display_name,
+        error=error,
+    )
+
+
+# ── Poet profile ──────────────────────────────────────────────────────────────
+
+@app.route('/u/<slug>')
+def user_profile(slug):
+    """Public poet profile. Phase 0.4 stub — full version in Phase 1.13."""
+    user = get_user_by_slug(slug)
+    if not user:
+        return render_template('index.html',
+            horses_loaded=dictionary.loaded,
+            active_tab='url',
+            form={},
+            error=f'No poet found with the slug "{slug}"',
+        ), 404
+    return render_template('user_profile.html', poet=user)
 
 
 # ── Main page ─────────────────────────────────────────────────────────────────

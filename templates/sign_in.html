@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Sign in — poet.horse{% endblock %}
+
+{% block content %}
+<h1 class="page-title">sign in to poet.horse</h1>
+
+<div id="clerk-sign-in" class="clerk-widget-wrap"></div>
+
+<p class="sign-in-note">
+  No account yet? Signing in for the first time creates one.
+  Anonymous poem submissions always remain anonymous even after you sign in.
+</p>
+
+<script>
+(async () => {
+  // Wait for Clerk JS to initialise (loaded async in <head>).
+  while (!window.Clerk) await new Promise(r => setTimeout(r, 30));
+  await Clerk.load();
+
+  // Already signed in on another tab / returning user with live session.
+  if (Clerk.user) {
+    await _verifyWithBackend();
+    return;
+  }
+
+  Clerk.mountSignIn(document.getElementById('clerk-sign-in'));
+
+  // After the user completes sign-in, Clerk fires this listener.
+  Clerk.addListener(async ({ user }) => {
+    if (user) await _verifyWithBackend();
+  });
+
+  async function _verifyWithBackend() {
+    const token       = await Clerk.session.getToken();
+    const displayName = Clerk.user?.firstName
+      ? (Clerk.user.firstName + (Clerk.user.lastName ? ' ' + Clerk.user.lastName : ''))
+      : (Clerk.user?.username || '');
+
+    try {
+      const res = await fetch('/auth/clerk/verify', {
+        method:  'POST',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type':  'application/json',
+        },
+        body: JSON.stringify({ display_name: displayName }),
+      });
+      const data = await res.json();
+      if (data.redirect) {
+        window.location.href = data.redirect;
+      } else {
+        console.error('Clerk verify error:', data.error);
+      }
+    } catch (err) {
+      console.error('Clerk verify fetch failed:', err);
+    }
+  }
+})();
+</script>
+{% endblock %}

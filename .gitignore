@@ -15,7 +15,8 @@ drafts.json
 pasture.json
 submissions.json
 
-# Horse data legacy alias
+# Horse dictionary — large file, not committed
+data/horses.json.gz
 horses_compressed.json.gz
 
 # macOS

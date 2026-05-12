@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ poet.display_name }} — poet.horse{% endblock %}
+
+{% block content %}
+<div class="poet-profile">
+  <h1 class="page-title">{{ poet.display_name }}</h1>
+  <p class="poet-slug">poet.horse/u/{{ poet.slug }}</p>
+
+  <p class="poet-joined">
+    joined {{ poet.joined_at | datefmt }}
+  </p>
+
+  {# Phase 1.13 will add the published-poem list here. #}
+  <p class="poet-stub-note">
+    Poem archive coming soon.
+  </p>
+
+  {% if current_user and current_user.id == poet.id %}
+    <p class="poet-own-actions">
+      <a href="#">edit display name</a>
+    </p>
+  {% endif %}
+</div>
+{% endblock %}
