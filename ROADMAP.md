@@ -1,9 +1,25 @@
 # poet.horse — Roadmap & Design Doc
 
-> **Status:** drafted 2026-05-11. Living doc — every decision here was confirmed
+> **Status:** drafted 2026-05-11, updated 2026-05-12. Living doc — every decision here was confirmed
 > by the project owner. Items marked **[OPEN]** still need a call before that
 > task starts. Each task is independently executable; the suggested Claude
 > model + reasoning effort is a hint, not a hard requirement.
+
+## You are here — 2026-05-12
+
+**Done this session:**
+- Phase 0.2 ✅ — SQLite schema, `poem_db.py`, `poem_submissions.py`, admin poem queue, `/p/<short_code>` stub, tags seeded
+- Phase 0.3 ✅ — `short_code` on every poem, `/p/<short_code>` route live, stub permalink template
+- VPS deployment ✅ — gunicorn running on `127.0.0.1:8765` under a systemd user service on zap.rupture.net. Apache vhost request sent to Jon (rupture.net admin); DNS A record for `poet.horse` → `162.221.25.21` already set in Cloudflare.
+- Horse dictionary ✅ — `data/horses.json.gz` (~29 MB, properly compressed) committed and pushed; loads 2.1M horses on boot.
+
+**Waiting on:**
+- Jon to create the Apache vhost for `poet.horse` → `127.0.0.1:8765`
+
+**Next session start:** Phase 0.4 — Clerk integration `[sonnet · high]`
+- Owner has a Clerk account and app already created; keys not yet wired into the app.
+- Start by: getting publishable key + secret key from Clerk dashboard, adding them to `.env`, writing the JWT-verification middleware and `@require_login` decorator, replacing PIN-based admin with `users.role = 'admin'`.
+- Parallel quick wins while waiting on the vhost: `tools/migrate_json_to_sqlite.py` `[sonnet · medium]` and Phase 0.6 ToS placeholder routes `[haiku · low]` — both are pure backend, no UI needed.
 
 ---
 
@@ -93,7 +109,7 @@ Goal: clean cutover-ready infra. App still works the way it does today, but the 
 ### 0.1 VPS provisioning and deploy pipeline `[sonnet · medium]`
 
 - Owner action: register `poet.horse` and point DNS A record to the VPS.
-- Set up nginx reverse proxy → gunicorn → flask. systemd unit for the gunicorn service.
+- Set up Apache reverse proxy → gunicorn → flask. systemd unit for the gunicorn service.
 - Provision Python 3.11+, Let's Encrypt cert via certbot.
 - GitHub Actions workflow `.github/workflows/deploy.yml`: on push to `main`, ssh to VPS, `git pull`, install deps, restart service. Use repo secrets for SSH key.
 - Acceptance: pushing to `main` deploys; `https://poet.horse/` serves the current app over TLS.
