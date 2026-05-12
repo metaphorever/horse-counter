@@ -15,8 +15,7 @@ drafts.json
 pasture.json
 submissions.json
 
-# Horse data — large binary, distributed separately
-data/horses.json.gz
+# Horse data legacy alias
 horses_compressed.json.gz
 
 # macOS
