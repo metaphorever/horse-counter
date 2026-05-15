@@ -19,6 +19,15 @@
 
 - **Sync horse_overrides.json from PA back to GitHub** — The canonical overrides file (deletes + corrections to the dictionary) lives on the PA server and gets edited in production. Changes don't automatically flow back to the repo, so a fresh deploy would regress them. Options: a one-click admin export/download, a cron that commits the file, or a deploy hook that pulls it first.
 
+## Compliance / legal
+
+- **Privacy policy** — Need a public privacy policy page (e.g. `/privacy`) covering what poet.horse stores about users (Clerk auth data, optional display name + slug, poem submissions), cookies/sessions, third parties (Clerk, Cloudflare, Tumblr, Datamuse, social OAuth providers). Required by most OAuth providers and by general data-protection norms.
+
+- **Data deletion route** — Facebook OAuth requires a data deletion callback URL. Two acceptable forms:
+  1. Automated webhook that verifies Facebook's `signed_request`, deletes the user's data, returns JSON `{url, confirmation_code}`.
+  2. Instructions page (acceptable for smaller apps) at e.g. `/data-deletion` explaining how to manually request deletion (email-based).
+  Start with #2 (`/data-deletion` static template) so we can complete the Facebook OAuth setup; upgrade to #1 later.
+
 ## Features
 
 - **Ambient background horses** — A few horse chips rendered in the SVG grass background behind all working areas (z-indexed so they never overlap the UI). Bonus: simple walk cycle animation that lets them slowly wander around.

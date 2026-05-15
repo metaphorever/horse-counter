@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grass Texture Swatches</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Playfair+Display:wght@700&display=swap">
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font: 13px/1.5 'Courier Prime', 'Courier New', monospace;
+  background: #222;
+  color: #eee;
+  padding: 20px 16px 40px;
+}
+
+h1 {
+  font: 700 15px 'Courier Prime', monospace;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 20px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.swatch-wrap {
+  border: 2px solid #444;
+  border-radius: 3px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.swatch-wrap:hover { border-color: #aaa; }
+.swatch-wrap.picked { border-color: #6dbf4a; }
+
+.swatch {
+  height: 180px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Mini card mockup ── */
+.mini-card {
+  background: #faf5e9;
+  border-radius: 2px;
+  padding: 12px 14px;
+  width: 200px;
+  box-shadow: 2px 3px 8px rgba(0,0,0,.3);
+  position: relative;
+}
+.mini-card::before {
+  content: '📌';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px;
+}
+.mini-title {
+  font: 700 13px 'Playfair Display', Georgia, serif;
+  color: #2d2316;
+  margin-bottom: 6px;
+}
+.mini-result {
+  font: 700 11px 'Courier Prime', monospace;
+  color: #3a5a1a;
+  background: #eaf5e0;
+  border-left: 3px solid #6dbf4a;
+  padding: 4px 7px;
+  margin-bottom: 6px;
+}
+.mini-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.mini-tag {
+  font: 700 9px 'Courier Prime', monospace;
+  padding: 2px 5px;
+  border-radius: 2px;
+  box-shadow: 1px 1px 2px rgba(0,0,0,.2);
+}
+.mt-y { background: #ffe082; color: #5a3e00; }
+.mt-g { background: #b5ead7; color: #0a3d2a; }
+.mt-p { background: #d4b8f5; color: #2d0a5a; }
+
+.swatch-label {
+  padding: 8px 12px;
+  background: #2a2a2a;
+  border-top: 1px solid #444;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.swatch-name { font-weight: 700; color: #ddd; font-size: 12px; }
+.swatch-desc { color: #777; font-size: 11px; }
+.pick-btn {
+  font: 700 10px 'Courier Prime', monospace;
+  background: #333;
+  color: #888;
+  border: 1px solid #555;
+  border-radius: 2px;
+  padding: 3px 8px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.swatch-wrap.picked .pick-btn { background: #3a5a1a; color: #a8d58a; border-color: #5a7a2a; }
+
+/* ══════════════════════════════════════
+   THE TEXTURE OPTIONS
+══════════════════════════════════════ */
+.bg-base { background-color: #4e7835; }
+
+/* 1: Solid — no texture, baseline */
+.bg-solid { background-color: #4e7835; }
+
+/* 2: Mowed stripes — alternating horizontal bands (like a mown lawn from above) */
+.bg-mowed {
+  background-color: #4e7835;
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(255,255,255,.06) 0px, rgba(255,255,255,.06) 28px,
+    rgba(0,0,0,.07)       28px, rgba(0,0,0,.07)       56px
+  );
+}
+
+/* 3: Vertical blades — thin upright lines */
+.bg-blades {
+  background-color: #4e7835;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0px, transparent 3px,
+    rgba(0,0,0,.1) 3px, rgba(0,0,0,.1) 4px
+  );
+}
+
+/* 4: SVG curved blades — actual grass shape in each tile */
+.bg-svg-blades {
+  background-color: #4e7835;
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="36"><path d="M4 36 Q4 24 7 8" stroke="rgba(0,0,0,.18)" stroke-width="1.5" fill="none"/><path d="M12 36 Q13 26 11 14" stroke="rgba(0,0,0,.12)" stroke-width="1" fill="none"/><path d="M20 36 Q19 25 22 10" stroke="rgba(0,0,0,.18)" stroke-width="1.5" fill="none"/></svg>');
+  background-size: 24px 36px;
+}
+
+/* 5: Noise grain — organic feTurbulence */
+.bg-noise {
+  background-color: #4e7835;
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="250" height="250"><filter id="n" x="0" y="0"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="4" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="250" height="250" filter="url(%23n)" opacity="0.18"/></svg>');
+  background-size: 250px 250px;
+}
+
+/* 6: Lawn check — alternating light/dark squares, sports pitch vibe */
+.bg-check {
+  background-color: #4e7835;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(0,0,0,.07) 0px, rgba(0,0,0,.07) 36px,
+      transparent     36px, transparent     72px
+    ),
+    repeating-linear-gradient(
+      180deg,
+      rgba(0,0,0,.07) 0px, rgba(0,0,0,.07) 36px,
+      transparent     36px, transparent     72px
+    );
+}
+
+/* 7: Linen weave — tight crosshatch suggesting grass texture */
+.bg-linen {
+  background-color: #4e7835;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0) 0px, rgba(0,0,0,0) 5px,
+      rgba(0,0,0,.07) 5px, rgba(0,0,0,.07) 6px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(0,0,0,0) 0px, rgba(0,0,0,0) 5px,
+      rgba(0,0,0,.07) 5px, rgba(0,0,0,.07) 6px
+    );
+}
+
+/* 8: Rough field — irregular dashes at a slight angle */
+.bg-rough {
+  background-color: #4d7432;
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><path d="M0 8 L8 0 M4 12 L12 4 M0 20 L4 16 M8 24 L16 16 M0 32 L8 24 M4 36 L12 28 M16 8 L24 0 M20 12 L28 4 M16 20 L20 16 M24 24 L32 16 M16 32 L24 24 M20 36 L28 28 M32 8 L40 0 M36 12 L40 8 M32 20 L36 16 M40 24 L40 24 M32 32 L40 24 M36 36 L40 32" stroke="rgba(0,0,0,.12)" stroke-width="1" fill="none"/></svg>');
+  background-size: 40px 40px;
+}
+
+/* Fence for demo */
+.fence-demo {
+  height: 20px;
+  background-color: #4e7835;
+  background-image: repeating-linear-gradient(90deg, transparent 0px, transparent 22px, #8b6914 22px, #8b6914 28px);
+  position: relative;
+  margin-bottom: 20px;
+}
+.fence-demo::before, .fence-demo::after {
+  content: ''; position: absolute; left: 0; right: 0; height: 4px; background: #8b6914;
+}
+.fence-demo::before { top: 3px; }
+.fence-demo::after  { top: 12px; }
+
+</style>
+</head>
+<body>
+
+<h1>Grass texture options — click to pick</h1>
+<p style="color:#666;font-size:11px;margin-bottom:16px">Each swatch shows the background with a sample card on top, same as it'll look on the blog.</p>
+
+<div class="fence-demo"></div>
+
+<div class="grid">
+
+  <!-- 1: Solid -->
+  <div class="swatch-wrap" onclick="pick(this,'solid')">
+    <div class="swatch bg-solid">
+      <div class="mini-card">
+        <div class="mini-title">Horse Counter</div>
+        <div class="mini-result">Found 4 horses</div>
+        <div class="mini-tags">
+          <span class="mini-tag mt-y">Secretariat</span>
+          <span class="mini-tag mt-g">Man o' War</span>
+          <span class="mini-tag mt-p">Seabiscuit</span>
+        </div>
+      </div>
+    </div>
+    <div class="swatch-label">
+      <div>
+        <div class="swatch-name">1 · Solid</div>
+        <div class="swatch-desc">No texture — clean field green</div>
+      </div>
+      <button class="pick-btn">Pick</button>
+    </div>
+  </div>
+
+  <!-- 2: Mowed stripes -->
+  <div class="swatch-wrap" onclick="pick(this,'mowed')">
+    <div class="swatch bg-mowed">
+      <div class="mini-card">
+        <div class="mini-title">Horse Counter</div>
+        <div class="mini-result">Found 4 horses</div>
+        <div class="mini-tags">
+          <span class="mini-tag mt-y">Secretariat</span>
+          <span class="mini-tag mt-g">Man o' War</span>
+          <span class="mini-tag mt-p">Seabiscuit</span>
+        </div>
+      </div>
+    </div>
+    <div class="swatch-label">
+      <div>
+        <div class="swatch-name">2 · Mowed stripes</div>
+        <div class="swatch-desc">Alternating bands — lawn from above</div>
+      </div>
+      <button class="pick-btn">Pick</button>
+    </div>
+  </div>
+
+  <!-- 3: Vertical blades -->
+  <div class="swatch-wrap" onclick="pick(this,'blades')">
+    <div class="swatch bg-blades">
+      <div class="mini-card">
+        <div class="mini-title">Horse Counter</div>
+        <div class="mini-result">Found 4 horses</div>
+        <div class="mini-tags">
+          <span class="mini-tag mt-y">Secretariat</span>
+          <span class="mini-tag mt-g">Man o' War</span>
+          <span class="mini-tag mt-p">Seabiscuit</span>
+        </div>
+      </div>
+    </div>
+    <div class="swatch-label">
+      <div>
+        <div class="swatch-name">3 · Vertical blades</div>
+        <div class="swatch-desc">Thin upright lines — dense grass</div>
+      </div>
+      <button class="pick-btn">Pick</button>
+    </div>
+  </div>
+
+  <!-- 4: SVG curved blades -->
+  <div class="swatch-wrap" onclick="pick(this,'svg-blades')">
+    <div class="swatch bg-svg-blades">
+      <div class="mini-card">
+        <div class="mini-title">Horse Counter</div>
+        <div class="mini-result">Found 4 horses</div>
+        <div class="mini-tags">
+          <span class="mini-tag mt-y">Secretariat</span>
+          <span class="mini-tag mt-g">Man o' War</span>
+          <span class="mini-tag mt-p">Seabiscuit</span>
+        </div>
+      </div>
+    </div>
+    <div class="swatch-label">
+      <div>
+        <div class="swatch-name">4 · Curved SVG blades</div>
+        <div class="swatch-desc">Actual blade shapes — most literal</div>
+      </div>
+      <button class="pick-btn">Pick</button>
+    </div>
+  </div>
+
+  <!-- 5: Noise grain -->
+  <div class="swatch-wrap" onclick="pick(this,'noise')">
+    <div class="swatch bg-noise">
+      <div class="mini-card">
+        <div class="mini-title">Horse Counter</div>
+        <div class="mini-result">Found 4 horses</div>
+        <div class="mini-tags">
+          <span class="mini-tag mt-y">Secretariat</span>
+          <span class="mini-tag mt-g">Man o' War</span>
+          <span class="mini-tag mt-p">Seabiscuit</span>
+        </div>
+      </div>
+    </div>
+    <div class="swatch-label">
+      <div>
+        <div class="swatch-name">5 · Noise grain</div>
+        <div class="swatch-desc">Organic fractal texture — earthy</div>
+      </div>
+      <button class="pick-btn">Pick</button>
+    </div>
+  </div>
+
+  <!-- 6: Lawn check -->
+  <div class="swatch-wrap" onclick="pick(this,'check')">
+    <div class="swatch bg-check">
+      <div class="mini-card">
+        <div class="mini-title">Horse Counter</div>
+        <div class="mini-result">Found 4 horses</div>
+        <div class="mini-tags">
+          <span class="mini-tag mt-y">Secretariat</span>
+          <span class="mini-tag mt-g">Man o' War</span>
+          <span class="mini-tag mt-p">Seabiscuit</span>
+        </div>
+      </div>
+    </div>
+    <div class="swatch-label">
+      <div>
+        <div class="swatch-name">6 · Lawn check</div>
+        <div class="swatch-desc">Alternating squares — sports pitch</div>
+      </div>
+      <button class="pick-btn">Pick</button>
+    </div>
+  </div>
+
+  <!-- 7: Linen weave -->
+  <div class="swatch-wrap" onclick="pick(this,'linen')">
+    <div class="swatch bg-linen">
+      <div class="mini-card">
+        <div class="mini-title">Horse Counter</div>
+        <div class="mini-result">Found 4 horses</div>
+        <div class="mini-tags">
+          <span class="mini-tag mt-y">Secretariat</span>
+          <span class="mini-tag mt-g">Man o' War</span>
+          <span class="mini-tag mt-p">Seabiscuit</span>
+        </div>
+      </div>
+    </div>
+    <div class="swatch-label">
+      <div>
+        <div class="swatch-name">7 · Linen weave</div>
+        <div class="swatch-desc">Tight crosshatch — most subtle</div>
+      </div>
+      <button class="pick-btn">Pick</button>
+    </div>
+  </div>
+
+  <!-- 8: Rough field -->
+  <div class="swatch-wrap" onclick="pick(this,'rough')">
+    <div class="swatch bg-rough">
+      <div class="mini-card">
+        <div class="mini-title">Horse Counter</div>
+        <div class="mini-result">Found 4 horses</div>
+        <div class="mini-tags">
+          <span class="mini-tag mt-y">Secretariat</span>
+          <span class="mini-tag mt-g">Man o' War</span>
+          <span class="mini-tag mt-p">Seabiscuit</span>
+        </div>
+      </div>
+    </div>
+    <div class="swatch-label">
+      <div>
+        <div class="swatch-name">8 · Rough field</div>
+        <div class="swatch-desc">Diagonal hatching — unmown meadow</div>
+      </div>
+      <button class="pick-btn">Pick</button>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:20px;padding:12px;background:#2a2a2a;border:1px solid #444;border-radius:3px;font-size:11px;color:#666">
+  Picked: <span id="result" style="color:#6dbf4a;font-weight:700">none yet</span>
+  — tell me the number and I'll apply it to the Tumblr theme.
+</div>
+
+<script>
+function pick(el, name) {
+  document.querySelectorAll('.swatch-wrap').forEach(s => s.classList.remove('picked'));
+  el.classList.add('picked');
+  document.getElementById('result').textContent = name;
+}
+</script>
+
+</body>
+</html>

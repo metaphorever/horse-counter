@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Horse Counter — Design Prototype</title>
+<style>
+
+/* ═══════════════════════════════════════════════
+   PROTOTYPE CHROME
+═══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.proto-bar {
+  background: #111;
+  color: #fff;
+  padding: 10px 14px;
+  font: bold 12px/1 'Courier New', monospace;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 999;
+}
+.proto-bar .label { color: #666; font-weight: normal; margin-right: 4px; }
+.th-btn {
+  padding: 5px 11px;
+  border: 1px solid #444;
+  background: #222;
+  color: #aaa;
+  cursor: pointer;
+  font: 11px 'Courier New', monospace;
+  border-radius: 2px;
+  transition: all .15s;
+}
+.th-btn.on { background: #00cf35; color: #000; border-color: #00cf35; font-weight: bold; }
+.proto-note { color: #555; font-size: 10px; margin-left: auto; }
+
+.theme { display: none; }
+.theme.on { display: block; }
+
+
+/* ═══════════════════════════════════════════════
+   THEME A — FLAT & CLEAN  (Tumblr-ish, current evolved)
+═══════════════════════════════════════════════ */
+.a-wrap {
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f7f7f7;
+  color: #111;
+  min-height: 100vh;
+  padding: 0 0 40px;
+}
+
+/* nav */
+.a-nav {
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  height: 46px;
+}
+.a-nav-logo { font-size: 15px; font-weight: 700; color: #111; letter-spacing: -.3px; }
+.a-nav-logo span { color: #00cf35; }
+.a-nav a { font-size: 13px; color: #555; text-decoration: none; }
+.a-nav a:hover { color: #00cf35; }
+
+.a-container { max-width: 640px; margin: 0 auto; padding: 20px 16px; }
+
+.a-card {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 14px;
+}
+
+.a-title { font-size: 18px; font-weight: 700; color: #111; margin-bottom: 16px; }
+
+/* tabs */
+.a-tabs { display: flex; border-bottom: 2px solid #e8e8e8; margin-bottom: 16px; gap: 0; }
+.a-tab {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+.a-tab.on { color: #00cf35; border-bottom-color: #00cf35; }
+
+/* input */
+.a-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font: 14px -apple-system, sans-serif;
+  margin-bottom: 10px;
+  outline: none;
+  transition: border-color .15s;
+}
+.a-input:focus { border-color: #00cf35; }
+.a-btn {
+  padding: 9px 18px;
+  background: #00cf35;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  font: 14px -apple-system, sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+}
+.a-btn-sec {
+  padding: 9px 18px;
+  background: transparent;
+  color: #555;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font: 14px -apple-system, sans-serif;
+  cursor: pointer;
+}
+
+/* result */
+.a-result-banner {
+  padding: 11px 14px;
+  background: #f0fdf4;
+  border-left: 3px solid #00cf35;
+  color: #166534;
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+.a-result-density { font-weight: normal; color: #4ade80; font-size: 13px; margin-left: 6px; }
+
+.a-text-preview {
+  font-size: 14px;
+  line-height: 1.8;
+  padding: 14px;
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 3px;
+  margin-bottom: 12px;
+}
+.a-horse-link { color: #00cf35; font-weight: 600; text-decoration: none; }
+.a-horse-link:hover { text-decoration: underline; }
+
+.a-submit-box {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 3px;
+  padding: 14px;
+}
+.a-submit-box p { font-size: 13px; color: #555; margin-bottom: 10px; }
+.a-field-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.a-field-row .a-input { margin: 0; flex: 1; font-size: 13px; padding: 8px 10px; }
+
+/* poetry */
+.a-section-head {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #aaa;
+  margin-bottom: 10px;
+}
+
+.a-pasture {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 60px;
+  padding: 12px;
+  background: #fafafa;
+  border: 1px dashed #ddd;
+  border-radius: 3px;
+  margin-bottom: 14px;
+}
+.a-horse-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  background: #e8fdf0;
+  border: 1px solid #bbf7d0;
+  border-radius: 3px;
+  font-size: 12px;
+  color: #166534;
+  cursor: grab;
+}
+.a-horse-chip .rm { color: #86efac; cursor: pointer; font-size: 10px; }
+
+.a-poem-canvas {
+  min-height: 140px;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 3px;
+  margin-bottom: 12px;
+}
+.a-poem-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed #eee;
+  min-height: 36px;
+}
+.a-poem-line:last-child { border-bottom: none; }
+.a-poem-word {
+  padding: 3px 8px;
+  background: #e8fdf0;
+  border: 1px solid #bbf7d0;
+  border-radius: 3px;
+  font-size: 13px;
+  color: #166534;
+  cursor: grab;
+}
+.a-poem-gap { font-size: 13px; color: #ccc; padding: 0 2px; cursor: pointer; }
+
+
+/* ═══════════════════════════════════════════════
+   THEME B — FRIDGE & FIELD  (warm, magnets, farmstead)
+═══════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Playfair+Display:wght@700&display=swap');
+
+.b-wrap {
+  font: 14px/1.6 Georgia, 'Times New Roman', serif;
+  background: #ede8dc;
+  color: #2d2316;
+  min-height: 100vh;
+  padding: 0 0 60px;
+}
+
+/* fence divider */
+.b-fence {
+  width: 100%;
+  height: 28px;
+  background:
+    repeating-linear-gradient(90deg,
+      transparent 0px, transparent 28px,
+      #8b6914 28px, #8b6914 36px
+    );
+  position: relative;
+  margin: 0;
+}
+.b-fence::before, .b-fence::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 5px;
+  background: #8b6914;
+  border-radius: 2px;
+}
+.b-fence::before { top: 6px; }
+.b-fence::after  { top: 16px; }
+
+/* nav */
+.b-nav {
+  background: #3a2a0a;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.b-nav-logo {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 20px;
+  color: #f5e9c8;
+  letter-spacing: .5px;
+}
+.b-nav-logo span { color: #6dbf4a; }
+.b-nav a { font-size: 12px; color: #b89a5c; text-decoration: none; font-family: 'Courier Prime', monospace; }
+
+.b-container { max-width: 640px; margin: 0 auto; padding: 20px 16px; }
+
+/* card: like a cork board or paper pinned up */
+.b-card {
+  background: #faf5e9;
+  border-radius: 2px;
+  padding: 22px 20px;
+  margin-bottom: 20px;
+  box-shadow: 2px 3px 10px rgba(0,0,0,.15), 0 0 0 1px rgba(139,105,20,.15);
+  position: relative;
+}
+.b-card::before { /* pushpin */
+  content: '📌';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 18px;
+}
+
+.b-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 22px;
+  color: #3a2a0a;
+  margin-bottom: 16px;
+}
+
+/* tabs as paper tabs */
+.b-tabs { display: flex; gap: 4px; margin-bottom: -1px; position: relative; z-index: 1; }
+.b-tab {
+  padding: 7px 16px;
+  background: #d9d0be;
+  border: 1px solid #b8a97a;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  font: 700 12px 'Courier Prime', monospace;
+  color: #6b5430;
+  cursor: pointer;
+}
+.b-tab.on {
+  background: #faf5e9;
+  color: #3a2a0a;
+  border-bottom: 1px solid #faf5e9;
+}
+
+.b-tab-content {
+  border: 1px solid #b8a97a;
+  border-radius: 0 4px 4px 4px;
+  padding: 14px;
+  background: #faf5e9;
+  margin-bottom: 14px;
+}
+
+/* input */
+.b-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 2px solid #c4a96b;
+  border-radius: 2px;
+  font: 14px Georgia, serif;
+  background: #fff9ee;
+  color: #2d2316;
+  margin-bottom: 10px;
+  outline: none;
+}
+.b-input:focus { border-color: #6dbf4a; }
+
+.b-btn {
+  padding: 10px 20px;
+  background: #5a7a2a;
+  color: #fff;
+  border: 2px solid #3d5a1a;
+  border-radius: 2px;
+  font: 700 13px 'Courier Prime', monospace;
+  cursor: pointer;
+  letter-spacing: .05em;
+  box-shadow: 2px 2px 0 #3d5a1a;
+}
+.b-btn:active { transform: translate(2px,2px); box-shadow: none; }
+
+.b-btn-sec {
+  padding: 10px 20px;
+  background: #f5e9c8;
+  color: #6b5430;
+  border: 2px solid #c4a96b;
+  border-radius: 2px;
+  font: 13px 'Courier Prime', monospace;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 #c4a96b;
+}
+
+/* result */
+.b-result-banner {
+  padding: 12px 16px;
+  background: #eaf5e0;
+  border: 2px solid #6dbf4a;
+  border-radius: 2px;
+  margin-bottom: 14px;
+  font-family: 'Courier Prime', monospace;
+  font-weight: 700;
+  font-size: 15px;
+  color: #3a5a1a;
+}
+.b-result-density { font-weight: normal; color: #8aad60; font-size: 12px; margin-left: 6px; }
+
+.b-text-preview {
+  font-size: 14px;
+  line-height: 1.9;
+  padding: 14px;
+  background: #fff9ee;
+  border: 1px solid #d9c88f;
+  border-radius: 2px;
+  margin-bottom: 14px;
+}
+
+/* fridge magnet tiles */
+.b-magnet {
+  display: inline-block;
+  padding: 5px 11px;
+  font: 700 13px 'Courier Prime', monospace;
+  box-shadow: 2px 2px 5px rgba(0,0,0,.28);
+  border-radius: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.b-magnet-y  { background: #ffe082; color: #5a3e00; transform: rotate(-1.8deg); }
+.b-magnet-g  { background: #b5ead7; color: #0a3d2a; transform: rotate( 1.2deg); }
+.b-magnet-p  { background: #d4b8f5; color: #2d0a5a; transform: rotate(-0.8deg); }
+.b-magnet-b  { background: #a8d4f7; color: #0a2d5a; transform: rotate( 1.5deg); }
+.b-magnet-r  { background: #ffcdd2; color: #5a0a0a; transform: rotate(-1.2deg); }
+.b-magnet-w  { background: #fff; color: #333;       transform: rotate( 0.6deg); border: 1px solid #ddd; }
+
+/* pasture */
+.b-pasture-label {
+  font: 700 11px 'Courier Prime', monospace;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: #8a7050;
+  margin-bottom: 8px;
+}
+.b-pasture {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  min-height: 70px;
+  padding: 14px;
+  background: #f0ead8;
+  border: 2px dashed #c4a96b;
+  border-radius: 2px;
+  margin-bottom: 14px;
+}
+
+/* poem canvas */
+.b-poem-canvas {
+  min-height: 160px;
+  padding: 16px;
+  background: #fdf8f0;
+  border: 2px solid #c4a96b;
+  border-radius: 2px;
+  margin-bottom: 12px;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 27px,
+      #e8d9b0 27px,
+      #e8d9b0 28px
+    );
+  background-position: 0 2px;
+}
+.b-poem-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  min-height: 28px;
+  margin-bottom: 0;
+  padding: 0 0 0 2px;
+  line-height: 28px;
+}
+.b-poem-gap {
+  font-size: 12px;
+  color: #c4a96b;
+  cursor: pointer;
+  padding: 0 4px;
+  font-family: 'Courier Prime', monospace;
+}
+
+/* submit box */
+.b-submit-box {
+  background: #eaf5e0;
+  border: 2px solid #6dbf4a;
+  border-radius: 2px;
+  padding: 16px;
+}
+.b-submit-box p { font-size: 13px; color: #3a5a1a; margin-bottom: 10px; font-family: 'Courier Prime', monospace; }
+.b-field-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.b-field-row .b-input { flex: 1; min-width: 120px; margin: 0; font-size: 13px; padding: 7px 10px; }
+.b-btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* fence as section separator */
+.b-section-fence {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 14px;
+  font: 700 10px 'Courier Prime', monospace;
+  color: #8a7050;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+}
+.b-section-fence::before, .b-section-fence::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg, #c4a96b 0px, #c4a96b 8px, transparent 8px, transparent 14px
+  );
+}
+
+
+/* ═══════════════════════════════════════════════
+   THEME C — DARK PASTURE  (terminal / neon green)
+═══════════════════════════════════════════════ */
+.c-wrap {
+  font: 14px/1.5 'Courier New', 'Courier', monospace;
+  background: #0d1117;
+  color: #c9d1d9;
+  min-height: 100vh;
+  padding: 0 0 60px;
+}
+
+.c-nav {
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.c-nav-logo { font-size: 16px; font-weight: 700; color: #e6edf3; letter-spacing: 1px; }
+.c-nav-logo span { color: #00cf35; text-shadow: 0 0 10px rgba(0,207,53,.5); }
+.c-nav a { font-size: 12px; color: #8b949e; text-decoration: none; }
+.c-nav a:hover { color: #00cf35; }
+
+.c-container { max-width: 640px; margin: 0 auto; padding: 20px 16px; }
+
+.c-card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.c-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #00cf35;
+  text-shadow: 0 0 12px rgba(0,207,53,.4);
+  margin-bottom: 16px;
+  letter-spacing: .5px;
+}
+
+/* tabs */
+.c-tabs { display: flex; border-bottom: 1px solid #30363d; margin-bottom: 16px; gap: 0; }
+.c-tab {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #8b949e;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  border-top: none; border-left: none; border-right: none;
+  letter-spacing: .05em;
+}
+.c-tab.on { color: #00cf35; border-bottom-color: #00cf35; }
+
+/* input */
+.c-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  background: #0d1117;
+  color: #c9d1d9;
+  font: 13px 'Courier New', monospace;
+  margin-bottom: 10px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.c-input:focus { border-color: #00cf35; box-shadow: 0 0 0 3px rgba(0,207,53,.15); }
+
+.c-btn {
+  padding: 8px 18px;
+  background: #00cf35;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  font: 700 13px 'Courier New', monospace;
+  cursor: pointer;
+  letter-spacing: .05em;
+  box-shadow: 0 0 12px rgba(0,207,53,.3);
+}
+.c-btn:hover { box-shadow: 0 0 20px rgba(0,207,53,.5); }
+
+.c-btn-sec {
+  padding: 8px 18px;
+  background: transparent;
+  color: #8b949e;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  font: 13px 'Courier New', monospace;
+  cursor: pointer;
+}
+
+/* result */
+.c-result-banner {
+  padding: 12px 14px;
+  background: rgba(0,207,53,.08);
+  border: 1px solid rgba(0,207,53,.3);
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 15px;
+  color: #00cf35;
+  text-shadow: 0 0 8px rgba(0,207,53,.4);
+  margin-bottom: 12px;
+}
+.c-result-density { font-weight: normal; color: #4ade80; font-size: 12px; margin-left: 6px; }
+
+.c-text-preview {
+  font-size: 13px;
+  line-height: 1.8;
+  padding: 14px;
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+.c-horse-link {
+  color: #00cf35;
+  font-weight: 700;
+  text-decoration: none;
+  text-shadow: 0 0 6px rgba(0,207,53,.4);
+  border-bottom: 1px solid rgba(0,207,53,.3);
+}
+
+/* chips */
+.c-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  background: rgba(0,207,53,.1);
+  border: 1px solid rgba(0,207,53,.3);
+  border-radius: 3px;
+  font-size: 12px;
+  color: #4ade80;
+  cursor: grab;
+}
+.c-chip .rm { color: rgba(0,207,53,.4); cursor: pointer; }
+
+/* pasture */
+.c-section-head {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: #30363d;
+  border-top: 1px solid #21262d;
+  padding-top: 8px;
+  margin: 4px 0 10px;
+}
+.c-pasture {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 64px;
+  padding: 12px;
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 4px;
+  margin-bottom: 14px;
+}
+
+/* poem canvas */
+.c-poem-canvas {
+  min-height: 140px;
+  padding: 14px;
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+.c-poem-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid #21262d;
+  min-height: 34px;
+}
+.c-poem-line:last-child { border-bottom: none; }
+.c-poem-word {
+  padding: 3px 8px;
+  background: rgba(0,207,53,.1);
+  border: 1px solid rgba(0,207,53,.25);
+  border-radius: 3px;
+  font-size: 12px;
+  color: #4ade80;
+  cursor: grab;
+}
+.c-poem-gap { font-size: 12px; color: #21262d; cursor: pointer; padding: 0 3px; }
+
+/* submit box */
+.c-submit-box {
+  background: rgba(0,207,53,.05);
+  border: 1px solid rgba(0,207,53,.2);
+  border-radius: 4px;
+  padding: 14px;
+}
+.c-submit-box p { font-size: 12px; color: #8b949e; margin-bottom: 10px; }
+.c-field-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.c-field-row .c-input { flex: 1; min-width: 120px; margin: 0; font-size: 12px; padding: 7px 10px; }
+.c-btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════ */
+@media (max-width: 420px) {
+  .a-field-row, .b-field-row, .c-field-row { flex-direction: column; }
+  .b-card::before { display: none; }
+  .proto-bar { font-size: 11px; gap: 6px; }
+  .th-btn { padding: 4px 8px; font-size: 10px; }
+  .proto-note { display: none; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ── Prototype switcher bar ── -->
+<div class="proto-bar">
+  <strong>🎨 prototype</strong>
+  <span class="label">theme:</span>
+  <button class="th-btn on" onclick="pick('a',this)">A · flat &amp; clean</button>
+  <button class="th-btn"    onclick="pick('b',this)">B · fridge &amp; field</button>
+  <button class="th-btn"    onclick="pick('c',this)">C · dark pasture</button>
+  <span class="proto-note">375px iPhone SE friendly</span>
+</div>
+
+
+<!-- ████████████████████████████████████████████
+     THEME A — FLAT & CLEAN
+████████████████████████████████████████████ -->
+<div id="th-a" class="theme on">
+<div class="a-wrap">
+
+  <nav class="a-nav">
+    <div class="a-nav-logo">🐴 Horse<span>Counter</span></div>
+    <a href="#">📝 Poetry →</a>
+    <a href="#">📬 Submissions →</a>
+  </nav>
+
+  <div class="a-container">
+
+    <!-- Counter card -->
+    <div class="a-card">
+      <div class="a-title">Horse Counter</div>
+
+      <div class="a-tabs">
+        <button class="a-tab on">URL</button>
+        <button class="a-tab">Text</button>
+        <button class="a-tab">Reply</button>
+      </div>
+
+      <input class="a-input" type="text" placeholder="https://blog.tumblr.com/post/123" value="https://horsegirlenergy.tumblr.com/post/77812344">
+      <button class="a-btn">Find Horses</button>
+
+      <!-- result -->
+      <div class="a-result-banner" style="margin-top:14px">
+        Found 4 horses
+        <span class="a-result-density">— 6.2% horse density (4 of 64 words)</span>
+      </div>
+
+      <div class="a-text-preview">
+        <p>
+          The legendary <a class="a-horse-link" href="#">Secretariat</a> set a record
+          that still stands today. Many compare him to <a class="a-horse-link" href="#">Man o' War</a>,
+          but aficionados of the sport know that <a class="a-horse-link" href="#">Seabiscuit</a>
+          captured the public imagination in a different way entirely. And no one can deny the
+          impact of <a class="a-horse-link" href="#">Black Beauty</a> on equestrian culture writ large.
+        </p>
+      </div>
+
+      <!-- submit section -->
+      <div class="a-submit-box">
+        <p>Want this posted to the blog? Submit it for review!</p>
+        <div class="a-field-row">
+          <input class="a-input" type="text" placeholder="Your name (optional)">
+          <input class="a-input" type="text" placeholder="Tumblr @ (optional)">
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="a-btn">Submit for review</button>
+          <button class="a-btn-sec">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Poetry card -->
+    <div class="a-card">
+      <div class="a-title">📝 Poetry Editor</div>
+
+      <div class="a-section-head">Pasture — your horse collection</div>
+      <div class="a-pasture">
+        <span class="a-horse-chip">Secretariat <span class="rm">✕</span></span>
+        <span class="a-horse-chip">Man o' War <span class="rm">✕</span></span>
+        <span class="a-horse-chip">Seabiscuit <span class="rm">✕</span></span>
+        <span class="a-horse-chip">Black Beauty <span class="rm">✕</span></span>
+        <span class="a-horse-chip">Trigger <span class="rm">✕</span></span>
+        <span class="a-horse-chip">Silver <span class="rm">✕</span></span>
+        <span class="a-horse-chip">Flicka <span class="rm">✕</span></span>
+      </div>
+
+      <div class="a-section-head">Poem canvas</div>
+      <div class="a-poem-canvas">
+        <div class="a-poem-line">
+          <span class="a-poem-word">Secretariat</span>
+          <span class="a-poem-gap">+</span>
+          <span class="a-poem-word">of</span>
+          <span class="a-poem-gap">+</span>
+          <span class="a-poem-word">my</span>
+          <span class="a-poem-gap">+</span>
+          <span class="a-poem-word">heart</span>
+          <span class="a-poem-gap">+</span>
+        </div>
+        <div class="a-poem-line">
+          <span class="a-poem-word">runs</span>
+          <span class="a-poem-gap">+</span>
+          <span class="a-poem-word">free</span>
+          <span class="a-poem-gap">+</span>
+          <span class="a-poem-word">past</span>
+          <span class="a-poem-gap">+</span>
+          <span class="a-poem-word">Seabiscuit</span>
+          <span class="a-poem-gap">+</span>
+        </div>
+        <div class="a-poem-line">
+          <span class="a-poem-gap">+</span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="a-btn">Submit poem for review</button>
+        <button class="a-btn-sec">Clear poem</button>
+        <button class="a-btn-sec">Clear pasture</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div><!-- /theme-a -->
+
+
+<!-- ████████████████████████████████████████████
+     THEME B — FRIDGE & FIELD
+████████████████████████████████████████████ -->
+<div id="th-b" class="theme">
+<div class="b-wrap">
+
+  <nav class="b-nav">
+    <div class="b-nav-logo">Horse<span>Counter</span></div>
+    <a href="#">Poetry →</a>
+    <a href="#">Submissions →</a>
+  </nav>
+
+  <div class="b-fence" style="margin-bottom:0"></div>
+
+  <div class="b-container">
+
+    <!-- Counter card -->
+    <div class="b-card" style="margin-top:24px">
+      <div class="b-title">Horse Counter</div>
+
+      <div class="b-tabs">
+        <button class="b-tab on">URL</button>
+        <button class="b-tab">Text</button>
+        <button class="b-tab">Reply</button>
+      </div>
+
+      <div class="b-tab-content">
+        <input class="b-input" type="text" placeholder="https://blog.tumblr.com/post/123" value="https://horsegirlenergy.tumblr.com/post/77812344">
+        <button class="b-btn">Find Horses</button>
+      </div>
+
+      <!-- result -->
+      <div class="b-result-banner">
+        Found <strong>4 horses</strong>
+        <span class="b-result-density">— 6.2% horse density (4 of 64 words)</span>
+      </div>
+
+      <div class="b-text-preview">
+        <p>
+          The legendary
+          <a class="b-magnet b-magnet-y" href="#" style="display:inline-block;margin:2px 4px;vertical-align:middle">Secretariat</a>
+          set a record that still stands today. Many compare him to
+          <a class="b-magnet b-magnet-g" href="#" style="display:inline-block;margin:2px 4px;vertical-align:middle">Man o' War</a>,
+          but aficionados know
+          <a class="b-magnet b-magnet-p" href="#" style="display:inline-block;margin:2px 4px;vertical-align:middle">Seabiscuit</a>
+          captured the public imagination differently. No one can deny
+          <a class="b-magnet b-magnet-b" href="#" style="display:inline-block;margin:2px 4px;vertical-align:middle">Black Beauty</a>
+          on equestrian culture writ large.
+        </p>
+      </div>
+
+      <!-- submit section -->
+      <div class="b-submit-box">
+        <p>Want this posted to the blog? Submit it for review!</p>
+        <div class="b-field-row">
+          <input class="b-input" type="text" placeholder="Your name (optional)">
+          <input class="b-input" type="text" placeholder="Tumblr @ (optional)">
+        </div>
+        <div class="b-btn-row">
+          <button class="b-btn">Submit for review</button>
+          <button class="b-btn-sec">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Poetry card -->
+    <div class="b-card">
+      <div class="b-title">Poetry Editor</div>
+
+      <div class="b-section-fence">Pasture</div>
+
+      <div class="b-pasture-label">Your horse collection — drag to poem</div>
+      <div class="b-pasture">
+        <span class="b-magnet b-magnet-y">Secretariat</span>
+        <span class="b-magnet b-magnet-g">Man o' War</span>
+        <span class="b-magnet b-magnet-p">Seabiscuit</span>
+        <span class="b-magnet b-magnet-b">Black Beauty</span>
+        <span class="b-magnet b-magnet-r">Trigger</span>
+        <span class="b-magnet b-magnet-w">Silver</span>
+        <span class="b-magnet b-magnet-y" style="transform:rotate(.9deg)">Flicka</span>
+      </div>
+
+      <div class="b-section-fence">Poem Canvas</div>
+
+      <div class="b-poem-canvas">
+        <div class="b-poem-line">
+          <span class="b-magnet b-magnet-y" style="transform:rotate(-2deg)">Secretariat</span>
+          <span class="b-poem-gap">·</span>
+          <span class="b-magnet b-magnet-w" style="transform:rotate(1deg)">of</span>
+          <span class="b-poem-gap">·</span>
+          <span class="b-magnet b-magnet-w" style="transform:rotate(-0.5deg)">my</span>
+          <span class="b-poem-gap">·</span>
+          <span class="b-magnet b-magnet-w" style="transform:rotate(1.5deg)">heart</span>
+          <span class="b-poem-gap">+</span>
+        </div>
+        <div class="b-poem-line" style="padding-top:10px">
+          <span class="b-magnet b-magnet-w" style="transform:rotate(-1deg)">runs</span>
+          <span class="b-poem-gap">·</span>
+          <span class="b-magnet b-magnet-w" style="transform:rotate(2deg)">free</span>
+          <span class="b-poem-gap">·</span>
+          <span class="b-magnet b-magnet-w" style="transform:rotate(-0.8deg)">past</span>
+          <span class="b-poem-gap">·</span>
+          <span class="b-magnet b-magnet-p" style="transform:rotate(1.2deg)">Seabiscuit</span>
+          <span class="b-poem-gap">+</span>
+        </div>
+        <div class="b-poem-line" style="padding-top:10px">
+          <span class="b-poem-gap">+ add line</span>
+        </div>
+      </div>
+
+      <div class="b-btn-row">
+        <button class="b-btn">Submit poem for review</button>
+        <button class="b-btn-sec">Clear poem</button>
+        <button class="b-btn-sec">Clear pasture</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="b-fence" style="margin-top:20px"></div>
+
+</div>
+</div><!-- /theme-b -->
+
+
+<!-- ████████████████████████████████████████████
+     THEME C — DARK PASTURE
+████████████████████████████████████████████ -->
+<div id="th-c" class="theme">
+<div class="c-wrap">
+
+  <nav class="c-nav">
+    <div class="c-nav-logo">🐴 HORSE<span>COUNTER</span></div>
+    <a href="#">📝 poetry</a>
+    <a href="#">📬 queue</a>
+  </nav>
+
+  <div class="c-container">
+
+    <!-- Counter card -->
+    <div class="c-card" style="margin-top:4px">
+      <div class="c-title">// horse_counter.exe</div>
+
+      <div class="c-tabs">
+        <button class="c-tab on">URL</button>
+        <button class="c-tab">TEXT</button>
+        <button class="c-tab">REPLY</button>
+      </div>
+
+      <input class="c-input" type="text" placeholder="https://blog.tumblr.com/post/123" value="https://horsegirlenergy.tumblr.com/post/77812344">
+      <button class="c-btn">▶ FIND HORSES</button>
+
+      <!-- result -->
+      <div class="c-result-banner" style="margin-top:14px">
+        ▲ FOUND 4 HORSES
+        <span class="c-result-density">— 6.2% density (4/64 words)</span>
+      </div>
+
+      <div class="c-text-preview">
+        <p>
+          The legendary <a class="c-horse-link" href="#">Secretariat</a> set a record
+          that still stands today. Many compare him to <a class="c-horse-link" href="#">Man o' War</a>,
+          but aficionados know <a class="c-horse-link" href="#">Seabiscuit</a>
+          captured the public imagination differently. And no one can deny
+          <a class="c-horse-link" href="#">Black Beauty</a> on equestrian culture.
+        </p>
+      </div>
+
+      <!-- submit section -->
+      <div class="c-submit-box">
+        <p>// submit this result for review and possible posting</p>
+        <div class="c-field-row">
+          <input class="c-input" type="text" placeholder="your name (optional)">
+          <input class="c-input" type="text" placeholder="tumblr @ (optional)">
+        </div>
+        <div class="c-btn-row">
+          <button class="c-btn">Submit for review</button>
+          <button class="c-btn-sec">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Poetry card -->
+    <div class="c-card">
+      <div class="c-title">// poetry_editor.exe</div>
+
+      <div class="c-section-head">PASTURE — horse collection</div>
+      <div class="c-pasture">
+        <span class="c-chip">Secretariat <span class="rm">✕</span></span>
+        <span class="c-chip">Man o' War <span class="rm">✕</span></span>
+        <span class="c-chip">Seabiscuit <span class="rm">✕</span></span>
+        <span class="c-chip">Black Beauty <span class="rm">✕</span></span>
+        <span class="c-chip">Trigger <span class="rm">✕</span></span>
+        <span class="c-chip">Silver <span class="rm">✕</span></span>
+        <span class="c-chip">Flicka <span class="rm">✕</span></span>
+      </div>
+
+      <div class="c-section-head">POEM CANVAS</div>
+      <div class="c-poem-canvas">
+        <div class="c-poem-line">
+          <span class="c-poem-word">Secretariat</span>
+          <span class="c-poem-gap">·</span>
+          <span class="c-poem-word">of</span>
+          <span class="c-poem-gap">·</span>
+          <span class="c-poem-word">my</span>
+          <span class="c-poem-gap">·</span>
+          <span class="c-poem-word">heart</span>
+          <span class="c-poem-gap">+</span>
+        </div>
+        <div class="c-poem-line">
+          <span class="c-poem-word">runs</span>
+          <span class="c-poem-gap">·</span>
+          <span class="c-poem-word">free</span>
+          <span class="c-poem-gap">·</span>
+          <span class="c-poem-word">past</span>
+          <span class="c-poem-gap">·</span>
+          <span class="c-poem-word">Seabiscuit</span>
+          <span class="c-poem-gap">+</span>
+        </div>
+        <div class="c-poem-line">
+          <span class="c-poem-gap">+ new line</span>
+        </div>
+      </div>
+
+      <div class="c-btn-row">
+        <button class="c-btn">Submit for review</button>
+        <button class="c-btn-sec">Clear poem</button>
+        <button class="c-btn-sec">Clear pasture</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div><!-- /theme-c -->
+
+
+<script>
+function pick(id, btn) {
+  document.querySelectorAll('.theme').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.th-btn').forEach(b => b.classList.remove('on'));
+  document.getElementById('th-' + id).classList.add('on');
+  btn.classList.add('on');
+  window.scrollTo(0, 0);
+}
+</script>
+
+</body>
+</html>

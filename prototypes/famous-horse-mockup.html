@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Famous Horse Chip Mockups</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Playfair+Display:wght@700&display=swap">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font: 14px/1.6 Georgia, serif;
+  background: #4d7432 url("static/grass.svg") repeat;
+  background-size: 40px 40px;
+  color: #2d2316;
+  padding: 30px 20px 60px;
+}
+h1 {
+  font: 700 1.5rem 'Playfair Display', serif;
+  color: #faf5e9;
+  text-align: center;
+  margin-bottom: 6px;
+  text-shadow: 1px 2px 4px rgba(0,0,0,.4);
+}
+.subtitle {
+  text-align: center;
+  color: #c8e8a0;
+  font: 13px 'Courier Prime', monospace;
+  margin-bottom: 30px;
+}
+.section {
+  background: #faf5e9;
+  border-radius: 4px;
+  padding: 22px 24px 28px;
+  margin-bottom: 24px;
+  box-shadow: 2px 3px 10px rgba(0,0,0,.18);
+}
+.section-label {
+  font: 700 11px 'Courier Prime', monospace;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #8a7050;
+  margin-bottom: 6px;
+}
+.section-title {
+  font: 700 1.05rem 'Playfair Display', serif;
+  color: #2d2316;
+  margin-bottom: 4px;
+}
+.section-desc {
+  font: 13px Georgia, serif;
+  color: #6b5430;
+  margin-bottom: 22px;
+  line-height: 1.5;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px 50px;
+  align-items: flex-end;
+  padding: 20px 10px 16px;
+  background: #fff9ee;
+  border: 1px solid #e0d4b0;
+  border-radius: 2px;
+}
+.chip-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.chip-label {
+  font: 11px 'Courier Prime', monospace;
+  color: #8a7050;
+  text-align: center;
+  max-width: 120px;
+}
+
+/* ── Base horse tile ── */
+.horse-tile {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 14px 5px 16px;
+  font: 700 12px 'Courier Prime','Courier New', monospace;
+  box-shadow: 2px 2px 4px rgba(0,0,0,.25);
+  border-radius: 6px;
+  white-space: nowrap;
+  position: relative;
+  overflow: visible;
+  background: var(--bg); color: var(--fg);
+  text-decoration: none;
+}
+.horse-tile::before {
+  content: '♞'; position: absolute; pointer-events: none;
+  color: var(--bg); font-size: 32px; line-height: 1;
+  left: 0; top: -20px;
+}
+.horse-tile::after {
+  content: '∫'; position: absolute; pointer-events: none;
+  color: var(--bg); font-size: 22px; line-height: 1;
+  right: -10px; top: 50%;
+  transform: translateY(-50%) scaleY(-1);
+}
+.horse-tile.rev::before { left: auto; right: 0; transform: scaleX(-1); }
+.horse-tile.rev::after  { right: auto; left: -10px; transform: translateY(-50%) scaleY(-1) scaleX(-1); }
+.horse-tile .legs {
+  position: absolute; pointer-events: none;
+  bottom: -6px; left: 0; right: 0; height: 6px;
+  background:
+    linear-gradient(var(--bg),var(--bg))  4px 0 / 2px 100% no-repeat,
+    linear-gradient(var(--bg),var(--bg)) 10px 0 / 2px 100% no-repeat,
+    linear-gradient(var(--bg),var(--bg)) calc(100% - 10px) 0 / 2px 100% no-repeat,
+    linear-gradient(var(--bg),var(--bg)) calc(100% -  4px) 0 / 2px 100% no-repeat;
+}
+
+/* ── A: Crown inside chip (current) ── */
+.a-crown .famous-crown {
+  font-size: 9px; color: #c8a000;
+  vertical-align: super; margin-right: 2px; line-height: 1;
+}
+
+/* ── B: Crown floating above the ♞ head ── */
+.b-head-crown::before { content: '♚♞'; letter-spacing: -4px; }
+
+/* ── C: Crown perched on top of the chip, centred ── */
+.c-top-crown .top-badge {
+  position: absolute;
+  top: -18px; left: 50%; transform: translateX(-50%);
+  font-size: 14px; line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.35));
+}
+
+/* ── D: Trophy to the right, hanging off the chip ── */
+.d-trophy-right .side-badge {
+  position: absolute;
+  right: -22px; top: 50%; transform: translateY(-50%);
+  font-size: 15px; line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.3));
+}
+
+/* ── E: Trophy above-right corner ── */
+.e-trophy-corner .corner-badge {
+  position: absolute;
+  top: -16px; right: -8px;
+  font-size: 14px; line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.3));
+}
+
+/* ── F: Small gold ribbon triangle in corner ── */
+.f-ribbon::after {
+  content: ''; position: absolute;
+  top: 0; right: 0;
+  border-style: solid;
+  border-width: 0 18px 18px 0;
+  border-color: transparent #c8a000 transparent transparent;
+  border-radius: 0 6px 0 0;
+}
+.f-ribbon .ribbon-star {
+  position: absolute; top: 0; right: 1px;
+  font-size: 8px; line-height: 1; color: #fff;
+  z-index: 1;
+}
+
+/* ── G: Gold glow only, no decoration ── */
+.g-glow {
+  box-shadow: 2px 2px 4px rgba(0,0,0,.25),
+              0 0 0 2px #c8a000,
+              0 0 10px 3px rgba(200,160,0,.45);
+}
+
+/* ── H: Shimmer animation ── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+/* Use background-image overlay instead of ::before so the horse head ::before is preserved */
+.h-shimmer {
+  background-color: var(--bg);
+  background-image: linear-gradient(105deg,
+    transparent 38%, rgba(255,255,255,.55) 50%, transparent 62%);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s linear infinite;
+  box-shadow: 2px 2px 4px rgba(0,0,0,.25), 0 0 0 1.5px rgba(200,160,0,.55);
+}
+
+/* ── I: Gold top stripe ── */
+.i-stripe {
+  border-top: 3px solid #c8a000;
+  padding-top: 3px;
+}
+
+/* ── J: Laurel wreath flanking the name ── */
+.j-laurel .laurel-l { margin-right: 3px; font-size: 11px; color: #9a7800; }
+.j-laurel .laurel-r { margin-left:  3px; font-size: 11px; color: #9a7800; transform: scaleX(-1); display: inline-block; }
+
+/* ── K: Rosette badge pinned to top-left ── */
+.k-rosette .rosette {
+  position: absolute;
+  top: -14px; left: 6px;
+  width: 20px; height: 20px;
+  background: radial-gradient(circle, #ffd700 40%, #c8a000 60%, #fff 62%, #c8a000 64%);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,.4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; color: #fff; font-weight: 700; line-height: 1;
+}
+
+/* ── L: Gold foil — metallic gradient overlay ── */
+.l-foil {
+  background: linear-gradient(135deg, #7a3520 0%, #a04828 30%, #7a3520 60%, #a04828 100%) !important;
+  box-shadow: 2px 2px 4px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.15);
+  border: 1px solid #c8a00088;
+}
+/* override legs and head/tail color for foil variant */
+.l-foil::before, .l-foil::after { color: #a04828; }
+.l-foil .legs { background:
+    linear-gradient(#a04828,#a04828)  4px 0 / 2px 100% no-repeat,
+    linear-gradient(#a04828,#a04828) 10px 0 / 2px 100% no-repeat,
+    linear-gradient(#a04828,#a04828) calc(100% - 10px) 0 / 2px 100% no-repeat,
+    linear-gradient(#a04828,#a04828) calc(100% -  4px) 0 / 2px 100% no-repeat;
+}
+
+/* ── M: Dotted gold outline (dashed border) ── */
+.m-dashed {
+  outline: 2px dashed #c8a000;
+  outline-offset: 3px;
+}
+
+/* ── N: Stars scattered around ── */
+.n-stars .star {
+  position: absolute;
+  font-size: 9px; line-height: 1; color: #c8a000;
+  filter: drop-shadow(0 0 2px rgba(200,160,0,.6));
+}
+.n-stars .s1 { top: -12px; left: 8px; }
+.n-stars .s2 { top: -10px; right: 10px; font-size: 7px; }
+.n-stars .s3 { bottom: -12px; left: 50%; transform: translateX(-50%); font-size: 8px; }
+
+/* ── O: Hanging ribbon below ── */
+.o-ribbon-below .ribbon-wrap {
+  position: absolute;
+  bottom: -22px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+  pointer-events: none;
+}
+.o-ribbon-below .ribbon-body {
+  background: #c8a000; color: #fff;
+  font: 700 7px 'Courier Prime', monospace;
+  padding: 1px 5px;
+  clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%);
+  white-space: nowrap;
+  letter-spacing: .04em;
+}
+.o-ribbon-below .ribbon-stem {
+  width: 1px; height: 5px; background: #c8a000;
+  margin-top: -1px;
+}
+
+/* ── Baseline (no famous styling) ── */
+.baseline { opacity: 0.55; }
+
+.fence {
+  height: 22px;
+  background: repeating-linear-gradient(90deg, #6b4820 0px, #6b4820 10px, transparent 10px, transparent 58px);
+  position: relative; margin: 0 -20px 30px;
+}
+.fence::before, .fence::after {
+  content: ''; position: absolute; left: 0; right: 0; height: 4px; background: #6b4820;
+}
+.fence::before { top: 4px; }
+.fence::after  { top: 14px; }
+</style>
+</head>
+<body>
+
+<h1>Famous Horse Chip Mockups</h1>
+<p class="subtitle">Options for marking Kentucky Derby winners and other notable horses</p>
+
+<div class="fence"></div>
+
+<!-- BASELINE -->
+<div class="section">
+  <div class="section-label">Reference</div>
+  <div class="section-title">Baseline — no famous styling</div>
+  <div class="section-desc">What a regular chip looks like. Each option below should feel like a clear upgrade.</div>
+  <div class="row">
+    <div class="chip-wrap">
+      <div class="horse-tile baseline" style="--bg:#7a3520;--fg:#f5ecd7">
+        <span class="legs"></span>Secretariat
+      </div>
+      <div class="chip-label">bay</div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile baseline" style="--bg:#1c1c1c;--fg:#e8d5b0">
+        <span class="legs"></span>Northern Dancer
+      </div>
+      <div class="chip-label">black</div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile baseline rev" style="--bg:#c8961a;--fg:#2a1800">
+        <span class="legs"></span>Mage
+      </div>
+      <div class="chip-label">palomino, facing right</div>
+    </div>
+  </div>
+</div>
+
+<!-- A: CROWN INSIDE (CURRENT) -->
+<div class="section">
+  <div class="section-label">Option A — Current</div>
+  <div class="section-title">♔ Crown superscript inside the chip</div>
+  <div class="section-desc">The crown glyph sits before the name as a superscript. Compact but feels a bit squeezed against the text, and the chess king reads as cluttered at small sizes.</div>
+  <div class="row">
+    <div class="chip-wrap">
+      <div class="horse-tile a-crown" style="--bg:#7a3520;--fg:#f5ecd7">
+        <span class="legs"></span><span class="famous-crown">♔</span>Secretariat
+      </div>
+      <div class="chip-label">crown before name</div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile a-crown" style="--bg:#1c1c1c;--fg:#e8d5b0">
+        <span class="legs"></span><span class="famous-crown">♔</span>Northern Dancer
+      </div>
+      <div class="chip-label"></div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile a-crown rev" style="--bg:#c8961a;--fg:#2a1800">
+        <span class="legs"></span><span class="famous-crown">♔</span>Mage
+      </div>
+      <div class="chip-label"></div>
+    </div>
+  </div>
+</div>
+
+<!-- B: CROWN ON HEAD -->
+<div class="section">
+  <div class="section-label">Option B</div>
+  <div class="section-title">♚ Crown stacked on the ♞ head</div>
+  <div class="section-desc">The black chess king sits directly on top of the horse head glyph, forming a layered silhouette. Works because both glyphs share the same colour as the chip body.</div>
+  <div class="row">
+    <div class="chip-wrap">
+      <div class="horse-tile b-head-crown" style="--bg:#7a3520;--fg:#f5ecd7">
+        <span class="legs"></span>Secretariat
+      </div>
+      <div class="chip-label">crown stacked on ♞</div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile b-head-crown" style="--bg:#1c1c1c;--fg:#e8d5b0">
+        <span class="legs"></span>Northern Dancer
+      </div>
+      <div class="chip-label"></div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile b-head-crown rev" style="--bg:#c8961a;--fg:#2a1800">
+        <span class="legs"></span>Mage
+      </div>
+      <div class="chip-label">reversed</div>
+    </div>
+  </div>
+</div>
+
+<!-- C: CROWN TOP-CENTRE -->
+<div class="section">
+  <div class="section-label">Option C</div>
+  <div class="section-title">Crown centred above the chip body</div>
+  <div class="section-desc">A crown emoji floats above the middle of the chip. Position is clear and symmetrical — doesn't compete with the horse head silhouette.</div>
+  <div class="row">
+    <div class="chip-wrap">
+      <div class="horse-tile c-top-crown" style="--bg:#7a3520;--fg:#f5ecd7">
+        <span class="legs"></span>
+        <span class="top-badge">👑</span>
+        Secretariat
+      </div>
+      <div class="chip-label">crown centred above</div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile c-top-crown" style="--bg:#1c1c1c;--fg:#e8d5b0">
+        <span class="legs"></span>
+        <span class="top-badge">👑</span>
+        Northern Dancer
+      </div>
+      <div class="chip-label"></div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile c-top-crown rev" style="--bg:#c8961a;--fg:#2a1800">
+        <span class="legs"></span>
+        <span class="top-badge">👑</span>
+        Mage
+      </div>
+      <div class="chip-label"></div>
+    </div>
+  </div>
+</div>
+
+<!-- D: TROPHY RIGHT -->
+<div class="section">
+  <div class="section-label">Option D</div>
+  <div class="section-title">🏆 Trophy off the right edge</div>
+  <div class="section-desc">A trophy hangs off the tail side of the chip. Feels like a medal or tag attached to the horse. Gets a bit close to the ∫ tail glyph on non-reversed chips.</div>
+  <div class="row">
+    <div class="chip-wrap">
+      <div class="horse-tile d-trophy-right" style="--bg:#7a3520;--fg:#f5ecd7">
+        <span class="legs"></span>Secretariat
+        <span class="side-badge">🏆</span>
+      </div>
+      <div class="chip-label">trophy off tail end</div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile d-trophy-right" style="--bg:#1c1c1c;--fg:#e8d5b0">
+        <span class="legs"></span>Northern Dancer
+        <span class="side-badge">🏆</span>
+      </div>
+      <div class="chip-label"></div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile d-trophy-right rev" style="--bg:#c8961a;--fg:#2a1800">
+        <span class="legs"></span>Mage
+        <span class="side-badge">🏆</span>
+      </div>
+      <div class="chip-label"></div>
+    </div>
+  </div>
+</div>
+
+<!-- E: TROPHY CORNER -->
+<div class="section">
+  <div class="section-label">Option E</div>
+  <div class="section-title">🏆 Trophy above the far corner</div>
+  <div class="section-desc">Trophy sits above the top-right corner of the chip. Feels like a stamp or seal. The gap from the horse head avoids clutter.</div>
+  <div class="row">
+    <div class="chip-wrap">
+      <div class="horse-tile e-trophy-corner" style="--bg:#7a3520;--fg:#f5ecd7">
+        <span class="legs"></span>Secretariat
+        <span class="corner-badge">🏆</span>
+      </div>
+      <div class="chip-label">trophy above right corner</div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile e-trophy-corner" style="--bg:#1c1c1c;--fg:#e8d5b0">
+        <span class="legs"></span>Northern Dancer
+        <span class="corner-badge">🏆</span>
+      </div>
+      <div class="chip-label"></div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile e-trophy-corner rev" style="--bg:#c8961a;--fg:#2a1800">
+        <span class="legs"></span>Mage
+        <span class="corner-badge">🏆</span>
+      </div>
+      <div class="chip-label"></div>
+    </div>
+  </div>
+</div>
+
+<!-- F: RIBBON CORNER -->
+<div class="section">
+  <div class="section-label">Option F</div>
+  <div class="section-title">Gold corner ribbon</div>
+  <div class="section-desc">A small gold triangle cut into the top-right corner with a star. Like a "sale" tag but for winners. Pure CSS, no emoji. Very subtle — might be too easy to miss.</div>
+  <div class="row">
+    <div class="chip-wrap">
+      <div class="horse-tile f-ribbon" style="--bg:#7a3520;--fg:#f5ecd7">
+        <span class="legs"></span>Secretariat
+        <span class="ribbon-star">★</span>
+      </div>
+      <div class="chip-label">gold corner triangle</div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile f-ribbon" style="--bg:#1c1c1c;--fg:#e8d5b0">
+        <span class="legs"></span>Northern Dancer
+        <span class="ribbon-star">★</span>
+      </div>
+      <div class="chip-label"></div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile f-ribbon rev" style="--bg:#c8961a;--fg:#2a1800">
+        <span class="legs"></span>Mage
+        <span class="ribbon-star">★</span>
+      </div>
+      <div class="chip-label"></div>
+    </div>
+  </div>
+</div>
+
+<!-- G: GOLD GLOW -->
+<div class="section">
+  <div class="section-label">Option G</div>
+  <div class="section-title">Gold glow — no decoration, just light</div>
+  <div class="section-desc">A double box-shadow creates a solid gold outline plus a soft ambient glow. Clean, works on every coat color, nothing competing with the horse shape. Relies on you noticing the glow.</div>
+  <div class="row">
+    <div class="chip-wrap">
+      <div class="horse-tile g-glow" style="--bg:#7a3520;--fg:#f5ecd7">
+        <span class="legs"></span>Secretariat
+      </div>
+      <div class="chip-label">2px ring + soft glow</div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile g-glow" style="--bg:#1c1c1c;--fg:#e8d5b0">
+        <span class="legs"></span>Northern Dancer
+      </div>
+      <div class="chip-label"></div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile g-glow rev" style="--bg:#c8961a;--fg:#2a1800">
+        <span class="legs"></span>Mage
+      </div>
+      <div class="chip-label">palomino — glow less visible</div>
+    </div>
+  </div>
+</div>
+
+<!-- H: SHIMMER -->
+<div class="section">
+  <div class="section-label">Option H</div>
+  <div class="section-title">Animated gold shimmer</div>
+  <div class="section-desc">A light sweep of gold moves across the chip on a loop, like a glint off a trophy. Draws the eye without adding any clutter. Very subtle on dark coats.</div>
+  <div class="row">
+    <div class="chip-wrap">
+      <div class="horse-tile h-shimmer" style="--bg:#7a3520;--fg:#f5ecd7">
+        <span class="legs"></span>Secretariat
+      </div>
+      <div class="chip-label">animated shimmer</div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile h-shimmer" style="--bg:#1c1c1c;--fg:#e8d5b0">
+        <span class="legs"></span>Northern Dancer
+      </div>
+      <div class="chip-label"></div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile h-shimmer rev" style="--bg:#c8961a;--fg:#2a1800">
+        <span class="legs"></span>Mage
+      </div>
+      <div class="chip-label">palomino — most visible</div>
+    </div>
+  </div>
+</div>
+
+<!-- I: TOP STRIPE -->
+<div class="section">
+  <div class="section-label">Option I</div>
+  <div class="section-title">Gold top stripe</div>
+  <div class="section-desc">A 3px gold stripe along the top edge of the chip — like the colour bar on a racing silks badge. Simple and unmissable, consistent across all coat colours.</div>
+  <div class="row">
+    <div class="chip-wrap">
+      <div class="horse-tile i-stripe" style="--bg:#7a3520;--fg:#f5ecd7">
+        <span class="legs"></span>Secretariat
+      </div>
+      <div class="chip-label">3px gold top edge</div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile i-stripe" style="--bg:#1c1c1c;--fg:#e8d5b0">
+        <span class="legs"></span>Northern Dancer
+      </div>
+      <div class="chip-label"></div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile i-stripe rev" style="--bg:#c8961a;--fg:#2a1800">
+        <span class="legs"></span>Mage
+      </div>
+      <div class="chip-label"></div>
+    </div>
+  </div>
+</div>
+
+<!-- J: LAUREL -->
+<div class="section">
+  <div class="section-label">Option J</div>
+  <div class="section-title">❧ Laurel sprigs flanking the name</div>
+  <div class="section-desc">Laurel/fleuron characters bookend the horse name. Classic "winner" symbolism, keeps the horse silhouette untouched. Feels a bit typographic rather than a physical badge.</div>
+  <div class="row">
+    <div class="chip-wrap">
+      <div class="horse-tile j-laurel" style="--bg:#7a3520;--fg:#f5ecd7">
+        <span class="legs"></span>
+        <span class="laurel-l">❧</span>Secretariat<span class="laurel-r">❧</span>
+      </div>
+      <div class="chip-label">laurel sprigs</div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile j-laurel" style="--bg:#1c1c1c;--fg:#e8d5b0">
+        <span class="legs"></span>
+        <span class="laurel-l">❧</span>Northern Dancer<span class="laurel-r">❧</span>
+      </div>
+      <div class="chip-label"></div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile j-laurel rev" style="--bg:#c8961a;--fg:#2a1800">
+        <span class="legs"></span>
+        <span class="laurel-l">❧</span>Mage<span class="laurel-r">❧</span>
+      </div>
+      <div class="chip-label"></div>
+    </div>
+  </div>
+</div>
+
+<!-- K: ROSETTE -->
+<div class="section">
+  <div class="section-label">Option K</div>
+  <div class="section-title">Gold rosette pinned above the chip</div>
+  <div class="section-desc">A small circular rosette badge sits above the chip body near the head. Like a show ribbon pin. The most "equestrian competition" feeling option.</div>
+  <div class="row">
+    <div class="chip-wrap">
+      <div class="horse-tile k-rosette" style="--bg:#7a3520;--fg:#f5ecd7">
+        <span class="legs"></span>Secretariat
+        <span class="rosette">1</span>
+      </div>
+      <div class="chip-label">gold rosette pin</div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile k-rosette" style="--bg:#1c1c1c;--fg:#e8d5b0">
+        <span class="legs"></span>Northern Dancer
+        <span class="rosette">1</span>
+      </div>
+      <div class="chip-label"></div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile k-rosette rev" style="--bg:#c8961a;--fg:#2a1800">
+        <span class="legs"></span>Mage
+        <span class="rosette">1</span>
+      </div>
+      <div class="chip-label"></div>
+    </div>
+  </div>
+</div>
+
+<!-- N: STARS -->
+<div class="section">
+  <div class="section-label">Option N</div>
+  <div class="section-title">★ Stars scattered around the chip</div>
+  <div class="section-desc">Small gold stars float above and below the chip like sparkles. Playful and whimsical — fits the tone of the site. Might look busy alongside the horse decorations.</div>
+  <div class="row">
+    <div class="chip-wrap">
+      <div class="horse-tile n-stars" style="--bg:#7a3520;--fg:#f5ecd7">
+        <span class="legs"></span>Secretariat
+        <span class="star s1">★</span>
+        <span class="star s2">★</span>
+        <span class="star s3">★</span>
+      </div>
+      <div class="chip-label">scattered stars</div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile n-stars" style="--bg:#1c1c1c;--fg:#e8d5b0">
+        <span class="legs"></span>Northern Dancer
+        <span class="star s1">★</span>
+        <span class="star s2">★</span>
+        <span class="star s3">★</span>
+      </div>
+      <div class="chip-label"></div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile n-stars rev" style="--bg:#c8961a;--fg:#2a1800">
+        <span class="legs"></span>Mage
+        <span class="star s1">★</span>
+        <span class="star s2">★</span>
+        <span class="star s3">★</span>
+      </div>
+      <div class="chip-label"></div>
+    </div>
+  </div>
+</div>
+
+<!-- O: HANGING RIBBON -->
+<div class="section">
+  <div class="section-label">Option O</div>
+  <div class="section-title">Hanging winner ribbon below</div>
+  <div class="section-desc">A small gold pennant hangs beneath the chip like a prize ribbon or medal. The text could say "KD" or "Winner." Very clear meaning, but adds height to the chip layout.</div>
+  <div class="row">
+    <div class="chip-wrap" style="padding-bottom: 14px;">
+      <div class="horse-tile o-ribbon-below" style="--bg:#7a3520;--fg:#f5ecd7">
+        <span class="legs"></span>Secretariat
+        <span class="ribbon-wrap">
+          <span class="ribbon-stem"></span>
+          <span class="ribbon-body">KD WINNER</span>
+        </span>
+      </div>
+      <div class="chip-label">pennant below</div>
+    </div>
+    <div class="chip-wrap" style="padding-bottom: 14px;">
+      <div class="horse-tile o-ribbon-below" style="--bg:#1c1c1c;--fg:#e8d5b0">
+        <span class="legs"></span>Northern Dancer
+        <span class="ribbon-wrap">
+          <span class="ribbon-stem"></span>
+          <span class="ribbon-body">KD WINNER</span>
+        </span>
+      </div>
+      <div class="chip-label"></div>
+    </div>
+    <div class="chip-wrap" style="padding-bottom: 14px;">
+      <div class="horse-tile o-ribbon-below rev" style="--bg:#c8961a;--fg:#2a1800">
+        <span class="legs"></span>Mage
+        <span class="ribbon-wrap">
+          <span class="ribbon-stem"></span>
+          <span class="ribbon-body">KD WINNER</span>
+        </span>
+      </div>
+      <div class="chip-label"></div>
+    </div>
+  </div>
+</div>
+
+<!-- COMBINATIONS -->
+<div class="section">
+  <div class="section-label">Combinations</div>
+  <div class="section-title">Glow + one decoration</div>
+  <div class="section-desc">The glow alone is easy to miss. Pairing it with a small badge might give the best of both — unmissable at a glance, but the decoration carries the meaning.</div>
+  <div class="row">
+    <div class="chip-wrap">
+      <div class="horse-tile g-glow c-top-crown" style="--bg:#7a3520;--fg:#f5ecd7">
+        <span class="legs"></span>
+        <span class="top-badge">👑</span>
+        Secretariat
+      </div>
+      <div class="chip-label">glow + crown above</div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile g-glow e-trophy-corner" style="--bg:#1c1c1c;--fg:#e8d5b0">
+        <span class="legs"></span>Northern Dancer
+        <span class="corner-badge">🏆</span>
+      </div>
+      <div class="chip-label">glow + trophy corner</div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile h-shimmer i-stripe" style="--bg:#8b3a1f;--fg:#fae8c8">
+        <span class="legs"></span>Justify
+      </div>
+      <div class="chip-label">shimmer + gold stripe</div>
+    </div>
+    <div class="chip-wrap">
+      <div class="horse-tile g-glow k-rosette" style="--bg:#7a7a7a;--fg:#f0ead6">
+        <span class="legs"></span>American Pharoah
+        <span class="rosette">1</span>
+      </div>
+      <div class="chip-label">glow + rosette</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
