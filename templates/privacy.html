@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Privacy Policy — poet.horse{% endblock %}
+{% block content %}
+<div class="box legal-page">
+  <h1>Privacy Policy</h1>
+
+  <p class="legal-updated">Last updated: 2026-05-15</p>
+
+  <section class="legal-plain">
+    <h2>The short version</h2>
+    <ul>
+      <li>We don't run analytics, tracking pixels, or third-party fingerprinting on poet.horse.</li>
+      <li>If you sign in, we store: your Clerk user ID, the slug and display name you chose, the poems you publish, the horses in your stable and pasture, and your site preferences.</li>
+      <li>If you don't sign in, we store nothing about you on our servers. Drafts and your stable live in your browser's local storage.</li>
+      <li>Your email lives with Clerk (our authentication provider). We never see your password.</li>
+      <li>Standard web server logs (IP, user agent, request path) are kept short-term for spam and abuse handling.</li>
+      <li>You can delete your account and your data at any time. See <a href="{{ url_for('data_deletion') }}">Data Deletion</a>.</li>
+    </ul>
+  </section>
+
+  <section class="legal-formal">
+    <h2>The longer version</h2>
+
+    <h3>1. What we collect</h3>
+    <p>If you sign in we store, in our own database:</p>
+    <ul>
+      <li>A Clerk-issued user identifier.</li>
+      <li>The slug, display name, profile links, and role you chose.</li>
+      <li>Poems you submit, with the title, lines, tags, and any attribution you supplied.</li>
+      <li>Horses you add to your stable, pasture, or saved collections.</li>
+      <li>Preferences (e.g. page size, reader-mode, signing name) you've set.</li>
+    </ul>
+    <p>If you don't sign in we store nothing on our servers about you personally. Your in-progress poems, your stable, and your preferences are kept in your browser's local storage and never sent to us until you choose to submit a poem.</p>
+
+    <h3>2. Authentication</h3>
+    <p>Sign-in is handled by Clerk (<a href="https://clerk.com/privacy">clerk.com/privacy</a>). We receive a verified user identifier and a display name from your identity provider. We do not see your password.</p>
+
+    <h3>3. Server logs</h3>
+    <p>Our web server keeps short-term access logs containing the request path, the response status, your IP address, and your user-agent string. These logs are used for debugging, rate limiting, and abuse handling. They are not shared with third parties and are rotated.</p>
+
+    <h3>4. Anonymous submissions</h3>
+    <p>You can submit poems anonymously. Anonymous poems are permanently anonymous; there is no path to retroactively claim them.</p>
+
+    <h3>5. Public information</h3>
+    <p>Your published poems, display name, slug, and profile links are public.</p>
+
+    <h3>6. Cookies</h3>
+    <p>We use a single session cookie for keeping you signed in. We do not use cookies for tracking, advertising, or analytics.</p>
+
+    <h3>7. Sharing</h3>
+    <p>We do not sell or rent your data. We do not share your data with advertisers. Cross-posting to platforms like Tumblr only happens when an admin flags a poem for cross-post, and only the poem content and attribution you supplied are sent.</p>
+
+    <h3>8. Deletion</h3>
+    <p>You can delete your account and your poems at any time. See <a href="{{ url_for('data_deletion') }}">Data Deletion</a>.</p>
+
+    <h3>9. Changes</h3>
+    <p>We may update this policy. Material changes will be announced on the home page.</p>
+  </section>
+</div>
+{% endblock %}

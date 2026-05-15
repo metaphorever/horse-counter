@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Terms of Service — poet.horse{% endblock %}
+{% block content %}
+<div class="box legal-page">
+  <h1>Terms of Service</h1>
+
+  <p class="legal-updated">Last updated: 2026-05-15</p>
+
+  <section class="legal-plain">
+    <h2>The short version</h2>
+    <ul>
+      <li>poet.horse is a small, hobbyist site for writing poems out of horse names. Use it for fun. Don't break it.</li>
+      <li>You keep the rights to your poems. By posting one publicly, you give us permission to display it on the site and share it on the connected platforms (Tumblr, etc.) with attribution.</li>
+      <li>Don't post anything illegal, harassing, or harmful. We can hide or remove anything at any time.</li>
+      <li>The horse dictionary, the source code, and the design are ours. Don't scrape the site or repackage it without asking.</li>
+      <li>The site is provided as-is. Things may break. Data may be lost. Please don't rely on it for anything important.</li>
+      <li>You can delete your account and your poems at any time. See <a href="{{ url_for('data_deletion') }}">Data Deletion</a>.</li>
+    </ul>
+  </section>
+
+  <section class="legal-formal">
+    <h2>The longer version</h2>
+
+    <h3>1. Acceptance</h3>
+    <p>By using poet.horse you agree to these terms. If you don't agree, please don't use the site.</p>
+
+    <h3>2. Your content</h3>
+    <p>You retain all rights to the poems you submit. By publishing a poem to poet.horse you grant us a non-exclusive, worldwide, royalty-free licence to display, format, archive, and republish that poem on poet.horse and on any connected publishing platform listed at the time of submission, with the attribution you supplied.</p>
+
+    <h3>3. Acceptable use</h3>
+    <p>You may not submit content that is unlawful, defamatory, threatening, harassing, or that infringes someone else's rights. We may remove content and suspend accounts at our sole discretion. Curation is a part of the product.</p>
+
+    <h3>4. Our content</h3>
+    <p>The horse dictionary, the site code, the visual design, and the assembled features are owned by the operator of poet.horse. You may link to public pages and quote poems with attribution. Scraping, mirroring, or building derivative services from our data requires written permission.</p>
+
+    <h3>5. Account and authentication</h3>
+    <p>Authentication is provided by Clerk. We don't store passwords. You can revoke your sign-in at any time through your identity provider.</p>
+
+    <h3>6. Availability</h3>
+    <p>The site is provided on an "as-is" and "as-available" basis with no warranty. We make no guarantee of uptime, accuracy, or fitness for any purpose. To the maximum extent permitted by law, the operator is not liable for any indirect or consequential loss arising from your use of the site.</p>
+
+    <h3>7. Changes</h3>
+    <p>We may update these terms. Material changes will be announced on the home page. Continued use after a change means you accept it.</p>
+
+    <h3>8. Contact</h3>
+    <p>Questions: write to the operator via the contact link in the footer.</p>
+  </section>
+</div>
+{% endblock %}

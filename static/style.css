@@ -727,3 +727,270 @@ button[type="submit"]:active { transform: translate(2px, 2px); box-shadow: none;
 @media (max-width: 640px) {
   .poetry-wrap { grid-template-columns: 1fr; }
 }
+
+/* ── Site header / top nav (Phase 1.1) ── */
+.site-header {
+  background: #faf5e9;
+  border-bottom: 1px solid rgba(139,105,20,.18);
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+}
+.site-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.site-brand {
+  font: 700 1.15rem/1 'Playfair Display', Georgia, serif;
+  color: #2d2316;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.site-brand:hover { color: #5a7a2a; }
+.site-nav { flex: 1; }
+.site-nav-list {
+  list-style: none;
+  display: flex;
+  gap: 18px;
+  margin: 0; padding: 0;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.site-nav-list a {
+  font: 13px 'Courier Prime', 'Courier New', monospace;
+  color: #2d2316;
+  text-decoration: none;
+  padding: 4px 2px;
+  border-bottom: 1px solid transparent;
+}
+.site-nav-list a:hover { color: #3d5a1a; border-bottom-color: #3d5a1a; }
+
+/* Dropdown submenu (Read Poems) */
+.site-nav-details { position: relative; }
+.site-nav-details > summary {
+  list-style: none;
+  cursor: pointer;
+  font: 13px 'Courier Prime', 'Courier New', monospace;
+  color: #2d2316;
+  padding: 4px 2px;
+  border-bottom: 1px solid transparent;
+  user-select: none;
+}
+.site-nav-details > summary::-webkit-details-marker { display: none; }
+.site-nav-details > summary::after {
+  content: ' ▾';
+  font-size: 10px;
+  color: #8a7050;
+}
+.site-nav-details[open] > summary { color: #3d5a1a; border-bottom-color: #3d5a1a; }
+.site-nav-sub {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  list-style: none;
+  background: #faf5e9;
+  border: 1px solid rgba(139,105,20,.25);
+  box-shadow: 2px 3px 8px rgba(0,0,0,.14);
+  padding: 6px 0;
+  min-width: 140px;
+  z-index: 100;
+}
+.site-nav-sub li { padding: 0; }
+.site-nav-sub a {
+  display: block;
+  padding: 6px 14px;
+  border-bottom: none;
+}
+.site-nav-sub a:hover { background: #ede0b0; }
+
+/* User menu */
+.site-user { position: relative; }
+.user-signin {
+  display: inline-block;
+  font: 13px 'Courier Prime', 'Courier New', monospace;
+  color: #2d2316;
+  text-decoration: none;
+  padding: 6px 12px;
+  background: #ede0b0;
+  border: 1px solid #c4a96b;
+  border-radius: 2px;
+}
+.user-signin:hover { background: #e0d090; }
+.user-menu { position: relative; }
+.user-menu > summary.user-menu-trigger {
+  list-style: none;
+  cursor: pointer;
+  font: 13px 'Courier Prime', 'Courier New', monospace;
+  color: #2d2316;
+  padding: 6px 12px;
+  background: #ede0b0;
+  border: 1px solid #c4a96b;
+  border-radius: 2px;
+  user-select: none;
+}
+.user-menu > summary.user-menu-trigger::-webkit-details-marker { display: none; }
+.user-menu > summary.user-menu-trigger::after {
+  content: ' ▾';
+  font-size: 10px;
+  color: #6b4820;
+}
+.user-menu-list {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  list-style: none;
+  background: #faf5e9;
+  border: 1px solid rgba(139,105,20,.25);
+  box-shadow: 2px 3px 8px rgba(0,0,0,.14);
+  padding: 6px 0;
+  min-width: 200px;
+  z-index: 100;
+}
+.user-menu-list a {
+  display: block;
+  padding: 6px 14px;
+  font: 13px 'Courier Prime', 'Courier New', monospace;
+  color: #2d2316;
+  text-decoration: none;
+}
+.user-menu-list a:hover { background: #ede0b0; }
+.user-menu-sep { border-top: 1px solid rgba(139,105,20,.2); margin-top: 4px; padding-top: 4px; }
+
+@media (max-width: 640px) {
+  .site-header-inner { gap: 10px; padding: 8px 12px; }
+  .site-nav-list { gap: 12px; }
+  .site-nav-list a, .site-nav-details > summary { font-size: 12px; }
+  .user-menu-list { right: auto; left: 0; }
+}
+
+/* ── Site footer (Phase 1.22) ── */
+.site-footer {
+  background: #2d2316;
+  color: #faf5e9;
+  margin-top: 24px;
+  padding: 24px 16px;
+}
+.site-footer-inner {
+  max-width: 820px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+}
+.weatherhead {
+  max-width: 640px;
+  border-left: 3px solid #c4a96b;
+  padding: 4px 16px;
+  margin: 0;
+  font: italic 14px/1.55 Georgia, 'Times New Roman', serif;
+  color: #f0ead8;
+}
+.weatherhead p { margin: 0 0 6px; }
+.weatherhead cite {
+  display: block;
+  font: 11px 'Courier Prime', 'Courier New', monospace;
+  font-style: normal;
+  color: #c4a96b;
+}
+.weatherhead cite a {
+  color: #c4a96b;
+  text-decoration: none;
+  border-bottom: 1px dotted #c4a96b;
+}
+.weatherhead cite a:hover { color: #faf5e9; border-bottom-color: #faf5e9; }
+.site-footer-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font: 12px 'Courier Prime', 'Courier New', monospace;
+}
+.site-footer-clover { font-size: 18px; }
+.site-footer-links { display: flex; gap: 14px; }
+.site-footer-links a {
+  color: #c4a96b;
+  text-decoration: none;
+  border-bottom: 1px dotted #c4a96b;
+}
+.site-footer-links a:hover { color: #faf5e9; border-bottom-color: #faf5e9; }
+.site-footer-kofi {
+  margin-top: 4px;
+}
+.site-footer-kofi .btn-container-Khaki { /* Ko-fi default class — keep widget happy */ }
+
+/* ── /me/* coming-soon stub ── */
+.me-stub p { margin-top: 8px; color: #5a4a30; }
+.me-stub-coming {
+  font: 12px 'Courier Prime', 'Courier New', monospace;
+  color: #8a7050;
+  margin-top: 16px;
+}
+
+/* ── Legal pages ── */
+.legal-page h1 { margin-bottom: 6px; }
+.legal-page h2 {
+  margin: 22px 0 10px;
+  font: 700 1.05rem/1.2 'Playfair Display', Georgia, serif;
+  border-bottom: 1px solid rgba(139,105,20,.25);
+  padding-bottom: 4px;
+}
+.legal-page h3 {
+  margin: 16px 0 6px;
+  font: 700 0.95rem/1.2 Georgia, serif;
+}
+.legal-page p, .legal-page li { margin-bottom: 8px; }
+.legal-page ul { padding-left: 22px; margin-bottom: 12px; }
+.legal-updated {
+  font: 11px 'Courier Prime', 'Courier New', monospace;
+  color: #8a7050;
+  margin-bottom: 12px;
+}
+.legal-note {
+  font: 11px 'Courier Prime', 'Courier New', monospace;
+  color: #8a7050;
+  margin-top: 16px;
+  border-top: 1px dashed rgba(139,105,20,.25);
+  padding-top: 10px;
+}
+.legal-formal { margin-top: 18px; }
+
+/* ── Sync prompt (Phase 0.5) ── */
+.sync-prompt {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #faf5e9;
+  border: 1px solid #c4a96b;
+  box-shadow: 2px 3px 10px rgba(0,0,0,.2);
+  padding: 12px 16px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  max-width: calc(100vw - 24px);
+  z-index: 9999;
+  font: 13px Georgia, serif;
+  color: #2d2316;
+}
+.sync-prompt-text { max-width: 380px; }
+.sync-prompt button {
+  font: 12px 'Courier Prime', 'Courier New', monospace;
+  padding: 6px 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  border: 1px solid #c4a96b;
+  background: #ede0b0;
+  color: #2d2316;
+}
+.sync-prompt-yes { background: #6dbf4a !important; color: #fff !important; border-color: #3a5a1a !important; }
+.sync-prompt-yes:hover:not([disabled]) { background: #5aa83a !important; }
+.sync-prompt button:hover:not([disabled]) { background: #e0d090; }
+.sync-prompt button[disabled] { opacity: .6; cursor: not-allowed; }

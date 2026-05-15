@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Data Deletion — poet.horse{% endblock %}
+{% block content %}
+<div class="box legal-page">
+  <h1>Data Deletion</h1>
+
+  <p class="legal-updated">Last updated: 2026-05-15</p>
+
+  <section class="legal-plain">
+    <h2>How to delete your data</h2>
+    <p>You have two scopes of deletion available.</p>
+
+    <h3>Delete your account</h3>
+    <p>Email the operator (see address below) from the email address associated with your sign-in and ask for account deletion. We will:</p>
+    <ul>
+      <li>Remove your user record (slug, display name, profile links, preferences).</li>
+      <li>Remove your private collections (stable, pasture, saved poems, saved horses).</li>
+      <li>Remove your drafts.</li>
+      <li>Either delete your published poems entirely, or — if you prefer — keep them on the site as <em>anonymous</em> with attribution stripped. State your preference in the email.</li>
+      <li>Revoke your Clerk session.</li>
+    </ul>
+    <p>Account deletion is processed within seven days. We will reply when it is complete.</p>
+
+    <h3>Delete an individual poem</h3>
+    <p>Use the <strong>Report</strong> button on the poem's permalink page and select "I am the author and want this removed". You can also email the operator with the poem URL.</p>
+
+    <h3>Anonymous submissions</h3>
+    <p>Anonymous poems carry no link to any account, so we generally cannot verify authorship. Email the operator with the poem URL and as much context as you can; we will use our best judgement.</p>
+
+    <h3>Local data only</h3>
+    <p>If you have never signed in, all of your poet.horse data lives in your own browser's local storage. Clearing site data for poet.horse in your browser settings removes it completely; we hold nothing.</p>
+  </section>
+
+  <section class="legal-formal">
+    <h2>Contact</h2>
+    <p>Email the operator via the contact link in the footer. Include the email address associated with your Clerk sign-in.</p>
+
+    <p class="legal-note">This page satisfies the data-deletion instructions requirement for OAuth providers that ask for one. A signed-request webhook will be added when a connected provider requires it.</p>
+  </section>
+</div>
+{% endblock %}

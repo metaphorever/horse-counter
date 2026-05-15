@@ -47,6 +47,7 @@ from clerk_auth import verify_clerk_token, CLERK_PUBLISHABLE_KEY
 from db.users import (
     get_user_by_id, get_user_by_clerk_id, get_user_by_slug,
     create_user, validate_slug, slug_available,
+    merge_preferences, merge_stable_for_user,
 )
 from auth import TumblrManager
 from matcher import (
@@ -317,6 +318,98 @@ def setup_account():
     )
 
 
+# ── /me/* — signed-in user destinations ───────────────────────────────────────
+# Most of these are stubs that fill out in later phases; the routes exist now
+# so the top-nav user menu (1.1) has somewhere to land.
+
+def _require_user():
+    """Returns the current user dict, or a redirect response for the sign-in flow."""
+    user = g.get('current_user')
+    if user is None:
+        return None, redirect(url_for('sign_in'))
+    return user, None
+
+
+def _me_stub(title: str, description: str):
+    """Render the minimal coming-soon placeholder for an unfinished /me/* page."""
+    user, redir = _require_user()
+    if redir is not None:
+        return redir
+    return render_template('me_stub.html', title=title, description=description)
+
+
+@app.route('/me/published')
+def me_published():
+    return _me_stub('Published Poems', 'Your published poems will appear here.')
+
+
+@app.route('/me/drafts')
+def me_drafts():
+    return _me_stub('Unpublished Poems', 'Drafts and submissions awaiting review will appear here.')
+
+
+@app.route('/me/pasture')
+def me_pasture():
+    return _me_stub('My Pasture', 'Horses you have added to your pasture will appear here.')
+
+
+@app.route('/me/saved-poems')
+def me_saved_poems():
+    return _me_stub('Saved Poems', 'Poems you have saved with the blue ribbon will appear here.')
+
+
+@app.route('/me/saved-horses')
+def me_saved_horses():
+    return _me_stub('Saved Horses', 'Horses you have saved with the blue ribbon will appear here.')
+
+
+@app.route('/me/profile')
+def me_profile():
+    """Owner view of own profile. For now, redirect to public /u/<slug>."""
+    user, redir = _require_user()
+    if redir is not None:
+        return redir
+    return redirect(url_for('user_profile', slug=user['slug']))
+
+
+@app.route('/me/sync', methods=['POST'])
+def me_sync():
+    """
+    Merge a signed-in user's browser-local data (stable + saved poetry prefs)
+    into their server-side record. Called by base.html after sign-in when
+    localStorage still holds anonymous data. Safe to call multiple times —
+    the stable merge is a union and prefs merge skips already-set keys.
+    """
+    user = g.get('current_user')
+    if user is None:
+        return jsonify({'ok': False, 'error': 'Not signed in'}), 401
+
+    data = request.get_json(silent=True) or {}
+    stable = data.get('stable') or []
+    if not isinstance(stable, list):
+        stable = []
+
+    prefs_in = {
+        'poem_name':   (data.get('poem_name')   or '')[:80],
+        'poem_tumblr': _sanitize_tumblr(data.get('poem_tumblr') or ''),
+    }
+    try:
+        ps = int(data.get('page_size') or 0)
+        if ps in (10, 25, 50, 100):
+            prefs_in['page_size'] = ps
+    except (TypeError, ValueError):
+        pass
+
+    inserted    = merge_stable_for_user(user['id'], stable)
+    merged_prefs = merge_preferences(user['id'], prefs_in, only_if_blank=True)
+
+    return jsonify({
+        'ok':              True,
+        'inserted_horses': inserted,
+        'preferences':     merged_prefs,
+    })
+
+
 # ── Poet profile ──────────────────────────────────────────────────────────────
 
 @app.route('/u/<slug>')
@@ -331,6 +424,52 @@ def user_profile(slug):
             error=f'No poet found with the slug "{slug}"',
         ), 404
     return render_template('user_profile.html', poet=user)
+
+
+# ── Public read-poems pages (Phase 1.5 / 1.8 stubs) ───────────────────────────
+# These exist so the top-level nav (Phase 1.1) has somewhere to land. Real
+# implementations arrive in 1.5 (permalink), 1.8 (featured/browse/random),
+# and 1.7/2.13 (pasture mode).
+
+def _public_stub(title: str, description: str):
+    return render_template('me_stub.html', title=title, description=description)
+
+
+@app.route('/featured')
+def featured():
+    return _public_stub('Featured Poems', 'Hand-picked poems will appear here once we have a featured rotation.')
+
+
+@app.route('/browse')
+def browse():
+    return _public_stub('Browse Poems', 'A sortable, filterable feed of every published poem will appear here.')
+
+
+@app.route('/random')
+def random_poem():
+    return _public_stub('Random Poem', 'A random published poem will appear here once we have a published feed.')
+
+
+@app.route('/pasture')
+def pasture():
+    return _public_stub('Pasture', 'A grassy field of horses will appear here. Sign in to load your own pasture.')
+
+
+# ── Legal pages ───────────────────────────────────────────────────────────────
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
+
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+
+@app.route('/data-deletion')
+def data_deletion():
+    return render_template('data_deletion.html')
 
 
 # ── Main page ─────────────────────────────────────────────────────────────────

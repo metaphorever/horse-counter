@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{% block title %}Horse Counter{% endblock %}</title>
+<title>{% block title %}poet.horse{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Playfair+Display:wght@700&display=swap">
@@ -17,15 +17,54 @@
 </head>
 <body>
 <div class="fence"></div>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="site-brand" href="{{ url_for('index') }}">poet.horse</a>
+
+    <nav class="site-nav" aria-label="Primary">
+      <ul class="site-nav-list">
+        <li><a href="{{ url_for('index') }}">Home</a></li>
+        <li class="site-nav-has-sub">
+          <details class="site-nav-details">
+            <summary>Read Poems</summary>
+            <ul class="site-nav-sub">
+              <li><a href="/featured">Featured</a></li>
+              <li><a href="/browse">Browse</a></li>
+              <li><a href="/random">Random</a></li>
+            </ul>
+          </details>
+        </li>
+        <li><a href="{{ url_for('poetry_editor') }}">Write Poems</a></li>
+        <li><a href="/pasture">Pasture</a></li>
+        <li><a href="{{ url_for('index') }}">Count</a></li>
+      </ul>
+    </nav>
+
+    <div class="site-user">
+      {% if current_user %}
+        <details class="user-menu">
+          <summary class="user-menu-trigger">{{ current_user.display_name }}</summary>
+          <ul class="user-menu-list">
+            <li><a href="{{ url_for('me_published') }}">Published Poems</a></li>
+            <li><a href="{{ url_for('me_drafts') }}">Unpublished Poems</a></li>
+            <li><a href="{{ url_for('me_pasture') }}">My Pasture</a></li>
+            <li><a href="{{ url_for('me_saved_poems') }}">Saved Poems</a></li>
+            <li><a href="{{ url_for('me_saved_horses') }}">Saved Horses</a></li>
+            <li><a href="{{ url_for('me_profile') }}">Edit Profile</a></li>
+            <li class="user-menu-sep"><a href="{{ url_for('sign_out') }}">Sign Out</a></li>
+          </ul>
+        </details>
+      {% elif not session.get('logged_in') %}
+        <a class="user-signin" href="{{ url_for('sign_in') }}">Sign In</a>
+      {% else %}
+        <a class="user-signin" href="{{ url_for('logout') }}">Log out (admin)</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
 <div class="container{% block container_class %}{% endblock %}">
-  <nav class="site-nav">
-    {% if current_user %}
-      <a href="{{ url_for('user_profile', slug=current_user.slug) }}" class="nav-user">{{ current_user.display_name }}</a>
-      <a href="{{ url_for('sign_out') }}">sign out</a>
-    {% elif not session.get('logged_in') %}
-      <a href="{{ url_for('sign_in') }}">sign in</a>
-    {% endif %}
-  </nav>
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for cat, msg in messages %}
       <div class="flash flash-{{ cat }}">{{ msg }}</div>
@@ -33,6 +72,118 @@
   {% endwith %}
   {% block content %}{% endblock %}
 </div>
+
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <blockquote class="weatherhead" cite="https://x.com/weeatherhead/status/314089933906264066">
+      <p>&ldquo;The best way to read a poem is to pretend each line is the name of a horse; so the poem is just a list of horses.&rdquo;</p>
+      <cite>&mdash; <a href="https://x.com/weeatherhead/">@weeatherhead</a> (<a href="http://www.andrewweatherhead.org/">Andrew Weatherhead</a>), <a href="https://x.com/weeatherhead/status/314089933906264066">Mar 19, 2013</a></cite>
+    </blockquote>
+
+    <div class="site-footer-meta">
+      <span class="site-footer-clover" aria-hidden="true">🍀</span>
+      <span class="site-footer-links">
+        <a href="{{ url_for('terms') }}">Terms</a>
+        <a href="{{ url_for('privacy') }}">Privacy</a>
+        <a href="{{ url_for('data_deletion') }}">Data Deletion</a>
+      </span>
+    </div>
+
+    <div class="site-footer-kofi">
+      <script src="https://storage.ko-fi.com/cdn/widget/Widget_2.js"></script>
+      <script>kofiwidget2.init('Support poet.horse on Ko-fi', '#72a4f2', 'G2G81ZF3IA');kofiwidget2.draw();</script>
+    </div>
+  </div>
+</footer>
+
 <div class="fence"></div>
+
+{% if current_user %}
+<script>
+(function(){
+  // First-login sync prompt: if any anonymous browser data is hanging around
+  // for this user, offer to merge it server-side. Stops asking once accepted
+  // or declined.
+  try {
+    if (localStorage.getItem('horse-sync-done') === '1') return;
+
+    var stable = [];
+    try { stable = JSON.parse(localStorage.getItem('horse-stable') || localStorage.getItem('horse-pasture') || '[]'); } catch(e){}
+    var poemName   = localStorage.getItem('horse-poem-name')   || '';
+    var poemTumblr = localStorage.getItem('horse-poem-tumblr') || '';
+    var pageSize   = localStorage.getItem('horse-page-size')   || '';
+
+    var hasStable = Array.isArray(stable) && stable.length > 0;
+    var hasPrefs  = !!(poemName || poemTumblr || pageSize);
+    if (!hasStable && !hasPrefs) {
+      localStorage.setItem('horse-sync-done', '1');
+      return;
+    }
+
+    var parts = [];
+    if (hasStable) parts.push(stable.length + ' horse' + (stable.length===1?'':'s') + ' from your stable');
+    if (poemName || poemTumblr) parts.push('your poem signing name');
+    if (pageSize) parts.push('your page-size preference');
+    var summary = parts.join(' and ');
+
+    var bar = document.createElement('div');
+    bar.className = 'sync-prompt';
+    bar.setAttribute('role', 'dialog');
+    bar.setAttribute('aria-label', 'Import browser data');
+    bar.innerHTML =
+      '<span class="sync-prompt-text">Import ' + summary + ' from this browser into your account?</span>' +
+      '<button type="button" class="sync-prompt-yes">Import</button>' +
+      '<button type="button" class="sync-prompt-no">No thanks</button>';
+    document.body.appendChild(bar);
+
+    function dismiss(done){
+      bar.remove();
+      if (done) localStorage.setItem('horse-sync-done', '1');
+    }
+
+    bar.querySelector('.sync-prompt-no').addEventListener('click', function(){
+      dismiss(true);
+    });
+
+    bar.querySelector('.sync-prompt-yes').addEventListener('click', async function(){
+      bar.querySelector('.sync-prompt-yes').disabled = true;
+      bar.querySelector('.sync-prompt-no').disabled  = true;
+      try {
+        var body = {
+          stable:      hasStable ? stable : [],
+          poem_name:   poemName,
+          poem_tumblr: poemTumblr,
+          page_size:   pageSize ? parseInt(pageSize, 10) : null,
+        };
+        var r = await fetch('/me/sync', {
+          method:  'POST',
+          headers: {'Content-Type': 'application/json'},
+          body:    JSON.stringify(body),
+        });
+        var d = await r.json();
+        if (d && d.ok) {
+          localStorage.removeItem('horse-stable');
+          localStorage.removeItem('horse-pasture');
+          localStorage.removeItem('horse-poem-name');
+          localStorage.removeItem('horse-poem-tumblr');
+          dismiss(true);
+          var toast = document.createElement('div');
+          toast.className = 'toast';
+          toast.textContent = 'Imported ' + (d.inserted_horses||0) + ' horse' + ((d.inserted_horses||0)===1?'':'s') + ' to your account';
+          document.body.appendChild(toast);
+          setTimeout(function(){ toast.remove(); }, 3200);
+        } else {
+          bar.querySelector('.sync-prompt-text').textContent = 'Import failed — please try again later.';
+          setTimeout(function(){ dismiss(false); }, 2400);
+        }
+      } catch(e) {
+        bar.querySelector('.sync-prompt-text').textContent = 'Import failed — please try again later.';
+        setTimeout(function(){ dismiss(false); }, 2400);
+      }
+    });
+  } catch(e) { /* localStorage unavailable — skip silently */ }
+})();
+</script>
+{% endif %}
 </body>
 </html>
