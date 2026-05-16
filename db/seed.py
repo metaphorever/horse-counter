@@ -32,6 +32,10 @@ _CATEGORIES = [
         'slug': 'poem-type', 'label': 'Poem Type',
         'behavior': 'single_select', 'sort_order': 10,
         'tags': [
+            # "After / Translation" was briefly seeded here in 1.3 but pulled —
+            # the relationship to an existing work is now a flag derived from
+            # the presence of `poems.inspired_by_text`, not a tag. Browse-side
+            # filter for it lands in 1.8.
             ('free-verse',  'Free verse'),
             ('haiku',       'Haiku'),
             ('limerick',    'Limerick'),
@@ -42,7 +46,6 @@ _CATEGORIES = [
             ('prose-poem',  'Prose poem'),
             ('concrete',    'Concrete'),
             ('found',       'Found'),
-            ('after',       'After / Translation'),  # 1.3 addition
             ('other',       'Other'),
         ],
     },
@@ -138,6 +141,32 @@ def seed_tag_taxonomy() -> None:
         conn.execute('COMMIT')
 
 
+_OBSOLETE_TAG_SLUGS = (
+    # Briefly seeded in 1.3 then pulled — attribution to an existing work is a
+    # flag derived from poems.inspired_by_text, not a tag.
+    'poem-type:after',
+)
+
+
+def cleanup_obsolete_tags() -> None:
+    """Remove tags we seeded then decided against. Idempotent — only acts on
+    a known-deprecated slug list. Existing poem_tags references are cascaded."""
+    with get_db() as conn:
+        for slug in _OBSOLETE_TAG_SLUGS:
+            row = conn.execute("SELECT id FROM tags WHERE slug = ?", (slug,)).fetchone()
+            if not row:
+                continue
+            conn.execute('BEGIN')
+            try:
+                conn.execute("DELETE FROM poem_tags WHERE tag_id = ?", (row['id'],))
+                conn.execute("DELETE FROM tags       WHERE id = ?",     (row['id'],))
+                conn.execute('COMMIT')
+            except Exception:
+                conn.execute('ROLLBACK')
+                raise
+
+
 def run_all() -> None:
     apply_migrations()
     seed_tag_taxonomy()
+    cleanup_obsolete_tags()
