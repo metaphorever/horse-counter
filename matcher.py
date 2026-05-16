@@ -405,6 +405,16 @@ def _tile_appearance(name: str) -> Tuple[str, str, str, bool]:
     return coat, bg, fg, h % 2 == 0
 
 
+def horse_appearance(name: str) -> Dict[str, object]:
+    """
+    Public wrapper around `_tile_appearance` for non-rendering callers
+    (e.g. the permalink view, which needs only the descriptor — not the
+    full HTML chip). Returns a flat dict of CSS hooks.
+    """
+    coat, bg, fg, rev = _tile_appearance(name)
+    return {'coat': coat, 'bg': bg, 'fg': fg, 'rev': rev}
+
+
 # ── HTML rendering ────────────────────────────────────────────────────────────
 
 def render_chain_item(
