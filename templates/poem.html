@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} — poet.horse{% endblock %}
+
+{% block head %}
+<meta property="og:title" content="{{ page_title }}">
+<meta property="og:description" content="{{ og_description }}">
+<meta property="og:url" content="{{ permalink_url }}">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="poet.horse">
+<meta name="twitter:card" content="summary">
+{% if poem.published_at %}<meta property="article:published_time" content="{{ published_iso }}">{% endif %}
+{% endblock %}
+
+{% block content %}
+<article class="poem-view{% if poem.inspired_by_text %} has-inspiration{% endif %}"
+         data-view-mode="plain" data-short-code="{{ poem.short_code }}">
+
+  <header class="poem-view-head">
+    <h1 class="poem-view-title">
+      <span class="poem-view-title-main">{{ poem.title or 'A horse poem' }}</span>
+      {% if poem.inspired_by_text %}
+        <span class="poem-view-title-after">
+          based on
+          {% if poem.inspired_by_url %}<a class="poem-after-link" href="{{ poem.inspired_by_url }}" rel="nofollow noopener" target="_blank">{{ poem.inspired_by_text }}</a>{% else %}<cite>{{ poem.inspired_by_text }}</cite>{% endif %}
+        </span>
+      {% endif %}
+    </h1>
+
+    <p class="poem-view-attribution">
+      {% if poem.author_display_name %}
+        by
+        {% if poem.author_link_url %}
+          <a class="poem-attr-link" href="{{ poem.author_link_url }}" rel="nofollow noopener" target="_blank">{{ poem.author_display_name }}</a>
+        {% else %}
+          {{ poem.author_display_name }}
+        {% endif %}
+      {% else %}
+        anonymous
+      {% endif %}
+      {% if poem.published_at %} · <time datetime="{{ published_iso }}">{{ published_human }}</time>{% endif %}
+    </p>
+
+    <div class="poem-view-controls">
+      <button type="button" class="btn-sec poem-view-toggle" id="poem-view-toggle"
+              aria-pressed="false" aria-label="Switch to pasture mode">
+        Pasture mode
+      </button>
+    </div>
+  </header>
+
+  <section class="poem-view-body" aria-label="Poem">
+    {% for line in poem.lines %}
+      <p class="poem-line-out">
+        {% for h in line %}{% if h.url %}<a class="poem-horse" href="{{ h.url }}" rel="nofollow noopener" target="_blank">{{ h.display }}</a>{% else %}<span class="poem-horse">{{ h.display }}</span>{% endif %}{% if not loop.last %} {% endif %}{% endfor %}
+      </p>
+    {% endfor %}
+  </section>
+
+  {% if grouped_tags %}
+  <section class="poem-view-tags" aria-label="Tags">
+    {% for cat in grouped_tags %}
+      <div class="poem-tag-group{% if cat.behavior == 'content_warning' %} cw{% endif %}">
+        <span class="poem-tag-cat">{{ cat.label }}</span>
+        <span class="poem-tag-list">
+          {% for tag in cat.tags %}<a class="poem-tag" href="/tag/{{ tag.slug }}">{{ tag.label }}</a>{% if not loop.last %} {% endif %}{% endfor %}
+        </span>
+      </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <footer class="poem-view-footer">
+    <span class="poem-view-stat">{{ poem.horse_count }} horse{{ 's' if poem.horse_count != 1 else '' }}</span>
+    <span class="poem-view-stat">{{ poem.word_count }} word{{ 's' if poem.word_count != 1 else '' }}</span>
+    <span class="poem-view-stat"><code>{{ poem.short_code }}</code></span>
+  </footer>
+
+</article>
+
+<script>
+(function(){
+  // Plain/pasture view-mode toggle. The actual pasture-mode visual treatment
+  // ships with Phase 1.6; for now the toggle flips a data attribute and
+  // persists the choice so 1.6 can hook in without changing this scaffold.
+  const btn = document.getElementById('poem-view-toggle');
+  const art = document.querySelector('.poem-view');
+  const LS_KEY = 'poem-view-mode';
+  function apply(mode){
+    art.dataset.viewMode = mode;
+    btn.setAttribute('aria-pressed', mode === 'pasture' ? 'true' : 'false');
+    btn.textContent = mode === 'pasture' ? 'Plain mode' : 'Pasture mode';
+    btn.setAttribute('aria-label', mode === 'pasture' ? 'Switch to plain mode' : 'Switch to pasture mode');
+  }
+  const initial = (function(){
+    try { return localStorage.getItem(LS_KEY) || 'plain'; } catch (e) { return 'plain'; }
+  })();
+  apply(initial);
+  btn.addEventListener('click', ()=>{
+    const next = art.dataset.viewMode === 'pasture' ? 'plain' : 'pasture';
+    apply(next);
+    try { localStorage.setItem(LS_KEY, next); } catch (e) {}
+  });
+})();
+</script>
+{% endblock %}
