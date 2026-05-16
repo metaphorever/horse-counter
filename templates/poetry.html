@@ -389,17 +389,25 @@ function renderSearchPage(){
       if(!seen[term]){ seen[term] = true; groups.push({term, items:[]}); }
       groups[groups.length-1].items.push(h);
     }
-    const GROUP_PREVIEW = 15;
+    // Group-specific preview size. The short-names browser's "3 letters — X"
+    // buckets are collapsed-by-default (preview=0) so the editor doesn't dump
+    // hundreds of 3-letter horses at once; the user expands per letter.
+    const DEFAULT_PREVIEW = 15;
+    const groupPreview = (term) => term.startsWith('3 letters — ') ? 0 : DEFAULT_PREVIEW;
     document.getElementById('search-results').innerHTML = groups.map((g,gi)=>{
-      const preview   = g.items.slice(0, GROUP_PREVIEW);
-      const remainder = g.items.length - GROUP_PREVIEW;
+      const prev      = groupPreview(g.term);
+      const preview   = g.items.slice(0, prev);
+      const remainder = g.items.length - prev;
       const expanded  = expandedGroups.has(g.term);
       const shown     = expanded ? g.items : preview;
+      const expandLbl = prev === 0
+        ? `show all ${g.items.length} →`
+        : `show ${remainder} more ↓`;
       return (
-        `<div class="rhyme-group-header${gi===0?' first':''}">${esc(g.term)}</div>` +
+        `<div class="rhyme-group-header${gi===0?' first':''}${prev===0?' collapsible':''}">${esc(g.term)}${prev===0?` <span class="group-count">(${g.items.length})</span>`:''}</div>` +
         shown.map(renderResultItem).join('') +
         (remainder > 0 && !expanded
-          ? `<div class="group-show-all" data-term="${esc(g.term)}">show ${remainder} more ↓</div>`
+          ? `<div class="group-show-all" data-term="${esc(g.term)}">${expandLbl}</div>`
           : '')
       );
     }).join('');
