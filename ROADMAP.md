@@ -13,14 +13,14 @@
 - 0.3 Short-code permalink ✅ — `/p/<short_code>` route live with a stub renderer.
 - 0.4 Clerk integration ✅ — `clerk_auth.py`, JWKS-verified sessions, `/sign-in`, `/sign-out`, `/setup-account`, `/u/<slug>`. Role-based admin; PIN remains as fallback.
 - 0.5 localStorage → account sync ✅ — `/me/sync` endpoint, `db/stable.py`, per-user `stable_horses` + `preferences_json` hydration on `/poetry`. Idempotent INSERT OR IGNORE; client clears local copies and fires a one-time toast. Verified in production 2026-05-15.
+- 0.6 ToS / Privacy / Data-Deletion pages ✅ — `/terms`, `/privacy`, `/data-deletion`. Plain-English summary box at top of each. Email-based deletion flow. Minimal site-wide footer with legal links. Verified in production 2026-05-15.
 
 ## Up next — Opus session, finishes Phase 0 + lands new shell
 
 Suggested chunk for a single Opus-driven session. Together these complete Phase 0 and reshape the site IA. Pick them up in order; each has acceptance criteria below.
 
-1. **0.6 ToS / Privacy / Data-Deletion pages** `[haiku · low]`
-2. **1.1 Top-level nav + user menu** `[sonnet · medium]` — implement the full IA including the user-menu dropdown. `/me/*` destinations that don't have real content yet should render a styled "coming soon" stub that links back to the relevant ROADMAP task.
-3. **1.22 Attribution footer + Ko-fi widget** `[sonnet · low]` — site-wide footer with the Weatherhead citation as a styled blockquote and the Ko-fi widget on the clover.
+1. **1.1 Top-level nav + user menu** `[sonnet · medium]` — implement the full IA including the user-menu dropdown. `/me/*` destinations that don't have real content yet should render a styled "coming soon" stub that links back to the relevant ROADMAP task.
+2. **1.22 Attribution footer + Ko-fi widget** `[sonnet · low]` — site-wide footer with the Weatherhead citation as a styled blockquote and the Ko-fi widget on the clover.
 
 After this session: Phase 0 is closed. The site has its new shell. Phase 1 continues with the editor pain-fix (1.2), tag taxonomy (1.3), and poem permalink renderer (1.5) — those are the next natural cluster.
 

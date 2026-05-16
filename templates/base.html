@@ -18,14 +18,64 @@
 <body>
 <div class="fence"></div>
 <div class="container{% block container_class %}{% endblock %}">
-  <nav class="site-nav">
-    {% if current_user %}
-      <a href="{{ url_for('user_profile', slug=current_user.slug) }}" class="nav-user">{{ current_user.display_name }}</a>
-      <a href="{{ url_for('sign_out') }}">sign out</a>
-    {% elif not session.get('logged_in') %}
-      <a href="{{ url_for('sign_in') }}">sign in</a>
-    {% endif %}
+
+  <nav class="site-nav" id="site-nav">
+    <div class="nav-brand">
+      <a class="nav-logo" href="/">poet.horse</a>
+      <button class="nav-hamburger" id="nav-hamburger"
+              aria-label="Toggle navigation" aria-expanded="false"
+              aria-controls="nav-body">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+
+    <div class="nav-body" id="nav-body">
+      <div class="nav-left">
+        <a class="nav-item" href="{{ url_for('index') }}">Home</a>
+
+        <div class="nav-group" data-nav-group>
+          <button class="nav-item nav-item-btn"
+                  aria-expanded="false" aria-haspopup="true">
+            Read Poems <span class="nav-caret" aria-hidden="true">&#x25BE;</span>
+          </button>
+          <div class="nav-sub" role="menu">
+            <a class="nav-sub-item" href="{{ url_for('featured') }}"      role="menuitem">Featured</a>
+            <a class="nav-sub-item" href="{{ url_for('browse') }}"        role="menuitem">Browse</a>
+            <a class="nav-sub-item" href="{{ url_for('random_poem') }}"   role="menuitem">Random</a>
+          </div>
+        </div>
+
+        <a class="nav-item" href="{{ url_for('poetry_editor') }}">Write Poems</a>
+        <a class="nav-item" href="{{ url_for('pasture') }}">Pasture</a>
+        <a class="nav-item" href="{{ url_for('count') }}">Count</a>
+      </div>
+
+      <div class="nav-right">
+        {% if current_user %}
+          <div class="nav-group" data-nav-group>
+            <button class="nav-item nav-item-btn nav-username"
+                    aria-expanded="false" aria-haspopup="true">
+              {{ current_user.display_name }}
+              <span class="nav-caret" aria-hidden="true">&#x25BE;</span>
+            </button>
+            <div class="nav-sub nav-sub-right" role="menu">
+              <a class="nav-sub-item" href="{{ url_for('me_published') }}"    role="menuitem">Published Poems</a>
+              <a class="nav-sub-item" href="{{ url_for('me_drafts') }}"       role="menuitem">Unpublished / WIP</a>
+              <a class="nav-sub-item" href="{{ url_for('me_pasture') }}"      role="menuitem">My Pasture</a>
+              <a class="nav-sub-item" href="{{ url_for('me_saved_poems') }}"  role="menuitem">Saved Poems</a>
+              <a class="nav-sub-item" href="{{ url_for('me_saved_horses') }}" role="menuitem">Saved Horses</a>
+              <a class="nav-sub-item" href="{{ url_for('me_profile') }}"      role="menuitem">Edit Profile</a>
+              <div class="nav-sub-sep" role="separator"></div>
+              <a class="nav-sub-item" href="{{ url_for('sign_out') }}"        role="menuitem">Sign Out</a>
+            </div>
+          </div>
+        {% elif not session.get('logged_in') %}
+          <a class="nav-signin" href="{{ url_for('sign_in') }}">Sign In</a>
+        {% endif %}
+      </div>
+    </div>
   </nav>
+
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for cat, msg in messages %}
       <div class="flash flash-{{ cat }}">{{ msg }}</div>
@@ -39,5 +89,51 @@
   </footer>
 </div>
 <div class="fence"></div>
+
+<script>
+(function(){
+  var nav       = document.getElementById('site-nav');
+  var hamburger = document.getElementById('nav-hamburger');
+  var groups    = nav ? Array.from(nav.querySelectorAll('[data-nav-group]')) : [];
+
+  function closeAll(except){
+    groups.forEach(function(g){
+      if(g === except) return;
+      g.classList.remove('open');
+      var btn = g.querySelector('.nav-item-btn');
+      if(btn) btn.setAttribute('aria-expanded','false');
+    });
+  }
+
+  groups.forEach(function(group){
+    var btn = group.querySelector('.nav-item-btn');
+    if(!btn) return;
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var isOpen = group.classList.contains('open');
+      closeAll(group);
+      group.classList.toggle('open', !isOpen);
+      btn.setAttribute('aria-expanded', String(!isOpen));
+    });
+  });
+
+  if(hamburger){
+    hamburger.addEventListener('click', function(e){
+      e.stopPropagation();
+      var open = nav.classList.toggle('nav-open');
+      hamburger.setAttribute('aria-expanded', String(open));
+    });
+  }
+
+  document.addEventListener('click', function(){ closeAll(null); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      closeAll(null);
+      if(nav){ nav.classList.remove('nav-open'); }
+      if(hamburger){ hamburger.setAttribute('aria-expanded','false'); }
+    }
+  });
+})();
+</script>
 </body>
 </html>

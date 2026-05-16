@@ -207,6 +207,16 @@ def login_required(f):
     return decorated
 
 
+def user_required(f):
+    """Require any signed-in user (regular Clerk user or admin)."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if g.get('current_user') is None and not session.get('logged_in'):
+            return redirect(url_for('sign_in'))
+        return f(*args, **kwargs)
+    return decorated
+
+
 # ── Login / logout ────────────────────────────────────────────────────────────
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -413,6 +423,111 @@ def user_profile(slug):
             error=f'No poet found with the slug "{slug}"',
         ), 404
     return render_template('user_profile.html', poet=user)
+
+
+# ── Public browse / discover stubs (Phase 1.1) ───────────────────────────────
+
+@app.route('/count')
+def count():
+    return redirect(url_for('index'))
+
+
+@app.route('/featured')
+def featured():
+    return render_template('coming_soon.html',
+        title='Featured Poems',
+        description='A hand-curated rotation of poems. Coming in Phase 1.8.',
+        roadmap_task='1.8',
+    )
+
+
+@app.route('/browse')
+def browse():
+    return render_template('coming_soon.html',
+        title='Browse Poems',
+        description='Sortable, filterable feed of all published poems. Coming in Phase 1.8.',
+        roadmap_task='1.8',
+    )
+
+
+@app.route('/random')
+def random_poem():
+    return render_template('coming_soon.html',
+        title='Random Poem',
+        description='A random published poem, every time. Coming in Phase 1.8.',
+        roadmap_task='1.8',
+    )
+
+
+@app.route('/pasture')
+def pasture():
+    return render_template('coming_soon.html',
+        title='Pasture',
+        description='A field of horses. Public by default — your personal collection when signed in. Coming in Phase 1.19.',
+        roadmap_task='1.19',
+    )
+
+
+# ── User account pages (/me/*) stubs (Phase 1.1) ─────────────────────────────
+
+@app.route('/me/published')
+@user_required
+def me_published():
+    return render_template('coming_soon.html',
+        title='Published Poems',
+        description='Your published poems, newest first. Coming in Phase 1.15.',
+        roadmap_task='1.15',
+    )
+
+
+@app.route('/me/drafts')
+@user_required
+def me_drafts():
+    return render_template('coming_soon.html',
+        title='Unpublished / WIP',
+        description='Drafts and poems awaiting review. Coming in Phase 1.13.',
+        roadmap_task='1.13',
+    )
+
+
+@app.route('/me/pasture')
+@user_required
+def me_pasture():
+    return render_template('coming_soon.html',
+        title='My Pasture',
+        description='Your personal working collection of horses. Coming in Phase 1.19.',
+        roadmap_task='1.19',
+    )
+
+
+@app.route('/me/saved-poems')
+@user_required
+def me_saved_poems():
+    return render_template('coming_soon.html',
+        title='Saved Poems',
+        description='Poems you have saved with the blue-ribbon. Coming in Phase 1.19.',
+        roadmap_task='1.19',
+    )
+
+
+@app.route('/me/saved-horses')
+@user_required
+def me_saved_horses():
+    return render_template('coming_soon.html',
+        title='Saved Horses',
+        description='Horses you have saved with the blue-ribbon. Coming in Phase 1.19.',
+        roadmap_task='1.19',
+    )
+
+
+@app.route('/me/profile')
+@user_required
+def me_profile():
+    return render_template('coming_soon.html',
+        title='Edit Profile',
+        description='Edit your display name and profile links. Coming in Phase 1.15.',
+        roadmap_task='1.15',
+    )
 
 
 # ── Main page ─────────────────────────────────────────────────────────────────
