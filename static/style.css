@@ -985,6 +985,172 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
   .poem-tag-cat { min-width: auto; }
 }
 
+/* ───── Poem permalink — pasture mode (1.6) ───────────────────────────────────
+   Ported from tumblr-theme.html — same chip decoration (legs/tail via pseudo-
+   elements, coat colours via class, famous shimmer). The plain-mode rules
+   above are untouched; everything below is gated on
+   `.poem-view[data-view-mode='pasture']` so toggling is a one-attribute flip.
+
+   Coat-class variables live in :root so the editor and other surfaces can
+   reuse them when they pick up the styling. */
+
+:root {
+  --coat-bay-bg: #7a3520;       --coat-bay-fg: #f5ecd7;
+  --coat-black-bg: #1c1c1c;     --coat-black-fg: #e8d5b0;
+  --coat-grey-bg: #7a7a7a;      --coat-grey-fg: #f0ead6;
+  --coat-chestnut-bg: #8b3a1f;  --coat-chestnut-fg: #fae8c8;
+  --coat-palomino-bg: #c8961a;  --coat-palomino-fg: #2a1800;
+  --coat-greywhite-bg: #c8bfaa; --coat-greywhite-fg: #1c1008;
+  --coat-liver-bg: #4a2812;     --coat-liver-fg: #ead8b8;
+  --coat-roan-bg: #8a6a5a;      --coat-roan-fg: #f0e4d0;
+}
+
+.poem-view[data-view-mode='pasture'] {
+  background-color: #4d7432;
+  background-image: url('/static/grass.svg');
+  background-size: 40px 40px;
+  border-color: #6b4820;
+  color: #fdf8f0;
+}
+.poem-view[data-view-mode='pasture'] .poem-view-head,
+.poem-view[data-view-mode='pasture'] .poem-view-tags,
+.poem-view[data-view-mode='pasture'] .poem-view-footer {
+  background: rgba(253, 248, 240, 0.92);
+  border-radius: 2px;
+  padding: 14px 16px;
+  border-color: transparent;
+  color: #2d2316;
+}
+.poem-view[data-view-mode='pasture'] .poem-view-head {
+  margin-bottom: 18px;
+}
+.poem-view[data-view-mode='pasture'] .poem-view-tags { margin-top: 18px; }
+.poem-view[data-view-mode='pasture'] .poem-view-footer { margin-top: 18px; }
+.poem-view[data-view-mode='pasture'] .poem-view-title,
+.poem-view[data-view-mode='pasture'] .poem-view-attribution,
+.poem-view[data-view-mode='pasture'] .poem-view-footer,
+.poem-view[data-view-mode='pasture'] .poem-view-footer code {
+  color: #2d2316;
+}
+.poem-view[data-view-mode='pasture'] .poem-view-body {
+  /* Extra vertical room so chip heads + legs don't crash into the head/tag
+     blocks. The decoration extends 20px above and 6px below each chip. */
+  padding: 26px 0 14px;
+}
+.poem-view[data-view-mode='pasture'] .poem-line-out {
+  line-height: 2.4;
+  color: #fdf8f0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* ── Decorated chips — pasture mode only ─────────────────────────────────── */
+.poem-view[data-view-mode='pasture'] .poem-horse {
+  display: inline-block;
+  position: relative;
+  overflow: visible;
+  padding: 4px 8px;
+  margin: 22px 4px 8px;
+  font: 700 0.92em 'Courier Prime','Courier New',monospace;
+  text-decoration: none;
+  border: none;
+  border-radius: 6px;
+  vertical-align: baseline;
+  background: var(--bg);
+  color: var(--fg);
+  box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.22);
+  text-shadow: none;
+  transition: transform .1s, box-shadow .1s;
+}
+/* Coat-class wiring — same hash buckets as matcher._tile_appearance */
+.poem-view[data-view-mode='pasture'] .coat-bay       { --bg: var(--coat-bay-bg);       --fg: var(--coat-bay-fg);       transform: rotate(-1.5deg); }
+.poem-view[data-view-mode='pasture'] .coat-black     { --bg: var(--coat-black-bg);     --fg: var(--coat-black-fg);     transform: rotate( 1.0deg); }
+.poem-view[data-view-mode='pasture'] .coat-grey      { --bg: var(--coat-grey-bg);      --fg: var(--coat-grey-fg);      transform: rotate(-0.7deg); }
+.poem-view[data-view-mode='pasture'] .coat-chestnut  { --bg: var(--coat-chestnut-bg);  --fg: var(--coat-chestnut-fg);  transform: rotate( 1.3deg); }
+.poem-view[data-view-mode='pasture'] .coat-palomino  { --bg: var(--coat-palomino-bg);  --fg: var(--coat-palomino-fg);  transform: rotate(-1.0deg); }
+.poem-view[data-view-mode='pasture'] .coat-greywhite { --bg: var(--coat-greywhite-bg); --fg: var(--coat-greywhite-fg); transform: rotate( 0.5deg); }
+.poem-view[data-view-mode='pasture'] .coat-liver     { --bg: var(--coat-liver-bg);     --fg: var(--coat-liver-fg);     transform: rotate(-1.3deg); }
+.poem-view[data-view-mode='pasture'] .coat-roan      { --bg: var(--coat-roan-bg);      --fg: var(--coat-roan-fg);      transform: rotate( 0.8deg); }
+
+/* ::before draws the head glyph (top) plus four leg stubs (bottom) using
+   background gradients. Single pseudo-element keeps the markup clean. */
+.poem-view[data-view-mode='pasture'] .poem-horse::before {
+  content: '♞';
+  position: absolute;
+  pointer-events: none;
+  left: 0; top: -20px;
+  width: 100%; height: calc(100% + 26px);
+  color: var(--bg);
+  font-size: 32px; line-height: 1;
+  background:
+    linear-gradient(var(--bg), var(--bg))  4px 100% / 2px 6px no-repeat,
+    linear-gradient(var(--bg), var(--bg)) 10px 100% / 2px 6px no-repeat,
+    linear-gradient(var(--bg), var(--bg)) calc(100% - 10px) 100% / 2px 6px no-repeat,
+    linear-gradient(var(--bg), var(--bg)) calc(100% -  4px) 100% / 2px 6px no-repeat;
+}
+/* ::after draws the tail off the right side. */
+.poem-view[data-view-mode='pasture'] .poem-horse::after {
+  content: '∫';
+  position: absolute;
+  pointer-events: none;
+  right: -10px; top: 50%;
+  transform: translateY(-50%) scaleY(-1);
+  color: var(--bg);
+  font-size: 22px; line-height: 1;
+}
+/* Reversed direction — name-hash parity puts roughly half of horses facing
+   the other way so a line of them doesn't look like a conga line. */
+.poem-view[data-view-mode='pasture'] .poem-horse.rev::before {
+  left: auto; right: 0; transform: scaleX(-1);
+}
+.poem-view[data-view-mode='pasture'] .poem-horse.rev::after {
+  right: auto; left: -10px;
+  transform: translateY(-50%) scaleY(-1) scaleX(-1);
+}
+.poem-view[data-view-mode='pasture'] .poem-horse:hover {
+  transform: scale(1.06) !important;
+  box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.28);
+}
+
+/* ── Famous-horse shimmer ────────────────────────────────────────────────── */
+@keyframes poem-famous-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.poem-view[data-view-mode='pasture'] .poem-horse.famous-horse {
+  background-color: var(--bg);
+  background-image: linear-gradient(
+    105deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 62%
+  );
+  background-size: 200% 100%;
+  animation: poem-famous-shimmer 2.5s linear infinite;
+  box-shadow:
+    2px 2px 4px rgba(0, 0, 0, 0.25),
+    0 0 0 1.5px rgba(200, 160, 0, 0.55);
+}
+
+/* Reduced-motion: keep the gold-rim but drop the shimmer animation, and
+   stop the rotational tilt on each chip. The chip stays decorated — only
+   the motion is removed. */
+@media (prefers-reduced-motion: reduce) {
+  .poem-view[data-view-mode='pasture'] .poem-horse {
+    transform: none;
+    transition: none;
+  }
+  .poem-view[data-view-mode='pasture'] .poem-horse.famous-horse {
+    animation: none;
+    background-image: none;
+  }
+}
+
+/* Mobile tightening — pasture chips need a touch more line-height to keep
+   the head glyphs above the previous line's leg stubs. */
+@media (max-width: 520px) {
+  .poem-view[data-view-mode='pasture'] .poem-line-out { line-height: 2.6; }
+}
+
 /* Tag picker — inside the publish modal */
 .modal-tag-sections { margin-top: 14px; display: flex; flex-direction: column; gap: 14px; }
 .tag-section {

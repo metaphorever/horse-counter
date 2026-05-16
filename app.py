@@ -55,6 +55,7 @@ from auth import TumblrManager
 from matcher import (
     HorseDictionary, ChainCounter,
     find_horses_in_text, render_chain_item, compute_stats,
+    horse_appearance,
 )
 from post_builder import extract_post
 from famous import FamousHorses
@@ -397,6 +398,41 @@ def me_sync():
         'stable':      list_stable_horses(user['id']),
         'preferences': prefs,
     })
+
+
+# Preference keys clients can write through /me/preferences. Allow-listed and
+# value-validated below so the endpoint never becomes a free-form key/value
+# store on the user row.
+_USER_PREF_WRITES = {
+    'poem_view_mode': lambda v: v if v in ('plain', 'pasture') else None,
+}
+
+
+@app.route('/me/preferences', methods=['POST'])
+def me_preferences():
+    """
+    Persist a small set of UI preferences for the signed-in user.
+
+    Body: {<pref_key>: <value>, ...} — keys must be in _USER_PREF_WRITES
+    and values are validated by the matching validator. Unknown keys and
+    values that fail validation are silently dropped.
+
+    Returns: { ok: true, preferences: {<merged dict>} }
+    """
+    user = g.get('current_user')
+    if user is None:
+        return jsonify({'error': 'Not signed in'}), 401
+
+    body = request.get_json(silent=True) or {}
+    updates = {}
+    for key, validator in _USER_PREF_WRITES.items():
+        if key in body:
+            cleaned = validator(body[key])
+            if cleaned is not None:
+                updates[key] = cleaned
+
+    prefs = update_preferences(user['id'], updates) if updates else get_preferences(user['id'])
+    return jsonify({'ok': True, 'preferences': prefs})
 
 
 # ── Legal pages (Phase 0.6) ──────────────────────────────────────────────────
@@ -1454,6 +1490,30 @@ def poem_permalink(short_code):
         if poem.get('inspired_by_text') else base_title
     )
 
+    # Enrich each horse with pasture-mode appearance hooks (coat / rev / famous)
+    # so the template can render decorated chips without any client-side work.
+    # The hooks are inert in plain mode — CSS only acts on them under
+    # `[data-view-mode='pasture']`.
+    for line in poem.get('lines', []):
+        for h in line:
+            name = h.get('name', '')
+            appearance = horse_appearance(name)
+            h['coat']      = appearance['coat']
+            h['rev']       = appearance['rev']
+            h['is_famous'] = bool(name) and famous_horses.lookup(name) is not None
+
+    # Default view mode for permalinks is pasture (per ROADMAP 1.6). A
+    # logged-in user's stored preference overrides; otherwise the client
+    # JS may downgrade to plain based on `prefers-reduced-motion` or a
+    # localStorage choice. The server passes the chosen default + the
+    # known-explicit signal so the template doesn't have to guess.
+    server_mode      = None
+    if user is not None:
+        prefs = get_preferences(user['id'])
+        candidate = prefs.get('poem_view_mode')
+        if candidate in ('plain', 'pasture'):
+            server_mode = candidate
+
     return render_template(
         'poem.html',
         poem            = poem,
@@ -1463,6 +1523,7 @@ def poem_permalink(short_code):
         permalink_url   = request.url,
         published_iso   = published_iso,
         published_human = published_human,
+        server_view_mode = server_mode,
     )
 
 

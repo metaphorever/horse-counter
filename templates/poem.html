@@ -12,8 +12,13 @@
 {% endblock %}
 
 {% block content %}
+{# data-view-mode starts as 'pasture' (the permalink default per ROADMAP 1.6);
+   the inline boot script may downgrade to 'plain' before paint based on
+   the resolved preference (server > localStorage > reduced-motion). #}
 <article class="poem-view{% if poem.inspired_by_text %} has-inspiration{% endif %}"
-         data-view-mode="plain" data-short-code="{{ poem.short_code }}">
+         data-view-mode="pasture" data-short-code="{{ poem.short_code }}"
+         {% if server_view_mode %}data-server-mode="{{ server_view_mode }}"{% endif %}
+         {% if current_user %}data-signed-in="1"{% endif %}>
 
   <header class="poem-view-head">
     <h1 class="poem-view-title">
@@ -42,8 +47,8 @@
 
     <div class="poem-view-controls">
       <button type="button" class="btn-sec poem-view-toggle" id="poem-view-toggle"
-              aria-pressed="false" aria-label="Switch to pasture mode">
-        Pasture mode
+              aria-pressed="true" aria-label="Switch to plain mode">
+        Plain mode
       </button>
     </div>
   </header>
@@ -51,7 +56,17 @@
   <section class="poem-view-body" aria-label="Poem">
     {% for line in poem.lines %}
       <p class="poem-line-out">
-        {% for h in line %}{% if h.url %}<a class="poem-horse" href="{{ h.url }}" rel="nofollow noopener" target="_blank">{{ h.display }}</a>{% else %}<span class="poem-horse">{{ h.display }}</span>{% endif %}{% if not loop.last %} {% endif %}{% endfor %}
+        {%- for h in line -%}
+          {%- set chip_cls = 'poem-horse coat-' ~ h.coat -%}
+          {%- if h.rev %}{% set chip_cls = chip_cls ~ ' rev' %}{% endif -%}
+          {%- if h.is_famous %}{% set chip_cls = chip_cls ~ ' famous-horse' %}{% endif -%}
+          {%- if h.url -%}
+            <a class="{{ chip_cls }}" data-name="{{ h.name }}" href="{{ h.url }}" rel="nofollow noopener" target="_blank">{{ h.display }}</a>
+          {%- else -%}
+            <span class="{{ chip_cls }}" data-name="{{ h.name }}">{{ h.display }}</span>
+          {%- endif -%}
+          {%- if not loop.last %} {% endif -%}
+        {%- endfor -%}
       </p>
     {% endfor %}
   </section>
@@ -79,26 +94,64 @@
 
 <script>
 (function(){
-  // Plain/pasture view-mode toggle. The actual pasture-mode visual treatment
-  // ships with Phase 1.6; for now the toggle flips a data attribute and
-  // persists the choice so 1.6 can hook in without changing this scaffold.
-  const btn = document.getElementById('poem-view-toggle');
+  // Plain / pasture view-mode toggle (Phase 1.6).
+  //
+  // Resolution order, highest precedence first:
+  //   1. Server-rendered user preference (data-server-mode) — set when a
+  //      logged-in user has previously toggled and we wrote it to
+  //      preferences_json.poem_view_mode.
+  //   2. localStorage (poem-view-mode) — anonymous-session memory.
+  //   3. `prefers-reduced-motion: reduce` — implicit plain default for
+  //      motion-sensitive visitors.
+  //   4. Pasture — the documented permalink default.
+  //
+  // Once a user explicitly clicks the toggle, we treat that as a strong
+  // signal and persist to both localStorage and (for signed-in users) the
+  // server.
   const art = document.querySelector('.poem-view');
+  const btn = document.getElementById('poem-view-toggle');
   const LS_KEY = 'poem-view-mode';
+
+  function reducedMotion(){
+    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+    catch (e) { return false; }
+  }
+
   function apply(mode){
     art.dataset.viewMode = mode;
-    btn.setAttribute('aria-pressed', mode === 'pasture' ? 'true' : 'false');
-    btn.textContent = mode === 'pasture' ? 'Plain mode' : 'Pasture mode';
-    btn.setAttribute('aria-label', mode === 'pasture' ? 'Switch to plain mode' : 'Switch to pasture mode');
+    const isPasture = mode === 'pasture';
+    btn.setAttribute('aria-pressed', isPasture ? 'true' : 'false');
+    btn.textContent = isPasture ? 'Plain mode' : 'Pasture mode';
+    btn.setAttribute('aria-label', isPasture ? 'Switch to plain mode' : 'Switch to pasture mode');
   }
-  const initial = (function(){
-    try { return localStorage.getItem(LS_KEY) || 'plain'; } catch (e) { return 'plain'; }
-  })();
-  apply(initial);
+
+  function resolveInitial(){
+    const serverMode = art.dataset.serverMode;
+    if (serverMode === 'plain' || serverMode === 'pasture') return serverMode;
+    let local = null;
+    try { local = localStorage.getItem(LS_KEY); } catch (e) {}
+    if (local === 'plain' || local === 'pasture') return local;
+    if (reducedMotion()) return 'plain';
+    return 'pasture';
+  }
+
+  function persistServerSide(mode){
+    if (!art.dataset.signedIn) return;
+    try {
+      fetch('/me/preferences', {
+        method:  'POST',
+        headers: {'Content-Type': 'application/json'},
+        body:    JSON.stringify({poem_view_mode: mode}),
+      });
+    } catch (e) {}
+  }
+
+  apply(resolveInitial());
   btn.addEventListener('click', ()=>{
     const next = art.dataset.viewMode === 'pasture' ? 'plain' : 'pasture';
     apply(next);
     try { localStorage.setItem(LS_KEY, next); } catch (e) {}
+    persistServerSide(next);
   });
 })();
 </script>
