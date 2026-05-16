@@ -50,6 +50,7 @@ from db.users import (
     get_preferences, update_preferences,
 )
 from db.stable import list_stable_horses, bulk_add_stable_horses
+from db.pasture import add_to_pasture
 from auth import TumblrManager
 from matcher import (
     HorseDictionary, ChainCounter,
@@ -498,6 +499,26 @@ def me_pasture():
         description='Your personal working collection of horses. Coming in Phase 1.19.',
         roadmap_task='1.19',
     )
+
+
+@app.route('/me/pasture/add', methods=['POST'])
+def me_pasture_add():
+    """Add one horse to the signed-in user's pasture.
+
+    Body: { "name": "...", "display": "...", "url": "..." }
+    Returns: { "ok": true, "added": <bool> }  (added=false if already present)
+    """
+    user = g.get('current_user')
+    if user is None:
+        return jsonify({'error': 'Sign in to save horses to your pasture'}), 401
+    body = request.get_json(silent=True) or {}
+    name    = (body.get('name')    or '').strip()[:200]
+    display = (body.get('display') or name).strip()[:200]
+    url     = (body.get('url')     or '').strip()[:500]
+    if not name:
+        return jsonify({'error': 'Missing horse name'}), 400
+    added = add_to_pasture(user['id'], name, display, url)
+    return jsonify({'ok': True, 'added': added})
 
 
 @app.route('/me/saved-poems')

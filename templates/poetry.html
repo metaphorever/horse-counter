@@ -6,6 +6,18 @@
 {% block content %}
 <div id="drag-ghost"></div>
 
+<!-- Chip menu — opens on tap or Enter/Space on a focused horse chip.
+     Items are populated dynamically based on the chip's context. -->
+<div class="chip-menu-backdrop" id="chip-menu-backdrop" hidden></div>
+<div class="chip-menu" id="chip-menu" role="menu" aria-label="Horse actions" hidden></div>
+
+<!-- Ephemeral drop zones — visible only while a horse chip is being dragged. -->
+<div class="drop-zones" id="drop-zones" aria-hidden="true">
+  <div class="drop-zone" id="dz-last-line"   data-zone="last-line">Drop to last line</div>
+  <div class="drop-zone" id="dz-pasture"     data-zone="pasture" hidden>Send to My Pasture</div>
+  <div class="drop-zone danger" id="dz-remove" data-zone="remove">Remove</div>
+</div>
+
 <div class="back-nav">
   <a href="/" class="btn-sec btn-link">← Back to counter</a>
 </div>
@@ -152,8 +164,9 @@ const COATS = [
 function nameHash(name){ return name.split('').reduce((s,c)=>s+c.charCodeAt(0),0); }
 function tileStyle(name){
   const c = COATS[nameHash(name) % COATS.length];
-  const rev = nameHash(name) % 2 === 0;
-  return { style:`--bg:${c.bg};--fg:${c.fg}`, cls: rev ? ' rev' : '' };
+  // Editor chips are utilitarian — no head/tail/legs, so no `rev` mirroring.
+  // Pasture-mode renderers (1.6+) decorate chips and can compute their own rev.
+  return { style:`--bg:${c.bg};--fg:${c.fg}`, cls: '' };
 }
 
 // Drag state — used by both mouse and touch handlers
@@ -238,12 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
     addToStable(btn.dataset.name, btn.dataset.display, btn.dataset.url, parseInt(btn.dataset.count||'1',10));
   });
 
-  // Event delegation for "×" remove buttons inside the stable panel.
-  document.getElementById('stable-tiles').addEventListener('click', e => {
-    const btn = e.target.closest('.tile-x');
-    if (!btn) return;
-    removeFromStable(btn.dataset.name);
-  });
 });
 
 // ── Util ──────────────────────────────────────────────────────────────────────
@@ -361,7 +368,6 @@ function renderSearchPage(){
     return `
     <div class="result-item">
       <span class="horse-tile result-chip${t.cls}" style="${t.style}">
-        <span class="legs"></span>
         <span class="tile-label">${esc(h.display)}${h.count>1?` <span class="multi-badge">${h.count}</span>`:''}</span>
       </span>
       <button class="add-btn"
@@ -723,13 +729,13 @@ function renderStable(){
   }
 
   el.innerHTML = stable.map(h=>{ const t=tileStyle(h.name); const rem=h.remaining||1; return `
-    <div class="horse-tile${t.cls}" style="${t.style}" data-name="${esc(h.name)}" data-display="${esc(h.display)}" data-url="${esc(h.url)}">
-      <span class="legs"></span>
+    <button type="button" class="horse-tile${t.cls}" style="${t.style}"
+            data-name="${esc(h.name)}" data-display="${esc(h.display)}" data-url="${esc(h.url)}"
+            aria-label="${esc(h.display)}${rem>1?` (×${rem} in stable)`:''} — actions">
       <span class="tile-label">${esc(h.display)}${rem>1?` <span class="multi-badge">(${rem})</span>`:''}</span>
-      <button class="tile-x" data-name="${esc(h.name)}">×</button>
-    </div>`; }).join('');
+    </button>`; }).join('');
 
-  el.querySelectorAll('.horse-tile').forEach(tile=>attachTileDrag(tile,'stable'));
+  el.querySelectorAll('.horse-tile').forEach(tile=>attachTileInteractions(tile,'stable'));
 }
 
 // ── Poem ──────────────────────────────────────────────────────────────────────
@@ -740,16 +746,16 @@ function renderPoem(){
       <span class="line-num">${li+1}</span>
       <div class="line-tiles" data-li="${li}">
         ${line.map((h,hi)=>{ const t=tileStyle(h.name); return `
-          <div class="horse-tile${t.cls}" style="${t.style}" data-li="${li}" data-hi="${hi}"
-               data-name="${esc(h.name)}" data-display="${esc(h.display)}" data-url="${esc(h.url)}">
-            <span class="legs"></span>
+          <button type="button" class="horse-tile${t.cls}" style="${t.style}"
+                  data-li="${li}" data-hi="${hi}"
+                  data-name="${esc(h.name)}" data-display="${esc(h.display)}" data-url="${esc(h.url)}"
+                  aria-label="${esc(h.display)} — actions">
             <span class="tile-label">${esc(h.display)}</span>
-            <button class="tile-x" onclick="removeTile(${li},${hi})">×</button>
-          </div>`; }).join('')}
+          </button>`; }).join('')}
       </div>
     </div>`).join('');
 
-  canvas.querySelectorAll('.horse-tile').forEach(tile=>attachTileDrag(tile,'poem'));
+  canvas.querySelectorAll('.horse-tile').forEach(tile=>attachTileInteractions(tile,'poem'));
   canvas.querySelectorAll('.line-tiles').forEach(attachLineDrop);
   updateStats();
 }
@@ -820,23 +826,78 @@ function dropHorseOnLine(horse, li, refHi, insertAfter){
   renderStable();
 }
 
-// ── Drag — Mouse ──────────────────────────────────────────────────────────────
-const ghost = document.getElementById('drag-ghost');
+// ── Interactions: drag-or-tap ─────────────────────────────────────────────────
+// Each chip is a <button>. On pointer-down we *prepare* a possible drag but do
+// not start it until the pointer moves past DRAG_THRESHOLD px. On pointer-up
+// without movement → a normal click fires → openChipMenu(). On pointer-up
+// after movement → drop logic. Keyboard activation (Enter/Space on focused
+// chip) always opens the menu.
 
-function attachTileDrag(tile, srcType){
-  tile.addEventListener('mousedown', e=>{
-    if(e.button!==0) return;
-    if(e.target.classList.contains('tile-x')) return;
-    e.preventDefault();
-    startDrag(e.clientX, e.clientY, tile, srcType);
-  });
-  tile.addEventListener('touchstart', e=>{
-    if(e.target.classList.contains('tile-x')) return;
-    e.preventDefault();
-    const t=e.touches[0];
-    startDrag(t.clientX, t.clientY, tile, srcType);
-  }, {passive:false});
+const ghost = document.getElementById('drag-ghost');
+const DRAG_THRESHOLD = 6;
+let pending = null;   // { tile, srcType, startX, startY, pointerId }
+
+function attachTileInteractions(tile, srcType){
+  // Pointer Events unify mouse, touch, and pen. preventDefault() on pointerdown
+  // is safe here (the synthetic click still fires unless we explicitly cancel
+  // it during a drag) but we skip it so native click semantics keep working;
+  // we cancel scroll by adding body.dragging only once a real drag begins.
+  tile.addEventListener('pointerdown', onChipPointerDown);
+  tile.addEventListener('click',       onChipClick);
 }
+
+function onChipPointerDown(e){
+  if(e.button!==undefined && e.button!==0) return;  // left mouse / primary touch only
+  const tile = e.currentTarget;
+  pending = {
+    tile, srcType: tile.closest('.line-tiles') ? 'poem' : 'stable',
+    startX: e.clientX, startY: e.clientY,
+    pointerId: e.pointerId,
+    moved: false,
+  };
+}
+
+function onChipClick(e){
+  // If a drag just ended on this chip, suppress the synthesized click.
+  if(suppressNextClick){
+    suppressNextClick = false;
+    e.preventDefault();
+    return;
+  }
+  const tile = e.currentTarget;
+  openChipMenu(tile);
+}
+
+let suppressNextClick = false;
+
+document.addEventListener('pointermove', e=>{
+  if(!pending && !drag) return;
+  if(pending && !drag){
+    const dx = e.clientX - pending.startX;
+    const dy = e.clientY - pending.startY;
+    if(dx*dx + dy*dy < DRAG_THRESHOLD*DRAG_THRESHOLD) return;
+    startDrag(e.clientX, e.clientY, pending.tile, pending.srcType);
+    pending = null;
+  }
+  if(drag){
+    e.preventDefault();
+    moveGhost(e.clientX, e.clientY);
+    updateDropZoneHover(e.clientX, e.clientY);
+  }
+});
+
+document.addEventListener('pointerup', e=>{
+  if(drag){
+    suppressNextClick = true;
+    endDrag(e.clientX, e.clientY);
+  }
+  pending = null;
+});
+
+document.addEventListener('pointercancel', ()=>{
+  if(drag){ cancelDrag(); }
+  pending = null;
+});
 
 function startDrag(x, y, tile, srcType){
   const h = {
@@ -852,10 +913,15 @@ function startDrag(x, y, tile, srcType){
     tile,
   };
   tile.classList.add('is-dragging');
+  document.body.classList.add('dragging');
+  // Hide pasture drop zone for anon users (sign-in prompt is in the menu instead)
+  const dzPasture = document.getElementById('dz-pasture');
+  if(dzPasture) dzPasture.hidden = !isLoggedIn;
+
   const t = tileStyle(h.name);
   ghost.className = 'horse-tile' + t.cls;
   ghost.style.cssText = `${t.style}; position:fixed; pointer-events:none; z-index:9999; white-space:nowrap; transform:translate(-50%,-50%);`;
-  ghost.innerHTML = `<span class="legs"></span>${esc(h.display)}`;
+  ghost.innerHTML = `<span class="tile-label">${esc(h.display)}</span>`;
   ghost.style.display = 'inline-flex';
   moveGhost(x,y);
 }
@@ -865,17 +931,57 @@ function moveGhost(x,y){
   ghost.style.top  = y+'px';
 }
 
+function updateDropZoneHover(x, y){
+  document.querySelectorAll('.drop-zone').forEach(z=>z.classList.remove('over'));
+  document.querySelectorAll('.line-tiles.drop-target').forEach(z=>z.classList.remove('drop-target'));
+  // Hide ghost briefly so elementFromPoint sees what's underneath
+  ghost.style.display='none';
+  const el = document.elementFromPoint(x,y);
+  ghost.style.display='inline-flex';
+  if(!el) return;
+  const zone = el.closest('.drop-zone');
+  if(zone){ zone.classList.add('over'); return; }
+  const lineZone = el.closest('.line-tiles');
+  if(lineZone) lineZone.classList.add('drop-target');
+}
+
+function cancelDrag(){
+  if(!drag) return;
+  ghost.style.display='none';
+  drag.tile.classList.remove('is-dragging');
+  document.body.classList.remove('dragging');
+  document.querySelectorAll('.drop-zone.over').forEach(z=>z.classList.remove('over'));
+  drag = null;
+}
+
 function endDrag(x,y){
   if(!drag) return;
   ghost.style.display='none';
   drag.tile.classList.remove('is-dragging');
+  document.body.classList.remove('dragging');
+  document.querySelectorAll('.drop-zone.over').forEach(z=>z.classList.remove('over'));
 
-  // Find drop target
-  ghost.style.display='none'; // hide so elementFromPoint works
   const el = document.elementFromPoint(x,y);
 
   if(el){
-    // Dropped on a tile inside the poem
+    // Ephemeral drop zones
+    const zone = el.closest('.drop-zone');
+    if(zone){
+      const action = zone.dataset.zone;
+      if(action==='last-line'){
+        dropHorseOnLine(drag.horse, lines.length-1, null, false);
+        drag=null; return;
+      }
+      if(action==='pasture'){
+        sendHorseToPasture(drag.horse, drag.srcType, drag.srcLine, drag.srcIdx);
+        drag=null; return;
+      }
+      if(action==='remove'){
+        removeHorseFromSource(drag.srcType, drag.srcLine, drag.srcIdx, drag.horse);
+        drag=null; return;
+      }
+    }
+    // Dropped on a tile inside the poem → insert before/after based on horizontal position
     const targetTile = el.closest('.horse-tile[data-li]');
     if(targetTile){
       const li  = parseInt(targetTile.dataset.li);
@@ -893,35 +999,202 @@ function endDrag(x,y){
       drag=null; return;
     }
   }
-  // Dropped outside — no action, just re-render to restore
+  // Dropped outside — no action; re-render to restore the source tile.
   renderPoem();
   renderStable();
   drag=null;
 }
 
-// Mouse move/up on document
-document.addEventListener('mousemove', e=>{ if(drag) moveGhost(e.clientX,e.clientY); });
-document.addEventListener('mouseup',   e=>{ if(drag) endDrag(e.clientX,e.clientY); });
+function attachLineDrop(zone){
+  // Visual feedback only — drop is routed through updateDropZoneHover/endDrag.
+  // (Kept as a no-op shim so renderPoem() doesn't break if this is removed later.)
+}
 
-// Touch move/end
-document.addEventListener('touchmove', e=>{
-  if(!drag) return;
-  e.preventDefault();
-  const t=e.touches[0];
-  moveGhost(t.clientX,t.clientY);
-},{passive:false});
+// ── Chip menu ─────────────────────────────────────────────────────────────────
+const chipMenu       = document.getElementById('chip-menu');
+const chipMenuBg     = document.getElementById('chip-menu-backdrop');
+let chipMenuReturnTo = null;  // element to return focus to on close
 
-document.addEventListener('touchend', e=>{
-  if(!drag) return;
-  const t=e.changedTouches[0];
-  endDrag(t.clientX,t.clientY);
+function openChipMenu(tile){
+  const srcType = tile.closest('.line-tiles') ? 'poem' : 'stable';
+  const horse = {
+    name:    tile.dataset.name,
+    display: tile.dataset.display,
+    url:     tile.dataset.url,
+  };
+  const items = buildChipMenuItems(srcType, tile, horse);
+
+  chipMenu.innerHTML = `
+    <div class="chip-menu-head">${esc(horse.display)}</div>
+    ${items.map((it,i)=>`
+      <button type="button" class="chip-menu-item${it.danger?' danger':''}"
+              role="menuitem" data-i="${i}" ${it.disabled?'disabled':''}>
+        ${esc(it.label)}${it.hint?`<span class="hint">${esc(it.hint)}</span>`:''}
+      </button>`).join('')}
+  `;
+
+  // Position: below the chip, or above if no room.
+  positionChipMenu(tile);
+
+  chipMenuBg.hidden = false;
+  chipMenu.hidden   = false;
+  chipMenuReturnTo  = tile;
+
+  // Wire actions
+  chipMenu.querySelectorAll('.chip-menu-item').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const item = items[parseInt(btn.dataset.i)];
+      if(item.disabled) return;
+      closeChipMenu();
+      item.action();
+    });
+  });
+
+  // Focus the first enabled menu item for keyboard users
+  const firstEnabled = chipMenu.querySelector('.chip-menu-item:not([disabled])');
+  if(firstEnabled) firstEnabled.focus();
+}
+
+function positionChipMenu(anchor){
+  // Make the menu measurable
+  chipMenu.style.left = '-9999px'; chipMenu.style.top = '-9999px';
+  chipMenu.hidden = false;
+  const ar = anchor.getBoundingClientRect();
+  const mw = chipMenu.offsetWidth;
+  const mh = chipMenu.offsetHeight;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  // position:fixed → use viewport coords from getBoundingClientRect directly.
+  let left = ar.left;
+  let top  = ar.bottom + 4;
+  if(left + mw > vw - 8)               left = vw - mw - 8;
+  if(left < 8)                         left = 8;
+  if(top + mh > vh - 8 && ar.top - 4 - mh > 0) top = ar.top - mh - 4;
+  chipMenu.style.left = left + 'px';
+  chipMenu.style.top  = top + 'px';
+}
+
+function closeChipMenu(){
+  chipMenu.hidden = true;
+  chipMenuBg.hidden = true;
+  if(chipMenuReturnTo && document.body.contains(chipMenuReturnTo)){
+    chipMenuReturnTo.focus();
+  }
+  chipMenuReturnTo = null;
+}
+
+chipMenuBg.addEventListener('click', closeChipMenu);
+chipMenu.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){ e.preventDefault(); closeChipMenu(); return; }
+  if(e.key==='ArrowDown' || e.key==='ArrowUp'){
+    e.preventDefault();
+    const items = Array.from(chipMenu.querySelectorAll('.chip-menu-item:not([disabled])'));
+    if(!items.length) return;
+    const cur = items.indexOf(document.activeElement);
+    const next = e.key==='ArrowDown'
+      ? (cur+1) % items.length
+      : (cur<=0 ? items.length-1 : cur-1);
+    items[next].focus();
+  }
 });
 
-function attachLineDrop(zone){
-  // Visual feedback only — actual drop handled in endDrag via elementFromPoint
-  zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('drop-target'); });
-  zone.addEventListener('dragleave',    ()=> zone.classList.remove('drop-target'));
-  zone.addEventListener('drop',     e=>{ e.preventDefault(); zone.classList.remove('drop-target'); });
+function buildChipMenuItems(srcType, tile, horse){
+  const li = tile.dataset.li!=null ? parseInt(tile.dataset.li) : -1;
+  const hi = tile.dataset.hi!=null ? parseInt(tile.dataset.hi) : -1;
+
+  if(srcType==='stable'){
+    return [
+      { label: 'Add to poem',
+        hint:  'Adds to the last line',
+        action: ()=>{
+          drag = { horse, srcType:'stable', srcLine:-1, srcIdx:-1, tile };
+          dropHorseOnLine(horse, lines.length-1, null, false);
+          drag=null;
+        }
+      },
+      { label: isLoggedIn ? 'Send to My Pasture' : 'Send to My Pasture — sign in',
+        action: ()=> sendHorseToPasture(horse, 'stable', -1, -1)
+      },
+      { label: 'Remove from stable',
+        danger: true,
+        action: ()=> removeHorseFromSource('stable', -1, -1, horse)
+      },
+    ];
+  }
+  // srcType === 'poem'
+  const line = lines[li] || [];
+  const canMoveLeft  = hi > 0;
+  const canMoveRight = hi < line.length - 1;
+  const canMoveToLast = li !== lines.length - 1 || hi !== line.length - 1;
+  return [
+    { label: 'Move left in line', disabled: !canMoveLeft,
+      action: ()=> moveWithinPoem(li, hi, -1) },
+    { label: 'Move right in line', disabled: !canMoveRight,
+      action: ()=> moveWithinPoem(li, hi, +1) },
+    { label: 'Move to last line', disabled: !canMoveToLast,
+      action: ()=>{
+        drag = { horse, srcType:'poem', srcLine:li, srcIdx:hi, tile };
+        dropHorseOnLine(horse, lines.length-1, null, false);
+        drag=null;
+      }
+    },
+    { label: 'Send back to stable',
+      action: ()=> removeTile(li, hi)  // existing function returns the horse to stable
+    },
+    { label: isLoggedIn ? 'Send to My Pasture' : 'Send to My Pasture — sign in',
+      action: ()=> sendHorseToPasture(horse, 'poem', li, hi)
+    },
+    { label: 'Remove from poem',
+      danger: true,
+      action: ()=>{
+        lines[li].splice(hi,1);
+        pruneEmptyLines();
+        renderPoem();
+      }
+    },
+  ];
+}
+
+function moveWithinPoem(li, hi, delta){
+  const line = lines[li];
+  const newHi = hi + delta;
+  if(newHi < 0 || newHi >= line.length) return;
+  const [h] = line.splice(hi, 1);
+  line.splice(newHi, 0, h);
+  renderPoem();
+}
+
+async function sendHorseToPasture(horse, srcType, srcLine, srcIdx){
+  if(!isLoggedIn){
+    showToast('Sign in to save horses to your pasture.');
+    return;
+  }
+  const r = await apiPost('/me/pasture/add', { name: horse.name, display: horse.display, url: horse.url });
+  if(!r || !r.ok){
+    showToast('Could not save to pasture — please try again.');
+    return;
+  }
+  showToast(r.added ? `Added ${horse.display} to My Pasture` : `${horse.display} is already in My Pasture`);
+  // If sending from the poem, remove it from the poem after a successful save.
+  if(srcType==='poem' && srcLine>=0 && srcIdx>=0){
+    lines[srcLine].splice(srcIdx, 1);
+    pruneEmptyLines();
+    renderPoem();
+  }
+}
+
+function removeHorseFromSource(srcType, srcLine, srcIdx, horse){
+  if(srcType==='stable'){
+    stable = stable.filter(h=>h.name!==horse.name);
+    if(isAdmin)      apiPost('/poetry/stable/remove', {name:horse.name});
+    else             saveStableLocal();
+    renderStable();
+  } else if(srcType==='poem' && srcLine>=0 && srcIdx>=0){
+    lines[srcLine].splice(srcIdx, 1);
+    pruneEmptyLines();
+    renderPoem();
+  }
 }
 
 // ── Post modal ────────────────────────────────────────────────────────────────

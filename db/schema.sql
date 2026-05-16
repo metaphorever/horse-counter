@@ -167,3 +167,19 @@ CREATE TABLE IF NOT EXISTS stable_horses (
 );
 
 CREATE INDEX IF NOT EXISTS idx_stable_user_added ON stable_horses(user_id, added_at DESC);
+
+-- ── Pasture horses (per-user, server-side) ───────────────────────────────────
+-- Long-term per-user collection of horses the user wants to keep around. Distinct
+-- from `stable_horses` (the current composition's working pool) and from a future
+-- `saved_horses` (sentiment / blue-ribbon). Anonymous users do not have a pasture;
+-- the editor's "Send to My Pasture" action prompts them to sign in.
+CREATE TABLE IF NOT EXISTS pasture_horses (
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name        TEXT    NOT NULL,    -- normalized horse name (matches dictionary key)
+    display     TEXT    NOT NULL,
+    url         TEXT    NOT NULL,
+    added_at    REAL    NOT NULL,
+    PRIMARY KEY (user_id, name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_pasture_user_added ON pasture_horses(user_id, added_at DESC);
