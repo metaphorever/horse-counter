@@ -1,5 +1,30 @@
 /* ── Google Fonts loaded in base.html ── */
 
+/* ── Text / legal pages ── */
+.text-page { max-width: 640px; }
+.text-page h1 { font: 700 26px/1.2 'Playfair Display', Georgia, serif; margin-bottom: 6px; }
+.text-page h2 { font: 700 15px/1.4 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .05em; color: #6b5430; margin: 24px 0 8px; }
+.text-page h3 { font: 700 13px/1.4 'Courier Prime','Courier New',monospace; color: #8a7050; margin: 16px 0 4px; }
+.text-page p, .text-page li { font: 14px/1.7 Georgia,'Times New Roman',serif; color: #2d2316; margin-bottom: 8px; }
+.text-page ul, .text-page ol { padding-left: 20px; margin-bottom: 8px; }
+.text-page li { margin-bottom: 4px; }
+.text-page hr { border: none; border-top: 1px solid #c4a96b; margin: 24px 0; }
+.text-page section { margin-bottom: 8px; }
+.text-page a { color: #3a6b1a; }
+.text-page code { font: 13px 'Courier Prime','Courier New',monospace; background: #f0ead8; padding: 1px 4px; border-radius: 2px; }
+.text-page-updated { font: 12px 'Courier Prime','Courier New',monospace; color: #a08060; margin-bottom: 20px; }
+.text-page-summary { background: #f5eedc; border: 1px solid #c4a96b; border-radius: 3px; padding: 14px 18px; margin-bottom: 4px; }
+.text-page-summary h2 { margin-top: 0; }
+.deletion-table { width: 100%; border-collapse: collapse; font: 13px/1.5 Georgia,'Times New Roman',serif; margin-top: 8px; }
+.deletion-table th { font: 700 11px 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .04em; color: #6b5430; border-bottom: 2px solid #c4a96b; padding: 6px 8px; text-align: left; }
+.deletion-table td { padding: 6px 8px; border-bottom: 1px solid #e0d5b8; vertical-align: top; }
+.deletion-table tr:last-child td { border-bottom: none; }
+
+/* ── Site footer ── */
+.site-footer { margin-top: 32px; padding-top: 14px; border-top: 1px solid #c4a96b; font: 12px 'Courier Prime','Courier New',monospace; color: #a08060; }
+.site-footer a { color: #a08060; }
+.site-footer a:hover { color: #6b5430; }
+
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 

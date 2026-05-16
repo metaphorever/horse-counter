@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Data Deletion — poet.horse{% endblock %}
+
+{% block content %}
+<div class="text-page">
+  <h1>Data Deletion</h1>
+  <p class="text-page-updated">Last updated: May 2026</p>
+
+  <section class="text-page-summary">
+    <h2>Plain English</h2>
+    <ul>
+      <li>You can delete your account and personal data at any time.</li>
+      <li>Deleting your account removes your profile, stable, saved horses, saved poems, and preferences.</li>
+      <li>Your published poems stay on the site attributed anonymously, unless you ask us to remove them too — just say so in your deletion request.</li>
+      <li>Anonymous poems (submitted without an account) cannot be deleted by request because we have no way to verify authorship.</li>
+    </ul>
+  </section>
+
+  <hr>
+
+  <section>
+    <h2>How to request deletion</h2>
+    <p>We do not yet have an automated self-service deletion flow. To request deletion of your account and data, contact the operator directly:</p>
+    <ol>
+      <li>Send an email to <strong>silkwormmarketing@gmail.com</strong> with the subject line <strong>Data Deletion Request — poet.horse</strong>.</li>
+      <li>Include the display name or URL slug associated with your account (e.g. <code>poet.horse/u/your-slug</code>) so we can locate your record.</li>
+      <li>Let us know whether you also want your published poems removed, or if you are happy for them to remain attributed anonymously.</li>
+    </ol>
+    <p>We will process your request within 30 days and confirm by reply.</p>
+  </section>
+
+  <section>
+    <h2>What gets deleted</h2>
+    <table class="deletion-table">
+      <thead>
+        <tr><th>Data</th><th>On account deletion</th><th>On poem removal request</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Profile (display name, slug, links)</td><td>Deleted</td><td>—</td></tr>
+        <tr><td>Stable horses</td><td>Deleted</td><td>—</td></tr>
+        <tr><td>Saved horses and poems</td><td>Deleted</td><td>—</td></tr>
+        <tr><td>Preferences</td><td>Deleted</td><td>—</td></tr>
+        <tr><td>Published poems</td><td>Attribution removed (anonymous)</td><td>Poem removed from site</td></tr>
+        <tr><td>Submitted (unpublished) poems</td><td>Deleted</td><td>—</td></tr>
+        <tr><td>Server logs</td><td>Retained briefly per normal log rotation; IP logs are not linked to accounts</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Facebook / Meta OAuth</h2>
+    <p>If you connected your account through a Meta product, you can also initiate deletion via the Facebook settings page under <strong>Apps and Websites</strong>. Removing poet.horse from that list will revoke our access to your Facebook identity. To delete the data we hold, follow the email process above — Facebook's deauthorization callback does not automatically purge our records.</p>
+  </section>
+</div>
+{% endblock %}
