@@ -1,55 +1,39 @@
 # poet.horse — Roadmap & Design Doc
 
-> **Status:** drafted 2026-05-11, updated 2026-05-13. Living doc — every decision here was confirmed
-> by the project owner. Items marked **[OPEN]** still need a call before that
+> **Status:** drafted 2026-05-11, last full revision 2026-05-15. Living doc — every decision here was confirmed
+> by the project owner. Items marked **[OPEN]** still need a call before the
 > task starts. Each task is independently executable; the suggested Claude
 > model + reasoning effort is a hint, not a hard requirement.
 
-## You are here — 2026-05-13
+## You are here — 2026-05-15
 
-**Done this session:**
-- Phase 0.2 ✅ — SQLite schema, `poem_db.py`, `poem_submissions.py`, admin poem queue, `/p/<short_code>` stub, tags seeded
-- Phase 0.3 ✅ — `short_code` on every poem, `/p/<short_code>` route live, stub permalink template
-- VPS deployment ✅ — gunicorn running on `127.0.0.1:8765` under a systemd user service on zap.rupture.net. Apache vhost request sent to Jon (rupture.net admin); DNS A record for `poet.horse` → `162.221.25.21` already set in Cloudflare.
-- Horse dictionary ✅ — `data/horses.json.gz` (~29 MB, properly compressed) committed and pushed; loads 2.1M horses on boot.
-- Phase 0.4 ✅ — Clerk integration wired up:
-  - `clerk_auth.py`: JWKS-cached RS256 JWT verification (PyJWT + Clerk's `/v1/jwks`)
-  - `db/users.py`: user lookups + slug validation helpers
-  - `requirements.txt` created (`Flask`, `gunicorn`, `requests`, `PyJWT`, `cryptography`)
-  - New routes: `GET /sign-in`, `GET /sign-out`, `POST /auth/clerk/verify`, `GET|POST /setup-account`, `GET /u/<slug>`
-  - First-login flow: Clerk JS → POST token → verify → slug picker → user row created
-  - Admin is now role-based (`users.role = 'admin'`); PIN login at `/login` remains as fallback
-  - `base.html` embeds Clerk JS CDN and shows sign-in/sign-out/user links in nav
+**Done (Phase 0 — Foundations):**
+- 0.1 VPS provisioning & deploy ✅ — gunicorn under systemd on zap.rupture.net, Apache vhost via Jon, Cloudflare proxied, Let's Encrypt cert auto-renewing. Full notes in `memory/vps_hosting.md`.
+- 0.2 SQLite + initial schema ✅ — `data/poet.db` with users, poems, submissions, tags. `poem_db.py`, `poem_submissions.py` wired in.
+- 0.3 Short-code permalink ✅ — `/p/<short_code>` route live with a stub renderer.
+- 0.4 Clerk integration ✅ — `clerk_auth.py`, JWKS-verified sessions, `/sign-in`, `/sign-out`, `/setup-account`, `/u/<slug>`. Role-based admin; PIN remains as fallback.
 
-**Waiting on:**
-- Jon to create the Apache vhost for `poet.horse` → `127.0.0.1:8765`
-- Owner: set up `.env` on the VPS and wire it into the systemd service (see below)
-- Owner: after first Clerk login, run `UPDATE users SET role='admin' WHERE slug='your-slug';` in the SQLite DB to grant admin access
+## Up next — Opus session, finishes Phase 0 + lands new shell
 
-**VPS environment setup** (one-time, not yet done):
-- Service file: `/home/metaphorever/.config/systemd/user/poet-horse.service`
-- App directory: `/data/home/metaphorever/horse-counter`
-- Venv: `/home/metaphorever/.venv`
-- No `EnvironmentFile=` in the service yet — env vars are not set. Steps:
-  1. `nano /data/home/metaphorever/horse-counter/.env` — add `SECRET_KEY`, `APP_PINS`, `TUMBLR_CONSUMER_KEY`, `TUMBLR_CONSUMER_SECRET`, `TUMBLR_BLOG_NAME`, `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`
-  2. `systemctl --user edit poet-horse.service` — add `EnvironmentFile=/data/home/metaphorever/horse-counter/.env` under `[Service]`
-  3. `systemctl --user daemon-reload && systemctl --user restart poet-horse.service`
-  4. Install deps — the VPS uses `uv`, not pip:
-     ```bash
-     source $HOME/.local/bin/env && source ~/.venv/bin/activate
-     uv pip install -r /data/home/metaphorever/horse-counter/requirements.txt
-     ```
+Suggested chunk for a single Opus-driven session. Together these complete Phase 0 and reshape the site IA. Pick them up in order; each has acceptance criteria below.
 
-**Next session start:** Phase 0.5 — localStorage → account sync `[sonnet · medium]`
-- Or parallel quick wins: `tools/migrate_json_to_sqlite.py` `[sonnet · medium]` and Phase 0.6 ToS routes `[haiku · low]`
+1. **0.5 localStorage → account sync** `[sonnet · medium]`
+2. **0.6 ToS / Privacy / Data-Deletion pages** `[haiku · low]`
+3. **1.1 Top-level nav + user menu** `[sonnet · medium]` — implement the full IA including the user-menu dropdown. `/me/*` destinations that don't have real content yet should render a styled "coming soon" stub that links back to the relevant ROADMAP task.
+4. **1.22 Attribution footer + Ko-fi widget** `[sonnet · low]` — site-wide footer with the Weatherhead citation as a styled blockquote and the Ko-fi widget on the clover.
+
+After this session: Phase 0 is closed. The site has its new shell. Phase 1 continues with the editor pain-fix (1.2), tag taxonomy (1.3), and poem permalink renderer (1.5) — those are the next natural cluster.
+
+**Known open bugs (track separately in `TODO.md`):**
+- Tumblr post CSS desync — Tumblr appears to strip `class` attributes; horse tile structural styling is lost on new posts. Likely needs data-attribute selectors or inlined structural CSS. **Deprioritized** — most Tumblr users view in dashboard mode where CSS is stripped anyway. Revisit only after the website CSS is finalized.
 
 ---
 
 ## 1. What we're building
 
-**poet.horse** is a constrained found-poetry tool. Every word in a poem must be a real horse name from a curated dictionary (~2.1M names). The site is the canonical home for poems. Tumblr (and later Bluesky/Mastodon/etc.) are *outbound* publishing connectors — the website never depends on them.
+**poet.horse** is a constrained found-poetry tool. Every word in a poem must be a real horse name from a curated dictionary (~2.1M names). The site is the canonical home for poems. Tumblr (and later Bluesky/Mastodon/Threads/etc.) are *outbound* publishing connectors — the website never depends on them.
 
-The current code (a Flask app on PythonAnywhere posting to `counting-horses` on Tumblr) is the kernel. We are migrating it to a real domain on a real VPS, swapping JSON-file storage for SQLite, adding real auth via Clerk, and reframing the UX around *poems on the website*. The Tumblr counter feature comes along for the ride at `/count`.
+The current code (a Flask app originally on PythonAnywhere posting to `counting-horses` on Tumblr) is the kernel. We're now running on a real VPS at poet.horse with SQLite storage and Clerk auth. The remaining work is to **reframe the UX around poems on the website**, with Tumblr and other platforms relegated to optional outbound bots. The horse-counter feature comes along for the ride at `/count`.
 
 ---
 
@@ -58,26 +42,52 @@ The current code (a Flask app on PythonAnywhere posting to `counting-horses` on 
 | Decision | Choice |
 |---|---|
 | Domain | `poet.horse` (only one for now; `counting.horse` etc. deferred) |
-| Hosting | Existing radio-station VPS (Phase 1). Independent VPS only if traffic / monetization justifies it |
-| Deploy | GitHub → VPS via GitHub Actions on merge to `main` |
+| Hosting | Existing radio-station VPS (zap.rupture.net). Independent VPS only if traffic / monetization justifies it |
+| Deploy | GitHub → VPS via GitHub Actions on merge to `master` (deploy pipeline pending — currently manual `git pull` + service restart) |
 | Backend | Flask + Jinja + vanilla JS (no SPA) |
 | Datastore (poems, users, tags, submissions) | **SQLite** (single file, FTS5 for poem search) |
 | Datastore (horse dictionary) | **Static `data/horses.json.gz`** loaded at app start (~30 MB). Not in SQLite |
-| Auth | **Clerk** (Google, Apple, GitHub, Facebook, magic link, passkeys). No passwords stored on our side |
+| Auth | **Clerk** (Google live, others pending OAuth provider setup). No passwords stored on our side |
 | Anonymous flow | Full tool access pre-login. localStorage for stable + drafts + prefs. Anonymous poems are **permanently anonymous** |
 | Poem ID | UUID4 (32-hex) internal; **base62 short code** (≈11 chars) for public URL `poet.horse/p/<short>` |
-| Tag taxonomy | Multiple curated **categories**, each seeded with common tags + admin-approved user suggestions. MVP categories: **Poem Type** (free verse, haiku, etc.), **Theme** (love, loss, nature, etc.), **Content Warnings** (sex, drugs and alcohol, violence, etc.). New categories addable by admin |
-| Tumblr | Retained. Site is canonical; Tumblr is one of N outbound connectors |
+| Tag taxonomy | Multiple curated **categories**, each seeded with common tags + admin-approved user suggestions. MVP categories: **Poem Type**, **Theme**, **Content Warnings**, **Linguistic Features**. New categories addable by admin |
+| Cross-posting | Admin-flagged poems land in a queue; scheduled bots (Tumblr, Bluesky, Mastodon, Threads, X) pull from the queue on their own cadence. Same schedule is fine for MVP; schema supports independent schedules later |
 | API | Internal-only at launch. Designed for eventual public exposure |
-| Editor UI | Always utilitarian + accessible (no horse-body decoration). Famous-horse shimmer kept. Big touch targets. Less drag-dependent (Phase 2 rethink) |
+| Editor UI | Always utilitarian + accessible (no horse-body decoration). Famous-horse shimmer kept. Big touch targets. Phase 1 ships a minimum-viable pain-fix; Phase 2 is a full editor rethink with multiple toggleable styles |
 | Display UI (poem viewer) | Two render paths: **plain** (default for accessibility / reduced-motion / explicit pref) and **pasture** (full grass/horse decoration, default for permalinks) |
+| Favorites & collections | Two distinct per-user collections. **Pasture** = working storage for horses ("store for later") — added via an explicit "add to pasture" action. **Save** = sentiment signal — small toggleable blue-ribbon icon on horses (→ Saved Horses) and on poems (→ Saved Poems). Both **private** — user sees their own; aggregate stats feed admin curation and popularity rankings; never displayed as public counts. The ribbon visually reads like an upvote but the "Save" label tells the user it's a private collection action |
 | Print | Two `@media print` stylesheets: plain text (also = `.txt` download + image-card source for plain) and Victorian broadsheet (also = image-card source for fancy) |
+
+### Top-level navigation (Phase 1)
+
+Site-wide nav, not scroll-locked, user menu on the right:
+
+- **Home** — `/`
+- **Read Poems** — `/featured` (default destination)
+  - Featured — `/featured` (hand-selected current rotation)
+  - Browse — `/browse` (sortable / filterable feed)
+  - Random — `/random`
+- **Write Poems** — `/poetry` (one-page editor; alias `/write` planned)
+- **Pasture** — `/pasture` (public default with random horses; renders your-pasture content when logged in)
+- **Count** — `/count` (existing horse-counter feature, kept but de-emphasized in IA)
+
+**User menu (right-hand side):**
+
+- Logged out: **Sign In** button → `/sign-in`
+- Logged in: username chip → dropdown with:
+  - **Published Poems** — `/me/published` (own published poems; mirrors `/u/<slug>` content)
+  - **Unpublished Poems (WIP)** — `/me/drafts` (drafts + submitted-not-yet-published)
+  - **My Pasture** — `/me/pasture` (working horse collection)
+  - **Saved Poems** — `/me/saved-poems` (blue-ribboned poems)
+  - **Saved Horses** — `/me/saved-horses` (blue-ribboned horses)
+  - **Edit Profile** — `/me/profile`
+  - **Sign Out** — `/sign-out`
 
 ### Famous horses model
 Two independent sources, both surfacing the same UI badge with a "why famous" caption on the more-info menu:
 
 1. **IRL famous** — curated JSON: `data/famous_horses.json`. Caption examples: "Kentucky Derby winner", "Triple Crown winner", "Belmont winner", "Breeders' Cup Classic winner".
-2. **Site-famous** — derived from real usage on poet.horse. Composite score from (a) appearances in published poems and (b) saves to user pastures (Phase 2+). Top-N gets the badge. Caption: "#3 most-used horse on poet.horse".
+2. **Site-famous** — derived from real usage on poet.horse. Composite score from (a) appearances in published poems, (b) saves to user pastures, (c) favorites, and (d) permalink views. Top-N gets the badge. Caption: "#3 most-used horse on poet.horse".
 
 A horse can be both. The badge merges both captions. **No voting** — the site never asks users to upvote. Rankings come from curated real-world facts or from real usage signals only.
 
@@ -88,23 +98,30 @@ A horse can be both. The badge merges both captions. **No voting** — the site 
 These exist as plans but won't be touched until the trigger condition fires. Listed here so they aren't forgotten.
 
 - **counting.horse domain & redirect** — no decision needed for MVP; the existing horse-counter feature lives at `poet.horse/count`. Revisit if/when the domain is purchased.
-- **Three-concept model (Stable / Your Pasture / Pasture mode)** — full rollout is **Phase 2**, after Clerk + user identities exist. Phase 1 keeps the current single "Stable" concept (per-user via localStorage; per-account once auth lands).
-- **Per-horse on-demand scrape** of pedigreequery (with Cloudflare-aware Playwright session, polite rate-limit, dead-link blacklist) — **Phase 2+**. Notes already in `TODO.md` and braindump.
+- **Per-horse on-demand scrape** of pedigreequery (Cloudflare-aware Playwright session, polite rate-limit, dead-link blacklist) — **Phase 2**. Notes in `TODO.md` and braindump.
 - **Real coat colors** — needs scraped data; defer until per-horse scrape is live. Hash-based pseudo-colors stay for now.
 - **Public API exposure + OpenAPI spec** — internal-first design, public exposure in Phase 3.
-- **Theme/mood tag set** (love, loss, humor, etc.) — deferred. Form taxonomy + `explicit/mature` ship at MVP.
-- **Editor UX rethink** (less drag-dependent) — Phase 2; needs a focused design conversation. Phase 1 ships chip-stripped + big-target version.
+- **Editor UX rethink** — Phase 2; needs a focused design conversation with multiple prototype UIs. Phase 1 ships a targeted pain-fix only.
 - **Old poem import** from `data/poems/*.json` and the counting-horses Tumblr blog — best-effort one-shot script in Phase 1. Fresh start is acceptable if conversion is messy.
 - **Lawyer review of ToS** — before monetization, not before launch. Plain-English placeholder ships in Phase 0.
-- **Ambient field horses + emoji-sprinkle background** — Phase 2, owner-prioritized.
+- **Ambient field horses + emoji-sprinkle background** — Phase 2.
 - **Multi-format line breaks** in poem schema — MVP encodes only `newline` breaks, with a publish-time warning when a poem has empty lines (intentional vs. strip).
+- **Tumblr theme port** — keep current posting flow working but the matching Tumblr theme rebuild waits until the canonical site CSS is locked in. Phase 2.
+- **Exquisite corpse mode** — Phase 3.
+
+### Open design questions (resolve before phase start)
+
+- **In-pasture horse interaction details** — confirmed shape (popover with name, link, poems-featuring, add-to-pasture, ribbon-save). Exact transition / placement / dismissal behavior is a Phase 1.7 design call.
+- **Editor chip interactions (one-page builder)** — drag-primary vs click-primary vs hybrid. Marked for Phase 2 prototyping. Phase 1 keeps drag and adds a click-to-add fallback + drop zone.
 
 ### Items I made a default call on — flag if wrong
 
 - **Internal poem ID:** UUID4 hex; **public short code:** 11-char base62 generated by `secrets.token_urlsafe(8)` then sanitized. Collision check on insert.
 - **Counting feature in MVP:** stays at `poet.horse/count` with no redesign. Tumblr posting from there continues to work for admins.
 - **Dictionary stays as a static file**, not migrated to SQLite. Lookups are O(1) via `word_index`; SQLite would only add overhead.
-- **Clerk plan:** start on the free tier (≤10k MAU). Re-evaluate if we hit the limit.
+- **Clerk plan:** on the free tier (≤10k MAU). Re-evaluate if we hit the limit.
+- **Pasture and Save are distinct collections** — Pasture is for working storage; Save (blue-ribbon) is for sentiment. They populate different per-user lists.
+- **Save signals are private** — never displayed as public counts. Aggregates feed admin curation and popularity rankings only.
 
 ---
 
@@ -124,50 +141,9 @@ Models named: `claude-haiku-4-5-20251001`, `claude-sonnet-4-6`, `claude-opus-4-7
 
 ---
 
-## Phase 0 — Foundations (pre-launch infra)
+## Phase 0 — Foundations completion
 
-Goal: clean cutover-ready infra. App still works the way it does today, but the deployment story, data layer, and auth are the new ones.
-
-### 0.1 VPS provisioning and deploy pipeline `[sonnet · medium]`
-
-- Owner action: register `poet.horse` and point DNS A record to the VPS.
-- Set up Apache reverse proxy → gunicorn → flask. systemd unit for the gunicorn service.
-- Provision Python 3.11+, Let's Encrypt cert via certbot.
-- GitHub Actions workflow `.github/workflows/deploy.yml`: on push to `main`, ssh to VPS, `git pull`, install deps, restart service. Use repo secrets for SSH key.
-- Acceptance: pushing to `main` deploys; `https://poet.horse/` serves the current app over TLS.
-
-### 0.2 SQLite + migration of JSON state `[sonnet · high]`
-
-- Add `data/poet.db` (gitignored). Use Python stdlib `sqlite3` — no ORM unless it earns its place.
-- Schema (initial):
-  - `users` (id, clerk_id UNIQUE, slug UNIQUE, display_name, joined_at, role)
-  - `poems` (id INTEGER PK, short_code UNIQUE, title, lines_json, status, author_user_id NULL, author_display_name, created_at, published_at, edited_at)
-  - `poem_tags` (poem_id, tag_id, applied_by user_id, status: pending/approved)
-  - `tag_categories` (id, slug UNIQUE, label, sort_order, behavior: enum `single_select`/`multi_select`/`content_warning`, created_at)
-  - `tags` (id, slug UNIQUE, label, category_id → tag_categories, status: active/pending/rejected, suggested_by user_id NULL, created_at)
-  - `reports` (id, target_type: poem/display_name/slug, target_id, reporter_user_id NULL, reason, created_at, status)
-  - `submissions` (id, poem_id, status: pending/approved/rejected, submitted_at) — replaces `submissions.json`
-  - `drafts` (id, user_id NULL, lines_json, title, updated_at) — replaces in-memory + `stable.json`
-  - `stable_horses` (user_id, name, display, url, remaining) — server-side stable for logged-in users
-- Write `tools/migrate_json_to_sqlite.py`: idempotently imports `submissions.json`, `data/poems/*.json`, and `stable.json` into the new schema. Best-effort; logs anything skipped.
-- Replace [submissions.py](submissions.py), [poem_store.py](poem_store.py), and the `stable_*` paths in [poetry.py](poetry.py) with sqlite-backed equivalents. Keep function signatures so [app.py](app.py) doesn't shift.
-- Acceptance: app boots against SQLite; `migrate_json_to_sqlite.py` run twice produces no duplicates; existing flows still work.
-
-### 0.3 Public short-code + permalink URL system `[sonnet · medium]`
-
-- `tools/shortcode.py`: `generate_short_code()` returns `secrets.token_urlsafe(8)`, length-checked, URL-safe (strip `_-`).
-- New route: `GET /p/<short_code>` (200 stub for now — full renderer is Phase 1).
-- Update [poem_store.py](poem_store.py) (now sqlite) to populate `short_code` on insert with collision retry.
-- Acceptance: every saved poem has a unique 11-ish-char short code reachable at `/p/<code>`.
-
-### 0.4 Clerk integration `[sonnet · high]`
-
-- Add Clerk Flask SDK. Configure: Google, Apple, GitHub, Facebook, magic-link email, passkeys.
-- New routes: `/sign-in`, `/sign-out`, `/u/<slug>` (basic).
-- On first login, create row in `users` with `clerk_id`. Prompt for unique slug (URL-safe, 3-32 chars, [a-z0-9-]). Display name defaults to Clerk profile name; user can edit.
-- Replace the PIN admin login (`config.check_pin`) with **role-based admin**: `users.role = 'admin'` set manually in DB for the owner's account. PIN remains as a fallback only if Clerk is unreachable.
-- Update `app.py:login_required` decorator to check Clerk session OR PIN-fallback.
-- Acceptance: a fresh Google login lands on a "pick your slug" form; second visit goes straight to `/u/<slug>`.
+0.1–0.4 are ✅ done (see "You are here" above). Remaining:
 
 ### 0.5 localStorage → account sync on first login `[sonnet · medium]`
 
@@ -176,125 +152,211 @@ Goal: clean cutover-ready infra. App still works the way it does today, but the 
 - "It already remembered" UX: show a one-time toast.
 - Acceptance: build a stable of 3 horses while logged out, log in, see them on the server-side stable.
 
-### 0.6 Plain-English ToS + privacy placeholder `[haiku · low]`
+### 0.6 Plain-English ToS + privacy + data-deletion `[haiku · low]`
 
-- New routes/templates: `/terms`, `/privacy`. Plain-language summary at top, formal terms below (per spec). Link in footer.
+- New routes/templates: `/terms`, `/privacy`, `/data-deletion`. Plain-language summary at top, formal terms below. Link in footer.
+- `/data-deletion` is a static instructions page (acceptable for smaller apps per Facebook OAuth requirements). Upgrade to webhook (`signed_request` verification + automated delete) later if needed for additional providers.
 - Owner reviews wording before launch; lawyer review pre-monetization.
-- Acceptance: pages render; footer link present site-wide.
+- Acceptance: all three pages render; footer link present site-wide.
 
 ---
 
 ## Phase 1 — MVP soft launch
 
-Goal: poet.horse is a complete website that lets anyone compose, publish, and read horse poems. Tumblr is one optional outbound connector for the admin.
+Goal: poet.horse is a complete website that lets anyone compose, publish, and read horse poems. Tumblr is one optional outbound connector for the admin, scheduled via the cross-post queue.
 
-### 1.1 Editor refresh — chips, big targets, famous shimmer `[sonnet · high]`
+### 1.1 Top-level navigation + IA `[sonnet · medium]`
+
+- Implement the nav structure in `templates/base.html`: Home, Read Poems (with Featured/Browse/Random submenu), Write Poems, Pasture, Count.
+- Right side: Sign-in button when logged out; username dropdown when logged in with sub-items:
+  - Published Poems (`/me/published`)
+  - Unpublished Poems / WIP (`/me/drafts`)
+  - My Pasture (`/me/pasture`)
+  - Saved Poems (`/me/saved-poems`)
+  - Saved Horses (`/me/saved-horses`)
+  - Edit Profile (`/me/profile`)
+  - Sign Out
+- Some destination pages render in later tasks (1.19 saves, 1.15 profile, etc.) — the menu links resolve to either real pages or a "coming soon" stub depending on phase order.
+- Mobile: collapses to a hamburger; submenus expand inline.
+- Acceptance: every top-level link resolves; user-menu items are reachable; submenu structure works keyboard-only and on touch.
+
+### 1.2 Editor pain-fix: drop zone + click-to-add + decoration strip `[sonnet · medium]`
 
 - Strip horse-body decoration (legs, coat shapes) from chips inside [templates/poetry.html](templates/poetry.html).
 - Keep coat color palette and famous shimmer.
 - Increase tap targets (44×44 minimum), increase spacing.
-- Keep current drag interactions; add a click-to-add fallback path on every chip ("click to add to current line"). Note this is an interim — full rethink is Phase 2.
-- Acceptance: every chip is keyboard-focusable; touch testing on a small phone shows no accidental drags; visual diff against current is dramatically simpler.
+- Keep current drag interactions.
+- **Add "drop to last line" zone** at the bottom of the stable area — drops add the horse to the final line of the current poem regardless of scroll position.
+- **Add an explicit click-to-add affordance** on every chip ("→ poem" button) — clicking adds the chip to the current line (or last line if no line is focused).
+- This is an interim fix targeting the specific drag-distance pain point on long poems. Full rethink is Phase 2.1.
+- Acceptance: every chip is keyboard-focusable; the drop zone catches drags from anywhere in the stable; the add-button works on touch without triggering drag.
 
-### 1.2 Tag taxonomy + selection UI `[sonnet · medium]`
+### 1.3 Tag taxonomy + selection UI `[sonnet · medium]`
 
 - Seed `tag_categories` and `tags` with curated baselines (owner to edit before launch):
   - **Poem Type** (`single_select`): free verse, haiku, limerick, sonnet, couplet, ballad, ode, prose poem, concrete, found, other
   - **Theme** (`multi_select`): love, loss, nature, humor, hope, longing, anger, joy, memory, place, animals, the body, time, dreams, work, faith, other
+  - **Linguistic Features** (`multi_select`): rhyming, blank verse, metered, alliterative, repetition, internal rhyme — **user-tagged at MVP**; auto-detection deferred to Phase 2+
   - **Content Warnings** (`content_warning`, multi_select with display-time consequences): sex, drugs and alcohol, violence, self-harm, death, slurs, mature themes
 - Editor UI: one section per category. Single-select renders as a radio chip group; multi-select as a toggleable chip cloud; content_warning gets warning-styled chips with a tooltip explaining display behavior. Each section has a "suggest a new tag" affordance that submits to the pending queue scoped to that category.
-- Acceptance: poems can be tagged across all three MVP categories; tagged poems show their tags grouped by category on the permalink.
+- Acceptance: poems can be tagged across all four MVP categories; tagged poems show their tags grouped by category on the permalink.
 
-### 1.3 Admin tag management `[sonnet · medium]`
+### 1.4 Admin tag management `[sonnet · medium]`
 
 - Admin route `/admin/tags`: list pending suggestions grouped by category. Approve / reject / merge into existing / move to a different category. Create new categories on the fly.
-- In the admin "review submission" flow, suggested tags appear inline next to the poem. Admin can approve a tag (adds to `tags`), reject the tag but keep the poem, move a tag to a different category, or override the tag set entirely.
 - Lightweight UI: drag tags between categories, type-to-merge.
 - Acceptance: a user-suggested tag goes from poem submission → admin queue → approved (in chosen category) → available in the editor's picker for the next user.
 
-### 1.4 Poem permalink + Open Graph `[sonnet · medium]`
+### 1.5 Poem permalink + Open Graph `[sonnet · medium]`
 
-- `/p/<short_code>` renders the poem with: title, attribution, tags, published date, two view modes (plain / pasture — see 1.5).
+- `/p/<short_code>` renders the poem with: title, attribution, tags, published date, view-mode toggle (plain / pasture — see 1.6).
 - Open Graph tags: `og:title`, `og:description` (first line of poem + count), `og:url`, `og:type=article`, `og:image` (defer to Phase 2 image card; meanwhile use a static OG card).
 - Acceptance: pasting a poem URL in Slack/Discord/iMessage shows a rich preview with the poem title and author.
 
-### 1.5 Two-mode poem renderer (plain / pasture) `[sonnet · high]`
+### 1.6 Two-mode poem renderer (plain / pasture) `[sonnet · high]`
 
 - Plain mode: utilitarian, semantic HTML, no animation, screen-reader friendly. Used as the default when the user has reduced-motion or has toggled reader mode.
-- Pasture mode: full grass background + decorated horse chips (current Tumblr-theme styling, ported in). Default for permalink visits.
+- Pasture mode: grass background + decorated horse chips (current Tumblr-theme styling, ported in). Default for permalink visits.
 - Toggle button in the poem header, persisted to localStorage (and to `users.preferences_json` if logged in).
 - Acceptance: a permalink loads in pasture by default; toggle persists across sessions.
 
-### 1.6 Public poem feed + chronological browse `[sonnet · medium]`
+### 1.7 Horse popover in pasture mode `[sonnet · high]`
 
-- `/` (homepage) shows: random curated poem hero (admin can pin), recent poems list below, "make a poem" CTA.
-- `/recent` paginated chronological feed (50/page).
-- Acceptance: published poems appear on /recent in reverse-chrono order; homepage hero rotates.
+- Click/tap a horse chip in pasture-mode display → popover with:
+  - Horse name
+  - Pedigreequery link
+  - **Blue-ribbon "Save" toggle** — small icon, top-right of the popover. Toggled on = horse is in Saved Horses. Compact, doesn't take a full row.
+  - **"Add to my pasture"** button — explicit row action (or "Remove from pasture" if already in).
+  - "Poems featuring this horse" — list of permalinks; shows up to N, links to `/horse/<slug>` for full list once Phase 2.10 ships.
+- Logged-out behavior: both the ribbon and the pasture button trigger an inline sign-in prompt — "Sign in to save horses to your collection." / "Sign in to add horses to your pasture." Distinct messages so the two actions feel distinct.
+- Keyboard-accessible, focus-trapped while open, ESC to close.
+- Acceptance: click any horse on a permalink → popover; logged-in ribbon and pasture actions both work and persist; logged-out prompts fire with the right copy per action; clicking outside dismisses.
 
-### 1.7 Empty-line warning at publish time `[haiku · low]`
+### 1.8 Featured / Browse / Random `[sonnet · high]`
+
+- **`/featured`** — admin-curated current rotation. Pinned poems display in order set by admin. New `featured` table or `poems.featured_at` column + `featured_order`.
+- **`/browse`** — paginated feed (50/page) with:
+  - **Sorts:** newest first (default), oldest, by title (A–Z), by author (A–Z)
+  - **Filters (combinable, as chips):** tag (any category), poem type, theme, linguistic feature, author/poet, contains horse (autocomplete dictionary lookup), **time-of-day band** (e.g. "12am–6am", with custom range picker), date range
+- **`/random`** — 302 to a random published poem; "another one" button.
+- Acceptance: filters combine; URL state is shareable (`/browse?tag=haiku&hour=3-5&sort=newest`); time-of-day filter respects the poem's stored local time.
+
+### 1.9 Empty-line warning at publish time `[haiku · low]`
 
 - Before submission, if any line in the poem is empty, show a modal: "Empty line detected — keep as a stanza break, or strip?" with two buttons.
 - Acceptance: submitting with empty lines triggers the modal; choosing "strip" removes them client-side before POST.
 
-### 1.8 Export: plain text copy, HTML copy, .txt download `[sonnet · low]`
+### 1.10 Export: plain text copy, HTML copy, .txt download `[sonnet · low]`
 
 - Buttons on the permalink page: "copy as text", "copy as HTML", "download .txt".
 - HTML copy includes minimal inline styling so it survives paste into rich-text contexts.
 - Acceptance: each button works in Chrome and Safari.
 
-### 1.9 Plain-text print stylesheet `[sonnet · medium]`
+### 1.11 Plain-text print stylesheet `[sonnet · medium]`
 
-- `@media print` for plain mode: serif font, generous margins, poem centered, attribution caption, `poet.horse` URL in footer.
+- `@media print` for plain mode: serif font, generous margins, poem centered, attribution caption, `poet.horse` URL in footer, Weatherhead citation in fine print at the bottom.
 - "Print" button on permalink invokes `window.print()`.
 - Acceptance: print preview on a poem looks like a poem on a page; no UI chrome bleeds through.
 
-### 1.10 Reader-mode toggle (site-wide) `[sonnet · medium]`
+### 1.12 Reader-mode toggle (site-wide) `[sonnet · medium]`
 
 - Always-visible toggle in header. Sets a `prefers-plain` localStorage flag (and `users.preferences_json` if logged in).
 - When set, every renderer uses the plain path. Respects `prefers-reduced-motion` and `prefers-contrast` automatically.
 - Acceptance: toggle on → permalink loads in plain by default; refresh persists choice.
 
-### 1.11 Admin moderation queue (publish-to-site) `[sonnet · high]`
+### 1.13 Admin moderation queue overhaul `[sonnet · high]`
 
-- Rework `/submissions`: queue is poem-first, not Tumblr-post-first. Each row: poem preview (plain), suggested tags, attribution, "publish to site" / "publish + cross-post to Tumblr" / "edit and publish" / "reject".
-- Publish flips `poems.status` to `published`, sets `published_at`. Cross-post button reuses the existing Tumblr submit path.
-- The original counter-submission queue stays as-is (it's a different flow), routed under `/admin/counter-queue` or similar.
-- Acceptance: a public poem submission lands in the admin queue; admin clicks "publish" → poem appears on /recent and at its permalink.
+- Rework `/submissions`: queue is poem-first, not Tumblr-post-first. Each row: poem preview (plain), suggested tags, attribution, "publish to site" / "publish + queue for cross-post" / "edit and publish" / "reject".
+- **Inline tag editing:** suggested tags appear inside the review card. Admin can approve / reject / move-to-different-category / merge with an existing tag *without leaving the queue*. New-category creation also inline.
+- Publish flips `poems.status` to `published`, sets `published_at`. Cross-post button flags the poem for the cross-post queue (see 1.20).
+- The existing counter-submission queue stays as-is (it's a different flow), routed under `/admin/counter-queue` or similar.
+- Acceptance: a public poem submission lands in the admin queue; admin clicks "publish" → poem appears on `/browse` and at its permalink; tag edits applied inline persist.
 
-### 1.12 Report button + report queue `[sonnet · medium]`
+### 1.14 Report button + report queue `[sonnet · medium]`
 
 - "Report" button on every poem permalink and on poet display names. Logged-out users can report (rate-limited by IP).
 - Admin route `/admin/reports`: list pending, approve (hide poem / rename slug / delete) or dismiss.
 - "One-click hide pending review" admin button on poems.
 - Acceptance: report submitted → appears in admin queue → admin actions take effect.
 
-### 1.13 Poet profile `/u/<slug>` `[sonnet · medium]`
+### 1.15 Poet profile `/u/<slug>` `[sonnet · medium]`
 
 - Public page: display name, slug, joined date, poems published (paginated reverse-chrono), small "edit profile" link if owner is viewing their own.
-- Owner can edit display name (slug is permanent post-Phase-0 — confirm UX for unique-slug enforcement).
+- Owner can edit display name (slug is permanent post-Phase-0).
 - Acceptance: visiting a slug shows that poet's published poems; anonymous-poem authors have no profile.
 
-### 1.14 RSS feed `[sonnet · low]`
+### 1.16 RSS feed `[sonnet · low]`
 
 - `/feed.xml` for all published poems (most recent 50). `/feed.xml?tag=haiku` and `/u/<slug>/feed.xml` for filters.
 - Acceptance: feed validates at validator.w3.org/feed; opens in a reader.
 
-### 1.15 Rate limiting `[sonnet · low]`
+### 1.17 Rate limiting `[sonnet · low]`
 
 - Add `flask-limiter` (Redis if VPS has it, in-memory otherwise). Limits: poem submission (5/hour anon, 30/hour logged-in), reports (3/hour per IP), search (60/min), API endpoints (per-route).
 - Acceptance: exceeding the limit returns 429 with retry-after header.
 
-### 1.16 One-shot import of existing data `[sonnet · medium]`
+### 1.18 One-shot import of existing data `[sonnet · medium]`
 
 - `tools/import_legacy.py`: pulls `data/poems/*.json` (the current store) into SQLite as published poems with their existing IDs as `short_code` (collision-checked). Optionally pulls poems posted to the counting-horses Tumblr via the API and imports those too, attributing to "anonymous (legacy)".
 - Best-effort; failures logged not raised.
 - Owner runs once before DNS cutover.
-- Acceptance: post-run, `/recent` shows a populated feed.
+- Acceptance: post-run, `/browse` shows a populated feed.
 
-### 1.17 DNS cutover + PythonAnywhere shutdown `[haiku · low — owner action]`
+### 1.19 Save (Blue Ribbon) + Pasture collections `[sonnet · medium]`
 
-- Update DNS to point poet.horse at the VPS.
-- Once new site is verified live, shut down the PA app. (Optional: configure PA to redirect to poet.horse — bonus.)
+Two separate per-user collections, each backed by its own table.
+
+- **My Pasture** — working storage for horses. Schema: `pasture_horses` (user_id, horse_name, added_at). Populated by the "add to my pasture" action in 1.7 popover, in the editor "→ pasture" chip action, and via the pasture-search mode (2.9).
+- **Saved Horses** — sentiment collection. Schema: `saved_horses` (user_id, horse_name, saved_at). Populated by the **blue-ribbon "Save" toggle** in the 1.7 popover (and anywhere else a horse chip appears with full UI).
+- **Saved Poems** — sentiment collection for poems. Schema: `saved_poems` (user_id, poem_id, saved_at). Populated by the same **blue-ribbon "Save" toggle** placed on poem permalinks. Visual treatment: blue-ribbon icon + "Save" label (text-paired so the user reads it as a private-collection action, not a public upvote).
+- **`/me/saved-horses`** and **`/me/saved-poems`** — list pages, paginated, with "remove" toggles per item.
+- **`/me/pasture`** — list page (also the logged-in destination for top-nav Pasture).
+- **Private:** none of these counts are surfaced publicly. Admin sees aggregates in `/admin/stats` for curation.
+- Saves + pasture additions + view counts feed the site-popularity score for horse and poem ranking (Phase 2.12).
+- Acceptance: logged-in user can independently toggle Save and add to Pasture for any horse; can Save any poem; each collection has its own `/me/*` page; admin sees aggregate counts.
+
+### 1.20 Cross-post queue (admin-flagged) `[sonnet · high]`
+
+- New table: `cross_post_queue` (id, poem_id, platform: tumblr/bluesky/mastodon/threads/x, status: pending/posted/failed, scheduled_for, posted_at, response_json).
+- Admin flags a poem for cross-posting per platform from the publish flow (checkboxes in 1.13). Queue picks them up.
+- **MVP scope:** Tumblr connector only (existing code adapted). Other platforms (Bluesky/Mastodon/Threads/X) ship in Phase 2.15.
+- Schedule: a single cron tick (e.g. once an hour) processes pending items, one platform per run. Schema supports per-platform schedules later.
+- Automatic poem selection (the bot picks unflagged poems) is deferred. **Admin flag → queue → post** only at MVP.
+- Acceptance: admin flags a poem for Tumblr cross-post; on next cron tick it posts; status flips to `posted`. Failures log and don't block the queue.
+
+### 1.21 Soft sign-in prompts `[sonnet · low]`
+
+Three quiet touchpoints, no modals:
+- **Inline near the stable** in the editor: small text "Sign in to save horses for later." Permanent but understated.
+- **Toast after first successful poem submit** (anonymous): "Your poem is in the queue. Sign in next time to track it." Auto-dismisses; not blocking.
+- **Action-gated prompt:** "add to pasture" / "favorite" / "save draft" while logged out → inline prompt at the action site, not a redirect.
+- Acceptance: all three appear in their contexts; none of them block flow; can be dismissed permanently per-user via a `dismissed_prompts` localStorage flag.
+
+### 1.22 Attribution footer + Ko-fi support `[sonnet · low]`
+
+- Site-wide footer (every page, plain mode and pasture mode):
+
+  > "The best way to read a poem is to pretend each line is the name of a horse; so the poem is just a list of horses." — [@weeatherhead](https://x.com/weeatherhead/) ([Andrew Weatherhead](http://www.andrewweatherhead.org/)), [Mar 19, 2013](https://x.com/weeatherhead/status/314089933906264066)
+
+  Note: keep the `andrewweatherhead.org` link as `http://` — the site doesn't support HTTPS (verified 2026-05-15). The footer should be marked up as a real `<blockquote cite="...">` + `<cite>` so it gets nice typography.
+
+- **Ko-fi widget** embedded in the footer (next to the clover emoji 🍀) and on clover-emoji sprites in pasture-mode views (Phase 2 ambient horses make this richer). Soft-sell — never blocking, never animated unless `prefers-reduced-motion` is off.
+- Ko-fi snippet (from `Links for poet-horse build`):
+  ```html
+  <script src="https://storage.ko-fi.com/cdn/widget/Widget_2.js"></script>
+  <script>kofiwidget2.init('Support me on Ko-fi', '#72a4f2', 'G2G81ZF3IA');kofiwidget2.draw();</script>
+  ```
+- Acceptance: footer visible on every page; Weatherhead citation renders as a styled blockquote; Ko-fi widget loads; works keyboard-only.
+
+### 1.23 GitHub Actions deploy `[sonnet · medium]`
+
+- `.github/workflows/deploy.yml`: on push to `master`, ssh to VPS, `git pull`, `uv pip install -r requirements.txt`, `systemctl --user restart poet-horse.service`. Use repo secrets for SSH key.
+- Acceptance: pushing to `master` deploys and the service restarts within 30s.
+
+### 1.24 DNS cutover + PA shutdown `[haiku · low — owner action]`
+
+- (DNS already cut. PythonAnywhere app still running.)
+- Once new site has been live for a few weeks with no regressions, shut down the PA app. Optional: configure PA to redirect to poet.horse.
 
 ---
 
@@ -302,12 +364,14 @@ Goal: poet.horse is a complete website that lets anyone compose, publish, and re
 
 Triggered when soft launch is live and traffic / feedback is flowing. Tasks here can be ordered freely.
 
-### 2.1 Editor UX rethink `[opus · high]`
+### 2.1 Editor UX rethink (multiple toggleable styles) `[opus · high]`
 
 - Owner has flagged the editor needs a real redesign — less drag-dependent, more thoughtful affordances.
-- This task starts with a design conversation, not code. Produce a written design doc (`docs/editor-redesign.md`) covering: input model alternatives (keyboard/click-to-add, sortable list, free-text-with-autocomplete, hybrid), accessibility plan, mobile vs desktop ergonomics. Get owner sign-off before implementation.
-- Implementation follows in a sub-task.
-- Acceptance: design doc merged; implementation matches the doc.
+- Two-stage task:
+  1. **Design doc + prototypes** (`docs/editor-redesign.md`): produce 2–4 distinct UI styles. Input model alternatives — keyboard/click-to-add primary, sortable list, free-text-with-autocomplete, drag-as-current, hybrids. Build runnable prototypes for each (separate routes under `/poetry/proto/<style>`). Get owner sign-off.
+  2. **Implementation + style toggle:** ship the winning styles as togglable options. User preference stored in `users.preferences_json.editor_style` (and localStorage for anon).
+- Accessibility plan, mobile vs desktop ergonomics, and reduced-motion behavior are part of the design doc.
+- Acceptance: design doc merged; ≥2 styles available in production; user can switch and choice persists.
 
 ### 2.2 Explicit/mature opt-in display `[sonnet · medium]`
 
@@ -327,7 +391,7 @@ Triggered when soft launch is live and traffic / feedback is flowing. Tasks here
 - High contrast, print-safe, no transparency.
 - Acceptance: printing in fancy mode produces a broadsheet-looking page; doubles as image-card source.
 
-### 2.5 "Horsified HTML" copy `[sonnet · medium]`
+### 2.5 "Horsified HTML" copy + embed.css `[sonnet · medium]`
 
 - Copy button: poem HTML + a `<link rel="stylesheet" href="https://poet.horse/embed.css">`. Pasted into a Tumblr/personal site, the poem renders with horse styling.
 - Publish `embed.css` as a versioned static file.
@@ -343,6 +407,7 @@ Triggered when soft launch is live and traffic / feedback is flowing. Tasks here
 - See `TODO.md` for the existing notes. Trigger on user clicking "more info" on a horse name not in cache.
 - Persistent Playwright session that has cleared the Cloudflare challenge once; cookie reuse for subsequent fetches.
 - Polite: 1 req/sec max, randomized delay. Cache result indefinitely. Mark dead links in `data/horse_overrides.json`.
+- 404s surface to the user as "horse not found" in the popover and add the name to the exclusion list.
 - Acceptance: clicking "more info" on a horse fetches and caches its PQ data within 3s; second click is instant.
 
 ### 2.8 Real coat color encoding `[sonnet · medium]` (depends on 2.7)
@@ -351,21 +416,17 @@ Triggered when soft launch is live and traffic / feedback is flowing. Tasks here
 - Use scraped color when present; fall back to hash-based for unknowns.
 - Acceptance: Black Beauty renders dark.
 
-### 2.9 Three-concept UI: Stable / Your Pasture / Pasture mode `[sonnet · high]`
+### 2.9 Pasture-search mode (whimsy opt-in) `[sonnet · high]`
 
-- Implement the braindump terminology now that auth is solid:
-  - **Stable** — current working area for one poem (existing).
-  - **Your Pasture** — per-account collection of saved horses across all poems. New "add to pasture" / "remove from pasture" buttons. New `/me/pasture` page.
-  - **Pasture mode** — display convention (the grass-styled poem renderer from 1.5; upgrade with movement toggles per user preference).
-- "Pasture search mode" (braindump): toggle on the search page that adds results to a visual pasture instead of a list.
-- Acceptance: each concept is distinct in UI and code; no terminology bleed.
+- New toggle on the horse-search UI in the editor (and `/pasture`): switch search-results display from list to a grass-styled pasture. Results scatter as horse chips (random walk optional, see 2.14). Drop zones around the pasture: "→ stable", "→ my pasture", "remove". Per-chip context menu: more info / add to current line.
+- Per the cross-cutting commitment about UI/display separation — this is opt-in whimsy, never the default in the editor.
+- Acceptance: toggle flips list ↔ pasture display; actions on chips reach the same destinations as the list mode; preference persists.
 
-### 2.10 Browse pages `[sonnet · medium]`
+### 2.10 Browse pages: per-horse + per-tag `[sonnet · medium]`
 
 - `/horse/<name-slug>` — all poems featuring this horse + horse metadata (registry, country, birth year, scraped fields if any).
-- `/u/<slug>` — already exists (1.13); add filters.
 - `/tag/<tag-slug>` — all poems with this tag.
-- Acceptance: each page paginates, sorts (newest / most-reported-positive / random), and is link-shareable.
+- Acceptance: each page paginates, sorts (newest / most-favorited-private / random), and is link-shareable.
 
 ### 2.11 Search inside poems `[sonnet · high]`
 
@@ -373,24 +434,42 @@ Triggered when soft launch is live and traffic / feedback is flowing. Tasks here
 - `/search?q=...` UI with filters by tag, by poet, by horse-in-poem.
 - Acceptance: searching for "rosebud" returns poems containing horses named Rosebud, poems with "rosebud" in the title, and poets named Rosebud.
 
-### 2.12 Random poem button `[haiku · low]`
+### 2.12 Famous-on-poet.horse popularity stats `[sonnet · medium]`
 
-- Header button + `/random` route that 302s to a random published-poem permalink.
-- Acceptance: clicking it lands on a different poem each time.
-
-### 2.13 Famous-on-poet.horse popularity stats `[sonnet · medium]`
-
-- Nightly cron computes a per-horse usage score from real signals: (a) count of distinct published poems containing the horse, (b) count of users with the horse in their Pasture (depends on 2.9). Tunable weights, default equal.
+- Nightly cron computes a per-horse usage score from real signals: (a) count of distinct published poems containing the horse, (b) count of users with the horse in their pasture, (c) count of poems featured that contain the horse, (d) permalink views. Tunable weights, default equal.
 - Top-N gets the "site-famous" badge; cache the rolling list in `data/site_famous.json`.
 - Merge with IRL famous list when surfacing the more-info menu (e.g. "Kentucky Derby winner · #3 most-used on poet.horse").
 - Acceptance: the more-info menu on a popular horse shows both reasons; rankings shift sensibly as new poems are published.
 
-### 2.14 Ambient field horses + emoji-sprinkle background `[sonnet · high]`
+### 2.13 Ambient field horses + emoji-sprinkle background `[sonnet · high]`
 
-- Per the braindump z-index plan: base color → SVG grass tile → emoji sprinkle (☘🍀🍄‍🟫🍄🌾🪾🌳, faux perspective, varied sizes) → styled horses → UI layer.
-- Few horses gently random-walk in the background of pasture views and the homepage hero.
+- z-index layering per spec: base color → SVG grass tile (seamless) → emoji sprinkle (☘🍀🍄‍🟫🍄🌾🪾🌳, varied sizes, faux perspective) → styled horses → UI layer.
+- A few horses gently random-walk in the background of pasture views and the homepage hero.
+- Specific font fallback chain for the emoji-sprinkle layer to maintain consistent style across platforms.
+- **Clover emoji touchpoints** = Ko-fi link targets (clickable, tooltip "Support poet.horse on Ko-fi").
 - Respect `prefers-reduced-motion` (no animation when set).
-- Acceptance: pasture view has a believable field; reduced-motion users see static.
+- Acceptance: pasture view has a believable field; reduced-motion users see static; clovers are interactive and discoverable.
+
+### 2.14 Cross-post connectors: Bluesky, Mastodon, Threads, X `[sonnet · high]`
+
+- Each platform = a new connector module. Same queue contract as the Tumblr connector from 1.20.
+- Per-platform setup notes documented in `docs/connectors/<platform>.md`. Threads and X may be the hardest (rate limits, API access).
+- Image-card export (2.3) feeds platforms that need a media attachment.
+- Acceptance: admin can flag a poem for any subset of platforms at publish time; queue processes each on its schedule; failures don't block siblings.
+
+### 2.15 Tumblr theme port (after web CSS is locked) `[sonnet · medium]`
+
+- Once the canonical site CSS is stable, port the styling into a new Tumblr theme. Address the class-attribute-stripping issue (`TODO.md`) — likely via data-attribute selectors or inlined structural CSS.
+- This unblocks the visual experience for Tumblr users who view themed blog pages directly (most won't — they view the dashboard).
+- Acceptance: a poem reblogged from poet.horse to the Tumblr blog renders with horse styling on the themed blog page.
+
+### 2.16 Three-concept UI cleanup: Stable / Your Pasture / Pasture mode `[sonnet · medium]`
+
+- By Phase 2 these concepts exist organically; this task is the deliberate disambiguation pass:
+  - **Stable** — the working area for the current poem (existing).
+  - **Your Pasture** — per-account collection of saved horses (Phase 1.19; this task adds the `/pasture` rendering polish and "load from pasture" button in the editor).
+  - **Pasture mode** — display convention (Phase 1.6 plus 2.13 ambient layer).
+- Acceptance: each concept is distinct in UI copy and code; user testing shows no terminology bleed.
 
 ---
 
@@ -398,15 +477,19 @@ Triggered when soft launch is live and traffic / feedback is flowing. Tasks here
 
 Triggered when sustained traffic justifies the lift.
 
-### 3.1 Bluesky bot `[sonnet · high]`
+### 3.1 Exquisite corpse mode `[opus · high]`
 
-- Daily poem-of-the-day post via AT Protocol. Bluesky audience is the highest-priority target per spec.
-- Cron job; uses image card export (2.3) for rich previews.
-- Acceptance: scheduled post lands daily on the bot account.
+- Collaborative poetry mode: a poem is built line-by-line by different users, each seeing only the previous line (classic exquisite corpse). Phase-start design doc needed; this is a real product surface.
+- Open questions to resolve before code: how lines are claimed (FCFS? lobby? invite?), abandonment / timeout behavior, attribution (per line? collective?), moderation surface, anonymous participation policy.
+- Acceptance: design doc merged, sign-off received, then implementation.
 
-### 3.2 Mastodon bot `[sonnet · medium]`
+### 3.2 Hall of Fame `[sonnet · medium]`
 
-- Same as 3.1 but for Mastodon.
+Two distinct halls, same principle as the famous-horses model: rankings come from curated real-world facts or real site-usage signals — never from voting.
+
+- **Curated hall** at `/hall-of-fame/curated`: permanent archive of poems that have appeared on `/featured`. Admin can pin additional poems (e.g. featured by Metafilter, included in an anthology, won an off-site contest). Caption explains why.
+- **Popular hall** at `/hall-of-fame/popular`: derived from real usage signals — view counts on permalinks, copy/export button presses, favorites (private), inclusion of constituent horses in user pastures. Tunable weights; nightly recompute.
+- Acceptance: admin can pin / unpin a poem in the curated hall with a caption; the popular hall updates daily from logged signals.
 
 ### 3.3 Public read API + OpenAPI spec `[sonnet · high]`
 
@@ -420,29 +503,21 @@ Triggered when sustained traffic justifies the lift.
 - `/data/horses.json.gz` static download with a license file. Credit/backlink culture.
 - Acceptance: file is downloadable; license clearly states terms.
 
-### 3.5 Hall of fame `[sonnet · medium]`
+### 3.5 Independent VPS migration `[sonnet · medium — partly owner action]`
 
-Two distinct halls, same principle as the famous-horses model: rankings come from curated real-world facts or real site-usage signals — never from voting.
-
-- **Curated hall** at `/hall-of-fame/curated`: admin pins exceptional poems (e.g. featured by Metafilter, included in an anthology, won an off-site contest). Caption explains why.
-- **Most-used poems hall** at `/hall-of-fame/popular`: derived from real usage signals — view counts on permalinks, copy/export button presses, and (Phase 2+) inclusion of constituent horses in user pastures. Tunable weights; nightly recompute.
-- Acceptance: admin can pin / unpin a poem in the curated hall with a caption; the popular hall updates daily from logged signals.
-
-### 3.6 Independent VPS migration `[sonnet · medium — partly owner action]`
-
-- If radio-station VPS becomes inappropriate or traffic warrants it: provision Hetzner/DigitalOcean (~$6/mo), reuse the existing GitHub Actions deploy (just swap secrets), DNS cutover.
+- If radio-station VPS becomes inappropriate or traffic warrants it: provision Hetzner/DigitalOcean (~$6/mo), reuse the GitHub Actions deploy (just swap secrets), DNS cutover.
 - Acceptance: same site, new IP, no downtime > 5 min.
 
 ---
 
 ## Phase 4 — Monetization (if revenue threshold met)
 
-Trigger: ~$20/mo sustained tip income, or interest from a small ad partner.
+Trigger: ~$20/mo sustained tip income, or interest from a small ad partner. (The Ko-fi widget already ships in Phase 1.22 — this phase is the *framework* around it.)
 
-### 4.1 Ko-fi tip jar `[sonnet · low]`
+### 4.1 Ko-fi tip jar polish `[sonnet · low]`
 
-- "Keep the horses fed" embed in footer. Single Ko-fi link. No platform-side handling.
-- Acceptance: link clicks register on Ko-fi.
+- Promote the Ko-fi presence: dedicated `/support` page describing the project and ask, FAQ on hosting costs and how funds are used.
+- Acceptance: `/support` page live; footer link present.
 
 ### 4.2 Tasteful static ads `[sonnet · low]`
 
@@ -478,10 +553,12 @@ These apply to every phase; future Claudes should not violate them.
 - **Accessibility-first.** Every interactive element keyboard-reachable. Every image alt-tagged. Every animation behind `prefers-reduced-motion`.
 - **No tracking.** No analytics SDKs, no third-party pixels, no fingerprinting. Use server logs for traffic. Plausible (self-hosted) is acceptable later if needed.
 - **Plain-mode parity.** Every feature must work in plain (reader) mode. If a feature can only exist in pasture mode, that's a flag to redesign it.
-- **The dictionary stays a fact, not a vibe.** Don't filter horses by name appropriateness — moderation happens on poems, not on the source data. Per spec.
+- **The dictionary stays a fact, not a vibe.** Don't filter horses by name appropriateness — moderation happens on poems, not on the source data.
 - **Admin work is rare and explicit.** Don't automate admin actions, don't hide them behind heuristics. Curation is the product.
 - **Web 1.0 ethos.** Static where possible, light JS, view-source-able. The audience will notice.
-- **No upvotes, no engagement metrics surfaced to users.** Any "popular", "famous", or "hall of fame" ranking comes from curated real-world facts or from real site-usage signals (poem occurrences, pasture saves, view counts, exports). Never from a thumbs-up button.
+- **No upvotes, no engagement metrics surfaced to users.** Save (blue-ribbon) counts and Pasture-add counts are **private to the user and admin only** — never displayed publicly. Any "popular", "famous", or "hall of fame" ranking comes from curated real-world facts or from real site-usage signals (poem occurrences, Pasture adds, Saves, view counts, exports). Never from a thumbs-up button.
+- **UI vs display separation.** Functional UI (editor, search, navigation) stays utilitarian — color palette and grass background as the only decorative elements. Whimsy (decorated horse chips, ambient field, random-walk) lives in display surfaces or opt-in modes. The editor is the canonical example: chips keep color + shimmer but no body parts.
+- **Tumblr is one connector among many.** The website is the canonical source of truth. Tumblr-specific work (theme port, posting code) is never on the critical path.
 
 ---
 

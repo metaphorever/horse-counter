@@ -131,9 +131,11 @@
 <script>
 // ── State ─────────────────────────────────────────────────────────────────────
 const isAdmin       = {{ is_admin|tojson }};
+const isLoggedIn    = {{ (current_user is not none)|tojson }};
 let stable          = {{ stable_json|safe }};
 let lines           = [[], [], []];
 let history         = [];
+let userPrefs       = {{ user_prefs_json|safe }};
 const OPTIONAL_TAGS = {{ optional_tags_json|safe }};
 
 // ── Horse tile appearance ─────────────────────────────────────────────────────
@@ -158,8 +160,11 @@ function tileStyle(name){
 let drag = null;
 // { horse:{name,display,url}, srcType:'stable'|'poem', srcLine:int, srcIdx:int }
 
-// ── localStorage helpers (public users only) ──────────────────────────────────
+// ── localStorage helpers (anonymous users only) ───────────────────────────────
 function saveStableLocal(){
+  // Only write to localStorage for anonymous users. Logged-in users' stable
+  // is server-backed; persisting client-side would silently shadow the DB.
+  if(isLoggedIn) return;
   try { localStorage.setItem('horse-stable', JSON.stringify(stable)); } catch(e){}
 }
 function loadStableLocal(){
@@ -170,9 +175,49 @@ function loadStableLocal(){
   } catch{ return []; }
 }
 
+// ── Account sync (Phase 0.5) ──────────────────────────────────────────────────
+// On first login the user may still have horse-stable / horse-poem-name /
+// horse-poem-tumblr / horse-page-size in localStorage from their logged-out
+// session. Push those to /me/sync, replace in-memory stable from the merged
+// server response, then clear the local copies so localStorage stops being
+// the source of truth for this account.
+async function syncLocalToAccount(){
+  const localStable = loadStableLocal();
+  const poemName    = localStorage.getItem('horse-poem-name');
+  const poemTumblr  = localStorage.getItem('horse-poem-tumblr');
+  const pageSizeLS  = localStorage.getItem('horse-page-size');
+  if(!localStable.length && !poemName && !poemTumblr && !pageSizeLS) return;
+
+  const d = await apiPost('/me/sync', {
+    stable:      localStable,
+    poem_name:   poemName  || '',
+    poem_tumblr: poemTumblr || '',
+    page_size:   pageSizeLS || '',
+  });
+  if(!d || !d.ok) return;
+
+  stable = d.stable || [];
+  userPrefs = d.preferences || userPrefs;
+  renderStable();
+  ['horse-stable','horse-pasture','horse-poem-name','horse-poem-tumblr','horse-page-size']
+    .forEach(k => { try{ localStorage.removeItem(k); }catch(e){} });
+
+  if(!localStorage.getItem('horse-sync-toast-shown')){
+    showToast('Your horses moved with you — synced to your account.');
+    try{ localStorage.setItem('horse-sync-toast-shown','1'); }catch(e){}
+  }
+}
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  if(!isAdmin) stable = loadStableLocal();
+  // Anonymous users hydrate from localStorage. Logged-in users (admin or
+  // regular) start from the server-rendered stable_json; if there's pending
+  // localStorage data, push it up via /me/sync.
+  if(!isAdmin && !isLoggedIn){
+    stable = loadStableLocal();
+  } else if(isLoggedIn && !isAdmin){
+    syncLocalToAccount();
+  }
   renderStable();
   renderPoem();
   document.getElementById('q').addEventListener('keydown', e => { if (e.key==='Enter') doSearch(); });
@@ -258,7 +303,9 @@ function setMode(mode){
 let searchResults  = [];
 let searchCapped   = false;
 let searchPage     = 0;
-let pageSize       = parseInt(localStorage.getItem('horse-page-size') || '25', 10);
+let pageSize       = parseInt(
+  (isLoggedIn ? (userPrefs.page_size || '') : '') || localStorage.getItem('horse-page-size') || '25',
+10);
 let showVia        = false;        // true when results carry a matched_term
 let expandedGroups = new Set();    // which rhyme-group terms are fully expanded
 
@@ -269,7 +316,9 @@ let expandedGroups = new Set();    // which rhyme-group terms are fully expanded
 
 function changePageSize(val){
   pageSize = parseInt(val, 10);
-  localStorage.setItem('horse-page-size', val);
+  // Anonymous users persist to localStorage; logged-in users' page-size
+  // lives in user preferences (synced via /me/sync on first login).
+  if(!isLoggedIn){ try{ localStorage.setItem('horse-page-size', val); }catch(e){} }
   searchPage = 0;
   renderSearchPage();
 }
@@ -878,11 +927,12 @@ function attachLineDrop(zone){
 // ── Post modal ────────────────────────────────────────────────────────────────
 function openModal(){
   document.getElementById('modal-err').style.display='none';
-  // Pre-fill attribution from localStorage (persisted across sessions for both admin and public)
+  // Pre-fill attribution: logged-in users from their synced preferences,
+  // anonymous users from localStorage.
   const nameEl   = document.getElementById('modal-submitter-name');
   const tumblrEl = document.getElementById('modal-submitter-tumblr');
-  if (nameEl)   nameEl.value   = localStorage.getItem('horse-poem-name')   || '';
-  if (tumblrEl) tumblrEl.value = localStorage.getItem('horse-poem-tumblr') || '';
+  if (nameEl)   nameEl.value   = (isLoggedIn ? (userPrefs.poem_name   || '') : (localStorage.getItem('horse-poem-name')   || ''));
+  if (tumblrEl) tumblrEl.value = (isLoggedIn ? (userPrefs.poem_tumblr || '') : (localStorage.getItem('horse-poem-tumblr') || ''));
   document.getElementById('post-modal').classList.add('open');
 }
 function closeModal(){ document.getElementById('post-modal').classList.remove('open'); }
@@ -894,8 +944,14 @@ async function submitPoemPublic(){
   const submitterName   = (document.getElementById('modal-submitter-name')?.value   || '').trim();
   const submitterTumblr = (document.getElementById('modal-submitter-tumblr')?.value || '').trim().replace(/^@/, '');
   const poemTitle       = (document.getElementById('modal-title')?.value            || '').trim();
-  localStorage.setItem('horse-poem-name',   submitterName);
-  localStorage.setItem('horse-poem-tumblr', submitterTumblr);
+  if(!isLoggedIn){
+    // Anonymous: persist attribution locally so the modal pre-fills next time.
+    // Logged-in users' attribution comes from their profile + preferences.
+    try{
+      localStorage.setItem('horse-poem-name',   submitterName);
+      localStorage.setItem('horse-poem-tumblr', submitterTumblr);
+    }catch(e){}
+  }
   const d = await apiPost('/submit/poem', {lines, submitter_name: submitterName, submitter_tumblr: submitterTumblr, poem_title: poemTitle});
   if(!d) return;
   if(d.ok){
