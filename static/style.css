@@ -783,8 +783,20 @@ button[type="submit"]:active { transform: translate(2px, 2px); box-shadow: none;
   outline: 3px solid #5a7a2a; outline-offset: 2px;
 }
 .horse-tile.is-dragging  { opacity: 0.35; cursor: grabbing; }
-.horse-tile.drop-before,
-.horse-tile.drop-after   { border-color: #5a7a2a; }
+/* Drop-side indicator: a green caret-bar on the edge where the dragged chip
+   will land. Pseudo-element so it doesn't disturb the chip's box shadow. */
+.horse-tile.drop-before::before,
+.horse-tile.drop-after::before {
+  content: '';
+  position: absolute;
+  top: -3px; bottom: -3px;
+  width: 4px;
+  background: #5a7a2a;
+  border-radius: 2px;
+  pointer-events: none;
+}
+.horse-tile.drop-before::before { left: -7px; }
+.horse-tile.drop-after::before  { right: -7px; }
 /* When dragging a chip, the chip itself uses grab cursor on press */
 body.dragging .horse-tile { cursor: grabbing; }
 /* Touch: prevent scroll-interception during an active drag only */

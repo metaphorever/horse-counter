@@ -932,8 +932,10 @@ function moveGhost(x,y){
 }
 
 function updateDropZoneHover(x, y){
-  document.querySelectorAll('.drop-zone').forEach(z=>z.classList.remove('over'));
+  document.querySelectorAll('.drop-zone.over').forEach(z=>z.classList.remove('over'));
   document.querySelectorAll('.line-tiles.drop-target').forEach(z=>z.classList.remove('drop-target'));
+  document.querySelectorAll('.horse-tile.drop-before, .horse-tile.drop-after')
+    .forEach(t=>t.classList.remove('drop-before','drop-after'));
   // Hide ghost briefly so elementFromPoint sees what's underneath
   ghost.style.display='none';
   const el = document.elementFromPoint(x,y);
@@ -941,6 +943,15 @@ function updateDropZoneHover(x, y){
   if(!el) return;
   const zone = el.closest('.drop-zone');
   if(zone){ zone.classList.add('over'); return; }
+  // Hovering over an existing poem chip → show a side indicator on the edge
+  // where the dragged chip will land (left = before, right = after).
+  const overTile = el.closest('.horse-tile[data-li]');
+  if(overTile && (!drag || overTile !== drag.tile)){
+    const r = overTile.getBoundingClientRect();
+    overTile.classList.add(x > r.left + r.width/2 ? 'drop-after' : 'drop-before');
+    return;
+  }
+  // Hovering over empty space inside a line → highlight the whole line
   const lineZone = el.closest('.line-tiles');
   if(lineZone) lineZone.classList.add('drop-target');
 }
@@ -951,6 +962,9 @@ function cancelDrag(){
   drag.tile.classList.remove('is-dragging');
   document.body.classList.remove('dragging');
   document.querySelectorAll('.drop-zone.over').forEach(z=>z.classList.remove('over'));
+  document.querySelectorAll('.line-tiles.drop-target').forEach(z=>z.classList.remove('drop-target'));
+  document.querySelectorAll('.horse-tile.drop-before, .horse-tile.drop-after')
+    .forEach(t=>t.classList.remove('drop-before','drop-after'));
   drag = null;
 }
 
@@ -960,6 +974,9 @@ function endDrag(x,y){
   drag.tile.classList.remove('is-dragging');
   document.body.classList.remove('dragging');
   document.querySelectorAll('.drop-zone.over').forEach(z=>z.classList.remove('over'));
+  document.querySelectorAll('.line-tiles.drop-target').forEach(z=>z.classList.remove('drop-target'));
+  document.querySelectorAll('.horse-tile.drop-before, .horse-tile.drop-after')
+    .forEach(t=>t.classList.remove('drop-before','drop-after'));
 
   const el = document.elementFromPoint(x,y);
 
