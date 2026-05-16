@@ -83,12 +83,40 @@
   {% endwith %}
   {% block content %}{% endblock %}
   <footer class="site-footer">
-    <a href="{{ url_for('terms') }}">Terms</a> &middot;
-    <a href="{{ url_for('privacy') }}">Privacy</a> &middot;
-    <a href="{{ url_for('data_deletion') }}">Data Deletion</a>
+    <figure class="weatherhead">
+      <blockquote cite="https://x.com/weeatherhead/status/314089933906264066">
+        <p>&#x201C;The best way to read a poem is to pretend each line is the name of a horse; so the poem is just a list of horses.&#x201D;</p>
+      </blockquote>
+      <figcaption>
+        &#x2014; <a href="https://x.com/weeatherhead/">@weeatherhead</a>
+        (<cite><a href="http://www.andrewweatherhead.org/">Andrew Weatherhead</a></cite>),
+        <a href="https://x.com/weeatherhead/status/314089933906264066">Mar&nbsp;19,&nbsp;2013</a>
+      </figcaption>
+    </figure>
+
+    <div class="footer-lower">
+      <span class="footer-kofi">
+        🍀 <a href="https://ko-fi.com/G2G81ZF3IA" target="_blank" rel="noopener noreferrer">Support poet.horse on Ko-fi</a>
+      </span>
+      <span class="footer-legal">
+        <a href="{{ url_for('terms') }}">Terms</a> &middot;
+        <a href="{{ url_for('privacy') }}">Privacy</a> &middot;
+        <a href="{{ url_for('data_deletion') }}">Data Deletion</a>
+      </span>
+    </div>
   </footer>
 </div>
 <div class="fence"></div>
+
+<!-- Ko-fi floating widget — only animates when reduced-motion is not preferred -->
+<script>
+if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+  var kf=document.createElement('script');
+  kf.src='https://storage.ko-fi.com/cdn/widget/Widget_2.js';
+  kf.onload=function(){ kofiwidget2.init('Support me on Ko-fi','#72a4f2','G2G81ZF3IA'); kofiwidget2.draw(); };
+  document.body.appendChild(kf);
+}
+</script>
 
 <script>
 (function(){
