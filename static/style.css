@@ -909,6 +909,60 @@ body.dragging .drop-zones {
    who navigate to it with their AT). */
 .chip-menu:focus { outline: none; }
 
+/* Tag picker — inside the publish modal */
+.modal-tag-sections { margin-top: 14px; display: flex; flex-direction: column; gap: 14px; }
+.tag-section {
+  border: 2px dashed #c4a96b; border-radius: 2px;
+  padding: 10px 12px; background: #fdf8f0;
+}
+.tag-section-head {
+  display: flex; align-items: baseline; gap: 8px;
+  margin-bottom: 8px;
+}
+.tag-section-label {
+  font: 700 11px 'Courier Prime','Courier New',monospace;
+  text-transform: uppercase; letter-spacing: .06em; color: #6b5430;
+}
+.tag-section-hint {
+  font: italic 11px Georgia,serif; color: #8a7050;
+}
+.tag-chip-cloud {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+}
+.tag-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 7px 10px; margin: 0;
+  font: 13px 'Courier Prime','Courier New',monospace;
+  background: #f0ead8; color: #2d2316;
+  border: 2px solid #c4a96b; border-radius: 2px;
+  cursor: pointer; user-select: none;
+  min-height: 36px;
+  /* Override the global `label` text-transform / letter-spacing / font-size /
+     color so chip labels read as plain text. */
+  text-transform: none; letter-spacing: normal; font-weight: normal;
+}
+.tag-chip span { text-transform: none; letter-spacing: normal; font-size: 13px; color: #2d2316; }
+.tag-chip input { position: absolute; opacity: 0; pointer-events: none; }
+.tag-chip:has(input:checked) {
+  background: #d8e6b8; border-color: #5a7a2a; color: #2d2316;
+}
+.tag-chip:focus-within { outline: 3px solid #5a7a2a; outline-offset: 2px; }
+.tag-chip.content-warning { border-style: dashed; }
+.tag-chip.content-warning:has(input:checked) {
+  background: #f7e3c8; border-color: #a86020;
+}
+.tag-chip.tag-pending { border-style: dotted; opacity: .9; }
+.tag-chip em { font: italic 10px Georgia,serif; color: #8a7050; }
+.tag-suggest-btn {
+  margin-top: 8px;
+  background: none; border: 1px dashed #c4a96b; border-radius: 2px;
+  color: #6b5430; padding: 6px 10px; cursor: pointer;
+  font: 12px 'Courier Prime','Courier New',monospace;
+  box-shadow: none;
+}
+.tag-suggest-btn:hover { border-color: #5a7a2a; color: #5a7a2a; }
+.tag-suggest-btn:focus-visible { outline: 2px solid #5a7a2a; outline-offset: 2px; }
+
 /* Post modal */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(45,35,22,.55); z-index: 100; align-items: center; justify-content: center; }
 .modal-overlay.open { display: flex; }
