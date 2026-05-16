@@ -15,9 +15,14 @@ CREATE TABLE IF NOT EXISTS users (
     clerk_id            TEXT    NOT NULL UNIQUE,
     slug                TEXT    NOT NULL UNIQUE COLLATE NOCASE,
     display_name        TEXT    NOT NULL,
-    role                TEXT    NOT NULL DEFAULT 'user',  -- 'user' | 'admin'
+    role                TEXT    NOT NULL DEFAULT 'user',     -- 'user' | 'admin'
+    -- Moderation trust signal (Phase 1.3 scaffold). Acted on in Phase 1.13:
+    --   'pending'  — default; poems go to the submission queue
+    --   'trusted'  — auto-publish; tag suggestions auto-approve (admin can revoke)
+    --   'flagged'  — extra scrutiny; flagged-horse-name guard applies, etc.
+    trust_level         TEXT    NOT NULL DEFAULT 'pending',
     preferences_json    TEXT    NOT NULL DEFAULT '{}',
-    flags_json          TEXT    NOT NULL DEFAULT '{}',    -- e.g. {"ad_free": true}
+    flags_json          TEXT    NOT NULL DEFAULT '{}',       -- e.g. {"ad_free": true}
     -- Profile links — list of {"label": "Bluesky", "url": "https://..."} dicts.
     -- Surfaced on the user's profile page and as the attribution links on
     -- their poems. Order in the array is the display order.
@@ -48,6 +53,13 @@ CREATE TABLE IF NOT EXISTS poems (
     author_user_id      INTEGER REFERENCES users(id) ON DELETE SET NULL,
     author_display_name TEXT    NOT NULL DEFAULT '',
     author_link_url     TEXT    NOT NULL DEFAULT '',
+    -- Optional citation of an existing work the poem translates / riffs on.
+    -- These are NOT tags — they're a one-off relationship with a specific
+    -- external work. Surfaced on the permalink as an "After ___" caption
+    -- and indexed for search (1.5+, 2.11). Phase 4.5 ToS / lawyer review
+    -- covers the IP wrinkle (fair-use horse-translations of copyrighted work).
+    inspired_by_text    TEXT    NOT NULL DEFAULT '',
+    inspired_by_url     TEXT    NOT NULL DEFAULT '',
     created_at          REAL    NOT NULL,
     published_at        REAL,
     edited_at           REAL,

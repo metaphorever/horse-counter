@@ -64,11 +64,14 @@ def get_db() -> Iterator[sqlite3.Connection]:
 
 
 def init_db() -> None:
-    """Apply schema.sql. Idempotent — safe to call on every boot."""
+    """Apply schema.sql + column migrations + tag-taxonomy seeding. Idempotent."""
     with open(SCHEMA_PATH, 'r', encoding='utf-8') as f:
         sql = f.read()
     with get_db() as conn:
         conn.executescript(sql)
+    # Imported lazily to avoid a circular import (db.seed -> db.conn).
+    from db.seed import run_all as _seed_run_all
+    _seed_run_all()
 
 
 def db_exists() -> bool:
