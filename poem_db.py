@@ -52,6 +52,8 @@ def save_poem(
     author_link_url:       str            = '',
     status:                str            = 'submitted',
     short_code:            Optional[str]  = None,
+    inspired_by_text:      str            = '',
+    inspired_by_url:       str            = '',
 ) -> Dict:
     """
     Insert a poem and return its full row as a dict (including id and short_code).
@@ -61,6 +63,10 @@ def save_poem(
 
     `short_code` is generated automatically unless provided (used by the
     legacy import to preserve old IDs).
+
+    `inspired_by_text` / `inspired_by_url` capture optional attribution to an
+    existing work the poem riffs on / translates. Surfaced on the permalink
+    as an "After ___" caption.
     """
     now = time.time()
     counts = _compute_counts(lines)
@@ -74,11 +80,13 @@ def save_poem(
                 """INSERT INTO poems
                    (short_code, title, lines_json, status,
                     author_user_id, author_display_name, author_link_url,
+                    inspired_by_text, inspired_by_url,
                     created_at, published_at, horse_count, word_count)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     code, title, lines_json, status,
                     author_user_id, author_display_name, author_link_url,
+                    inspired_by_text, inspired_by_url,
                     now,
                     now if status == 'published' else None,
                     counts['horse_count'], counts['word_count'],

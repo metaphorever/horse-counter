@@ -1,0 +1,5 @@
+{
+  "_doc": "Horse names that trigger extra scrutiny on poem publish (Phase 1.13 enforces). Per ROADMAP cross-cutting commitment, the dictionary stays a fact, not a vibe — this list filters poems containing flagged names from untrusted users, not the dictionary itself. Edit by hand for now; admin UI may follow.",
+  "_format": "exact-match horse names (case-insensitive, normalized) that should trigger a moderation flag when present in a poem submitted by a non-trusted user.",
+  "names": []
+}
