@@ -15,14 +15,18 @@
 - 0.5 localStorage → account sync ✅ — `/me/sync` endpoint, `db/stable.py`, per-user `stable_horses` + `preferences_json` hydration on `/poetry`. Idempotent INSERT OR IGNORE; client clears local copies and fires a one-time toast. Verified in production 2026-05-15.
 - 0.6 ToS / Privacy / Data-Deletion pages ✅ — `/terms`, `/privacy`, `/data-deletion`. Plain-English summary box at top of each. Email-based deletion flow. Minimal site-wide footer with legal links. Verified in production 2026-05-15.
 
-## Up next — Opus session, finishes Phase 0 + lands new shell
+- 1.1 Top-level nav + user menu ✅ — full IA in `base.html`: logo, Home, Read Poems (Featured/Browse/Random submenu), Write Poems, Pasture, Count; Sign In / user dropdown (Published, Drafts, My Pasture, Saved Poems, Saved Horses, Edit Profile, Sign Out). Mobile hamburger. `user_required` decorator. Coming-soon stubs for all not-yet-implemented destinations. Verified 2026-05-15.
+- 1.22 Attribution footer + Ko-fi widget ✅ — Weatherhead citation as `<figure><blockquote cite="…"><figcaption>` with italic serif typography. Ko-fi floating widget gated on `prefers-reduced-motion`; plain text Ko-fi link always present. Verified 2026-05-15.
 
-Suggested chunk for a single Opus-driven session. Together these complete Phase 0 and reshape the site IA. Pick them up in order; each has acceptance criteria below.
+**Phase 0 is closed. The site has its new shell.**
 
-1. **1.1 Top-level nav + user menu** `[sonnet · medium]` — implement the full IA including the user-menu dropdown. `/me/*` destinations that don't have real content yet should render a styled "coming soon" stub that links back to the relevant ROADMAP task.
-2. **1.22 Attribution footer + Ko-fi widget** `[sonnet · low]` — site-wide footer with the Weatherhead citation as a styled blockquote and the Ko-fi widget on the clover.
+## Up next — Phase 1 continues
 
-After this session: Phase 0 is closed. The site has its new shell. Phase 1 continues with the editor pain-fix (1.2), tag taxonomy (1.3), and poem permalink renderer (1.5) — those are the next natural cluster.
+Next natural cluster — pick up in order:
+
+1. **1.2 Editor pain-fix** `[sonnet · medium]` — strip horse-body decoration from chips, add "drop to last line" zone, click-to-add button on every chip.
+2. **1.3 Tag taxonomy + selection UI** `[sonnet · medium]` — seed tag categories, editor chip-cloud UI, per-category suggestion affordance.
+3. **1.5 Poem permalink renderer** `[sonnet · medium]` — full `/p/<short_code>` page with title, attribution, tags, plain/pasture toggle, Open Graph tags.
 
 **Known open bugs (track separately in `TODO.md`):**
 - Tumblr post CSS desync — Tumblr appears to strip `class` attributes; horse tile structural styling is lost on new posts. Likely needs data-attribute selectors or inlined structural CSS. **Deprioritized** — most Tumblr users view in dashboard mode where CSS is stripped anyway. Revisit only after the website CSS is finalized.
