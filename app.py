@@ -382,6 +382,23 @@ def me_sync():
     })
 
 
+# ── Legal pages (Phase 0.6) ──────────────────────────────────────────────────
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
+
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+
+@app.route('/data-deletion')
+def data_deletion():
+    return render_template('data_deletion.html')
+
+
 # ── Poet profile ──────────────────────────────────────────────────────────────
 
 @app.route('/u/<slug>')

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Privacy Policy — poet.horse{% endblock %}
+
+{% block content %}
+<div class="text-page">
+  <h1>Privacy Policy</h1>
+  <p class="text-page-updated">Last updated: May 2026</p>
+
+  <section class="text-page-summary">
+    <h2>Plain English</h2>
+    <ul>
+      <li>We collect the minimum needed to run the site. No advertising. No tracking pixels. No third-party analytics.</li>
+      <li>If you sign in, we store your display name, a URL slug, and the poems and horses you associate with your account.</li>
+      <li>Anonymous use leaves no account data. Your IP may appear in server logs, which are retained briefly for debugging.</li>
+      <li>We use Clerk for sign-in. Clerk handles authentication; we only receive a user ID and whatever profile info you choose to share (e.g. your Google display name).</li>
+      <li>We do not sell your data. We do not share it with third parties except as required to run the service (Clerk for auth, the VPS host for infrastructure).</li>
+      <li>You can request deletion of your account and its associated data at any time — see our <a href="{{ url_for('data_deletion') }}">data deletion page</a>.</li>
+    </ul>
+  </section>
+
+  <hr>
+
+  <section>
+    <h2>1. What we collect</h2>
+    <h3>If you use the site without an account</h3>
+    <ul>
+      <li><strong>Server logs</strong> — standard Apache/gunicorn logs including IP address, request path, and timestamp. Retained for a short period for debugging; not analyzed for tracking.</li>
+      <li><strong>Browser localStorage</strong> — your stable (working horse collection), page-size preference, and optional attribution fields (pen name, Tumblr handle) are stored locally in your browser. This data never leaves your device unless you sign in, at which point it is synced to your account (see below).</li>
+    </ul>
+    <h3>If you create an account</h3>
+    <ul>
+      <li><strong>Profile</strong> — display name, URL slug, joined date, optional profile links.</li>
+      <li><strong>Poems</strong> — poems you submit, including their publication status and any tags.</li>
+      <li><strong>Stable and saved horses</strong> — your working horse collection and any horses or poems you save.</li>
+      <li><strong>Preferences</strong> — page-size preference, attribution defaults, display settings.</li>
+      <li><strong>Auth identifier</strong> — a Clerk user ID (an opaque string). We do not store passwords or OAuth tokens.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>2. How we use it</h2>
+    <p>We use your data only to provide the service: displaying your poems, persisting your stable and preferences across sessions, and allowing you to manage your account. We do not use it for advertising, profiling, or sale.</p>
+    <p>Aggregate, non-identifying statistics (e.g. most-used horse names, popular poem lengths) may be used to curate the site and are never linked back to individual accounts.</p>
+  </section>
+
+  <section>
+    <h2>3. Third-party services</h2>
+    <ul>
+      <li><strong>Clerk</strong> — handles sign-in. When you authenticate, Clerk processes your credentials and returns a session token to us. Clerk's own privacy policy applies to that interaction. We proxy the Clerk JS bundle through <code>clerk.poet.horse</code> to avoid third-party script restrictions.</li>
+      <li><strong>Google Fonts</strong> — the site loads Courier Prime and Playfair Display from Google's CDN. Google's standard font-serving privacy policy applies.</li>
+      <li><strong>Ko-fi</strong> — a voluntary tip-jar widget. Interacting with it is governed by Ko-fi's privacy policy. It does not track you unless you click it.</li>
+      <li><strong>Tumblr / social platforms</strong> — if an admin cross-posts a poem you submitted, it may appear on Tumblr or other platforms per their respective policies. Cross-posting is opt-in per poem at the admin's discretion.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4. Cookies and storage</h2>
+    <p>We use a single server-side session cookie to keep you signed in. We do not use advertising cookies or third-party tracking cookies. Browser localStorage is used for anonymous state (stable, preferences) as described above.</p>
+  </section>
+
+  <section>
+    <h2>5. Data retention and deletion</h2>
+    <p>Account data is retained as long as your account exists. Published poems remain on the site after account deletion (attributed anonymously) unless you request otherwise. See our <a href="{{ url_for('data_deletion') }}">data deletion page</a> for full instructions.</p>
+  </section>
+
+  <section>
+    <h2>6. Security</h2>
+    <p>The site runs over HTTPS. We do not store passwords. The database is on a server that is not publicly accessible beyond the web application. We are a small hobby project and cannot make enterprise-grade security guarantees, but we take reasonable precautions.</p>
+  </section>
+
+  <section>
+    <h2>7. Changes</h2>
+    <p>If we make material changes to this policy we will update the "Last updated" date. Continued use of the site constitutes acceptance.</p>
+  </section>
+</div>
+{% endblock %}
