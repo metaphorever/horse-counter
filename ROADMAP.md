@@ -1,11 +1,11 @@
 # poet.horse — Roadmap & Design Doc
 
-> **Status:** drafted 2026-05-11, last full revision 2026-05-15. Living doc — every decision here was confirmed
+> **Status:** drafted 2026-05-11, last full revision 2026-05-16. Living doc — every decision here was confirmed
 > by the project owner. Items marked **[OPEN]** still need a call before the
 > task starts. Each task is independently executable; the suggested Claude
 > model + reasoning effort is a hint, not a hard requirement.
 
-## You are here — 2026-05-15
+## You are here — 2026-05-16
 
 **Done (Phase 0 — Foundations):**
 - 0.1 VPS provisioning & deploy ✅ — gunicorn under systemd on zap.rupture.net, Apache vhost via Jon, Cloudflare proxied, Let's Encrypt cert auto-renewing. Full notes in `memory/vps_hosting.md`.
@@ -16,7 +16,8 @@
 - 0.6 ToS / Privacy / Data-Deletion pages ✅ — `/terms`, `/privacy`, `/data-deletion`. Plain-English summary box at top of each. Email-based deletion flow. Minimal site-wide footer with legal links. Verified in production 2026-05-15.
 
 - 1.1 Top-level nav + user menu ✅ — full IA in `base.html`: logo, Home, Read Poems (Featured/Browse/Random submenu), Write Poems, Pasture, Count; Sign In / user dropdown (Published, Drafts, My Pasture, Saved Poems, Saved Horses, Edit Profile, Sign Out). Mobile hamburger. `user_required` decorator. Coming-soon stubs for all not-yet-implemented destinations. Verified 2026-05-15.
-- 1.22 Attribution footer + Ko-fi widget ✅ — Weatherhead citation as `<figure><blockquote cite="…"><figcaption>` with italic serif typography. Ko-fi floating widget gated on `prefers-reduced-motion`; plain text Ko-fi link always present. Verified 2026-05-15.
+- 1.22 Attribution footer + Ko-fi support ✅ — Weatherhead citation as `<figure><blockquote cite="…"><figcaption>` with italic serif typography. Plain text Ko-fi link in the footer. Floating Ko-fi widget was reverted: Widget_2.js injected styles that blanked the page; the footer text link is sufficient. Revisit the floating widget in Phase 2.13 (ambient clovers). Verified 2026-05-15.
+- **Nav/footer chrome polish (2026-05-16)** ✅ — nav lifted out of the container and placed above the top fence; footer lifted out and placed below the bottom fence. Both wrapped in full-width tan (`#f0ead8`) bars so they're legible over the grass pattern. Mobile hamburger and dropdowns still work; no structural changes to nav or footer content. Shipped as [PR #10](https://github.com/metaphorever/horse-counter/pull/10).
 
 **Phase 0 is closed. The site has its new shell.**
 
