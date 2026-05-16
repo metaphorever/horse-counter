@@ -99,20 +99,134 @@ h2 {
   margin-bottom: 12px;
 }
 
-/* ── Nav links (small, inside box) ── */
-.nav-links {
+/* ── Site nav ── */
+.site-nav {
   display: flex;
-  gap: 16px;
   align-items: center;
-  margin-bottom: 14px;
-  flex-wrap: wrap;
+  gap: 4px;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #c4a96b;
 }
-.nav-links a {
-  font: 12px 'Courier Prime', 'Courier New', monospace;
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-right: 12px;
+}
+.nav-logo {
+  font: 700 15px 'Playfair Display', Georgia, serif;
+  color: #2d2316;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.nav-logo:hover { color: #3a6b1a; }
+.nav-body {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 2px;
+}
+.nav-left  { display: flex; align-items: center; gap: 2px; flex: 1; }
+.nav-right { display: flex; align-items: center; gap: 4px; margin-left: auto; flex-shrink: 0; }
+.nav-item {
+  font: 12px 'Courier Prime','Courier New',monospace;
   color: #5a7a2a;
   text-decoration: none;
-  border-bottom: 1px solid #b5d68a;
+  padding: 5px 7px;
+  border-radius: 2px;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  cursor: pointer;
+  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
+.nav-item:hover, .nav-item:focus-visible { color: #2d4a10; background: #f0ead8; outline: none; }
+.nav-caret { font-size: 8px; opacity: .7; }
+.nav-username { font-weight: 700; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+.nav-signin {
+  font: 700 11px 'Courier Prime','Courier New',monospace;
+  color: #5a7a2a;
+  text-decoration: none;
+  border: 1px solid #c4a96b;
+  border-radius: 2px;
+  padding: 4px 11px;
+  white-space: nowrap;
+  background: transparent;
+}
+.nav-signin:hover { background: #f0ead8; color: #2d4a10; }
+
+/* Dropdown groups */
+.nav-group { position: relative; }
+.nav-sub {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 300;
+  background: #faf5e9;
+  border: 1px solid #c4a96b;
+  border-radius: 2px;
+  box-shadow: 2px 4px 10px rgba(0,0,0,.13);
+  min-width: 170px;
+  padding: 4px 0;
+}
+.nav-sub-right { left: auto; right: 0; }
+.nav-group.open .nav-sub { display: block; }
+.nav-group.open > .nav-item-btn { background: #f0ead8; color: #2d4a10; }
+.nav-sub-item {
+  display: block;
+  padding: 6px 14px;
+  font: 12px 'Courier Prime','Courier New',monospace;
+  color: #5a7a2a;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.nav-sub-item:hover, .nav-sub-item:focus-visible { background: #f0ead8; color: #2d4a10; outline: none; }
+.nav-sub-sep { border-top: 1px solid #e0d5b8; margin: 4px 0; }
+
+/* Hamburger (hidden on desktop) */
+.nav-hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  margin-left: auto;
+}
+.nav-hamburger span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: #5a7a2a;
+  border-radius: 1px;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .site-nav   { flex-wrap: wrap; gap: 0; }
+  .nav-brand  { width: 100%; justify-content: space-between; margin-right: 0; }
+  .nav-hamburger { display: flex; }
+  .nav-body   { display: none; flex-direction: column; align-items: flex-start; width: 100%; padding: 6px 0 2px; gap: 0; }
+  .site-nav.nav-open .nav-body { display: flex; }
+  .nav-left, .nav-right { flex-direction: column; align-items: flex-start; width: 100%; gap: 0; margin-left: 0; }
+  .nav-right  { border-top: 1px solid #e0d5b8; padding-top: 4px; margin-top: 4px; }
+  .nav-group  { width: 100%; }
+  .nav-sub    { position: static; box-shadow: none; border: none; border-radius: 0; background: transparent; padding: 0 0 2px 12px; min-width: 0; }
+  .nav-group.open .nav-sub { display: flex; flex-direction: column; }
+  .nav-signin { padding: 5px 7px; border: none; }
+}
+
+/* ── Nav links (small, inside box — legacy, used on some inner pages) ── */
+.nav-links { display: flex; gap: 16px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+.nav-links a { font: 12px 'Courier Prime','Courier New',monospace; color: #5a7a2a; text-decoration: none; border-bottom: 1px solid #b5d68a; }
 .nav-links a:hover { color: #3d5a1a; border-bottom-color: #3d5a1a; }
 
 /* ── Inputs ── */
