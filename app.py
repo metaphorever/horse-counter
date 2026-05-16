@@ -63,6 +63,7 @@ from db.tags import (
     list_categories_with_tags,
     apply_tags_to_poem,
     suggest_tag,
+    tags_for_poem,
 )
 from poem_submissions import (
     create_for_poem      as create_poem_submission,
@@ -1370,10 +1371,21 @@ def admin_dictionary_delete():
 @app.route('/p/<short_code>')
 def poem_permalink(short_code):
     """
-    Public permalink for a poem. Phase 0.3 stub — full pasture/plain renderer
-    arrives in Phase 1.5. For now we just confirm the poem exists and dump
-    a minimal preview so we can verify the SQLite write path works.
+    Public permalink for a poem (Phase 1.5).
+
+    Renders title + attribution + optional "After ___" caption + grouped tags
+    + Open Graph meta tags. Plain-mode is the only fully-styled mode in this
+    phase; the toggle wires up to a `data-view-mode` attribute so 1.6 can
+    layer pasture-mode styling without changing this scaffold.
+
+    Unpublished poems (status != 'published') are accessible to the author
+    and to admins; everyone else gets a 404. The public-link-leakage angle
+    is acceptable for MVP — short codes are long enough that guessing them
+    is impractical and the worst case is a draft poem being viewable by
+    someone who already has the URL.
     """
+    from datetime import datetime, timezone
+
     poem = get_poem_by_short_code(short_code)
     if not poem:
         return render_template('index.html',
@@ -1382,7 +1394,65 @@ def poem_permalink(short_code):
             form={},
             error=f'No poem found with code "{short_code}"',
         ), 404
-    return render_template('poem_stub.html', poem=poem)
+
+    # Visibility gate. Published is public; everything else needs the right
+    # eyeballs. Anonymous-author submissions are publicly viewable only after
+    # admin publish; the link itself is a soft secret in the meantime.
+    user     = g.get('current_user')
+    is_admin = bool(session.get('logged_in'))
+    if poem['status'] != 'published':
+        owns = user is not None and poem.get('author_user_id') == user.get('id')
+        if not (is_admin or owns):
+            return render_template('index.html',
+                horses_loaded=dictionary.loaded,
+                active_tab='url',
+                form={},
+                error=f'No poem found with code "{short_code}"',
+            ), 404
+
+    # Group approved tags by category for grouped display.
+    tag_rows = tags_for_poem(poem['id'])
+    grouped_tags = []
+    seen = {}
+    for r in tag_rows:
+        cat_key = r['cat_id']
+        if cat_key not in seen:
+            seen[cat_key] = {
+                'label':    r['cat_label'],
+                'behavior': r['behavior'],
+                'tags':     [],
+            }
+            grouped_tags.append(seen[cat_key])
+        seen[cat_key]['tags'].append({'slug': r['slug'], 'label': r['label']})
+
+    # Open Graph description: first non-empty line's horse list + total count.
+    first_line_horses = ''
+    for line in poem.get('lines', []):
+        if line:
+            first_line_horses = ' '.join(h.get('display', '') for h in line)
+            break
+    n = poem.get('horse_count', 0)
+    og_description = (
+        f'{first_line_horses} — a {n}-horse poem on poet.horse'
+        if first_line_horses else f'A {n}-horse poem on poet.horse'
+    )
+
+    published_iso   = ''
+    published_human = ''
+    if poem.get('published_at'):
+        dt = datetime.fromtimestamp(poem['published_at'], tz=timezone.utc)
+        published_iso   = dt.isoformat()
+        published_human = dt.strftime('%b %-d, %Y') if os.name != 'nt' else dt.strftime('%b %#d, %Y')
+
+    return render_template(
+        'poem.html',
+        poem            = poem,
+        grouped_tags    = grouped_tags,
+        og_description  = og_description,
+        permalink_url   = request.url,
+        published_iso   = published_iso,
+        published_human = published_human,
+    )
 
 
 # ── poet.horse: admin poem-submissions queue ──────────────────────────────────
