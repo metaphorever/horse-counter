@@ -59,6 +59,11 @@ from matcher import (
 from post_builder import extract_post
 from famous import FamousHorses
 from poem_db import save_poem as save_poem_db, get_poem_by_short_code, list_published as list_published_poems
+from db.tags import (
+    list_categories_with_tags,
+    apply_tags_to_poem,
+    suggest_tag,
+)
 from poem_submissions import (
     create_for_poem      as create_poem_submission,
     load_pending         as load_pending_poem_submissions,
@@ -878,10 +883,21 @@ def submit_poem_public():
     poem_title       = _sanitize_name(data.get('poem_title', ''))
     submitter_link   = (data.get('submitter_link') or '').strip()[:300]
     submitter_tumblr = _sanitize_tumblr(data.get('submitter_tumblr', ''))
+    inspired_text    = (data.get('inspired_by_text') or '').strip()[:300]
+    inspired_url     = (data.get('inspired_by_url')  or '').strip()[:300]
+    raw_tag_ids      = data.get('tag_ids') or []
 
     author_link_url = submitter_link
     if not author_link_url and submitter_tumblr:
         author_link_url = f'https://www.tumblr.com/{submitter_tumblr}'
+
+    tag_ids = []
+    if isinstance(raw_tag_ids, list):
+        for t in raw_tag_ids[:40]:  # generous cap; helper revalidates against DB
+            try:
+                tag_ids.append(int(t))
+            except (TypeError, ValueError):
+                continue
 
     poem = save_poem_db(
         lines               = lines,
@@ -889,8 +905,14 @@ def submit_poem_public():
         author_user_id      = None,           # anonymous; logged-in flow lands later
         author_display_name = submitter_name,
         author_link_url     = author_link_url,
+        inspired_by_text    = inspired_text,
+        inspired_by_url     = inspired_url,
         status              = 'submitted',
     )
+    if tag_ids:
+        # Submitter-applied tags land as 'pending' on the poem_tags row so the
+        # admin queue (1.13) can approve / strip / add per-poem.
+        apply_tags_to_poem(poem['id'], tag_ids, applied_by=None, status='pending')
     create_poem_submission(poem['id'])
 
     return jsonify({
@@ -898,6 +920,30 @@ def submit_poem_public():
         'message':    'Poem submitted for review!',
         'short_code': poem['short_code'],
     })
+
+
+@app.route('/tags/suggest', methods=['POST'])
+def tags_suggest():
+    """Create a pending tag suggestion scoped to a category. Returns the new
+    tag id + slug so the editor can immediately reflect it as a chosen tag.
+
+    Anonymous suggestions are allowed (suggested_by=NULL). Per-IP rate
+    limiting comes in 1.17.
+    """
+    user = g.get('current_user')
+    body = request.get_json(silent=True) or {}
+    try:
+        category_id = int(body.get('category_id'))
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'error': 'Invalid category'}), 400
+    label = (body.get('label') or '').strip()[:60]
+    if not label:
+        return jsonify({'ok': False, 'error': 'Tag label required'}), 400
+
+    new_id = suggest_tag(category_id, label, suggested_by=(user['id'] if user else None))
+    if not new_id:
+        return jsonify({'ok': False, 'error': 'That tag already exists in this category'}), 409
+    return jsonify({'ok': True, 'tag': {'id': new_id, 'label': label}})
 
 
 # ── Admin submission review ───────────────────────────────────────────────────
@@ -1074,10 +1120,12 @@ def poetry_editor():
     else:
         stable = []
         prefs  = {}
+    tag_categories = list_categories_with_tags()
     return render_template('poetry.html',
         stable_json=json.dumps(stable),
         user_prefs_json=json.dumps(prefs),
         optional_tags_json=json.dumps(OPTIONAL_TAGS),
+        tag_categories_json=json.dumps(tag_categories),
     )
 
 

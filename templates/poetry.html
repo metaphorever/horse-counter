@@ -125,13 +125,24 @@
 <div class="modal-overlay" id="post-modal">
   <div class="modal">
     <h3>Submit Poem</h3>
+
     <label>Title <span class="opt">(optional)</span>:</label>
     <input type="text" id="modal-title" placeholder="Poem title" maxlength="120">
+
     <label>Your name <span class="opt">(optional — for attribution on the post)</span>:</label>
     <div class="modal-name-row">
       <input type="text" id="modal-submitter-name"   placeholder="Your name"       maxlength="60">
       <input type="text" id="modal-submitter-tumblr" placeholder="Tumblr @ (no @)" maxlength="32">
     </div>
+
+    <label>After <span class="opt">(optional — credit a work this poem riffs on)</span>:</label>
+    <div class="modal-name-row">
+      <input type="text" id="modal-inspired-text" placeholder="e.g. Hamlet by William Shakespeare" maxlength="200">
+      <input type="text" id="modal-inspired-url"  placeholder="https://… (optional source link)"   maxlength="300">
+    </div>
+
+    <div id="modal-tag-sections" class="modal-tag-sections"></div>
+
     <div class="modal-actions">
       <button class="btn-primary" onclick="submitPoemPublic()">{% if is_admin %}Submit to queue{% else %}Submit for review{% endif %}</button>
       <button class="btn-sec" onclick="closeModal()">Cancel</button>
@@ -149,6 +160,8 @@ let lines           = [[], [], []];
 let history         = [];
 let userPrefs       = {{ user_prefs_json|safe }};
 const OPTIONAL_TAGS = {{ optional_tags_json|safe }};
+let TAG_CATEGORIES = {{ tag_categories_json|safe }};  // [{id,slug,label,behavior,tags:[…]}, …]
+let selectedTagIds = new Set();  // tag IDs the user has picked for the current poem
 
 // ── Horse tile appearance ─────────────────────────────────────────────────────
 const COATS = [
@@ -1222,6 +1235,77 @@ function removeHorseFromSource(srcType, srcLine, srcIdx, horse){
   }
 }
 
+// ── Tag picker (in the publish modal) ─────────────────────────────────────────
+function renderTagSections(){
+  const host = document.getElementById('modal-tag-sections');
+  if(!host) return;
+  host.innerHTML = TAG_CATEGORIES.map(cat=>{
+    const inputType = cat.behavior === 'single_select' ? 'radio' : 'checkbox';
+    const groupName = `tagcat-${cat.id}`;
+    const warningClass = cat.behavior === 'content_warning' ? ' content-warning' : '';
+    const chips = cat.tags.map(t=>{
+      const checked = selectedTagIds.has(t.id) ? ' checked' : '';
+      const pending = t.status === 'pending' ? ' tag-pending' : '';
+      return `
+        <label class="tag-chip${warningClass}${pending}">
+          <input type="${inputType}" name="${groupName}" value="${t.id}" data-cat="${cat.id}"${checked}>
+          <span>${esc(t.label)}${pending?' <em>(pending)</em>':''}</span>
+        </label>`;
+    }).join('');
+    return `
+      <div class="tag-section" data-cat-id="${cat.id}" data-behavior="${esc(cat.behavior)}">
+        <div class="tag-section-head">
+          <span class="tag-section-label">${esc(cat.label)}</span>
+          <span class="tag-section-hint">${cat.behavior==='single_select' ? 'pick one' : 'pick any'}</span>
+        </div>
+        <div class="tag-chip-cloud">${chips}</div>
+        <button type="button" class="tag-suggest-btn" data-cat-id="${cat.id}" data-cat-label="${esc(cat.label)}">
+          + Suggest a new ${esc(cat.label).toLowerCase()} tag
+        </button>
+      </div>`;
+  }).join('');
+
+  // Wire input changes → selectedTagIds
+  host.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(inp=>{
+    inp.addEventListener('change', e=>{
+      const id = parseInt(inp.value);
+      if(inp.type === 'radio'){
+        // Clear previous radio selections in this category
+        const catId = parseInt(inp.dataset.cat);
+        const cat = TAG_CATEGORIES.find(c=>c.id===catId);
+        if(cat) cat.tags.forEach(t=>selectedTagIds.delete(t.id));
+      }
+      if(inp.checked) selectedTagIds.add(id);
+      else            selectedTagIds.delete(id);
+    });
+  });
+
+  // Wire "+ Suggest" buttons
+  host.querySelectorAll('.tag-suggest-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> suggestTagInline(parseInt(btn.dataset.catId), btn.dataset.catLabel));
+  });
+}
+
+async function suggestTagInline(categoryId, categoryLabel){
+  const label = (prompt(`Suggest a new tag for "${categoryLabel}":`, '') || '').trim();
+  if(!label) return;
+  const r = await apiPost('/tags/suggest', { category_id: categoryId, label });
+  if(!r){ return; }
+  if(!r.ok){
+    showToast(r.error || 'Could not add suggestion');
+    return;
+  }
+  // Append the new pending tag to its category and re-render
+  const cat = TAG_CATEGORIES.find(c=>c.id===categoryId);
+  if(cat){
+    cat.tags.push({ id: r.tag.id, slug: '', label: r.tag.label, status: 'pending' });
+    cat.tags.sort((a,b)=> a.label.localeCompare(b.label));
+  }
+  selectedTagIds.add(r.tag.id);
+  renderTagSections();
+  showToast(`Suggested “${r.tag.label}” — pending admin review.`);
+}
+
 // ── Post modal ────────────────────────────────────────────────────────────────
 function openModal(){
   document.getElementById('modal-err').style.display='none';
@@ -1231,6 +1315,11 @@ function openModal(){
   const tumblrEl = document.getElementById('modal-submitter-tumblr');
   if (nameEl)   nameEl.value   = (isLoggedIn ? (userPrefs.poem_name   || '') : (localStorage.getItem('horse-poem-name')   || ''));
   if (tumblrEl) tumblrEl.value = (isLoggedIn ? (userPrefs.poem_tumblr || '') : (localStorage.getItem('horse-poem-tumblr') || ''));
+  // Reset attribution-to-existing-work fields and tag selection each time.
+  const itext = document.getElementById('modal-inspired-text'); if (itext) itext.value = '';
+  const iurl  = document.getElementById('modal-inspired-url');  if (iurl)  iurl.value  = '';
+  selectedTagIds = new Set();
+  renderTagSections();
   document.getElementById('post-modal').classList.add('open');
 }
 function closeModal(){ document.getElementById('post-modal').classList.remove('open'); }
@@ -1250,7 +1339,15 @@ async function submitPoemPublic(){
       localStorage.setItem('horse-poem-tumblr', submitterTumblr);
     }catch(e){}
   }
-  const d = await apiPost('/submit/poem', {lines, submitter_name: submitterName, submitter_tumblr: submitterTumblr, poem_title: poemTitle});
+  const inspiredText = (document.getElementById('modal-inspired-text')?.value || '').trim();
+  const inspiredUrl  = (document.getElementById('modal-inspired-url')?.value  || '').trim();
+  const tag_ids = Array.from(selectedTagIds);
+  const d = await apiPost('/submit/poem', {
+    lines, submitter_name: submitterName, submitter_tumblr: submitterTumblr,
+    poem_title: poemTitle,
+    inspired_by_text: inspiredText, inspired_by_url: inspiredUrl,
+    tag_ids,
+  });
   if(!d) return;
   if(d.ok){
     closeModal();
