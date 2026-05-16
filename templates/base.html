@@ -16,9 +16,7 @@
 {% endif %}
 </head>
 <body>
-<div class="fence"></div>
-<div class="container{% block container_class %}{% endblock %}">
-
+<div class="site-nav-bar">
   <nav class="site-nav" id="site-nav">
     <div class="nav-brand">
       <a class="nav-logo" href="/">poet.horse</a>
@@ -75,13 +73,22 @@
       </div>
     </div>
   </nav>
+</div>
 
+<div class="fence"></div>
+
+<div class="container{% block container_class %}{% endblock %}">
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for cat, msg in messages %}
       <div class="flash flash-{{ cat }}">{{ msg }}</div>
     {% endfor %}
   {% endwith %}
   {% block content %}{% endblock %}
+</div>
+
+<div class="fence"></div>
+
+<div class="site-footer-bar">
   <footer class="site-footer">
     <figure class="weatherhead">
       <blockquote cite="https://x.com/weeatherhead/status/314089933906264066">
@@ -106,7 +113,6 @@
     </div>
   </footer>
 </div>
-<div class="fence"></div>
 
 <script>
 (function(){
