@@ -26,9 +26,10 @@
 
 ## Up next — Phase 1 continues
 
-Next natural cluster — pick up in order:
+Next natural cluster:
 
-1. **1.5 Poem permalink renderer** `[sonnet · medium]` — full `/p/<short_code>` page with title, attribution, tags, plain/pasture toggle, Open Graph tags.
+- Soft-launch list is now mostly the page-side work: **1.6** (two-mode renderer — pasture-mode CSS that plugs into the toggle scaffold 1.5 shipped), **1.8** (Featured / Browse / Random), **1.9–1.12** (publish UX polish + reader-mode), **1.13** (admin moderation queue + tag review using the `pending` rows 1.3 wired up).
+- Open style-session for chip decoration restoration + plain-chips preference + side-by-side prototype of fancy / plain / high-contrast / typography-only print styling.
 
 **Known open bugs (track separately in `TODO.md`):**
 - Tumblr post CSS desync — Tumblr appears to strip `class` attributes; horse tile structural styling is lost on new posts. Likely needs data-attribute selectors or inlined structural CSS. **Deprioritized** — most Tumblr users view in dashboard mode where CSS is stripped anyway. Revisit only after the website CSS is finalized.
