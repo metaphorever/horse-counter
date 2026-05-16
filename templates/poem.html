@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% set page_title = poem.title or 'A horse poem' %}
 {% block title %}{{ page_title }} — poet.horse{% endblock %}
 
 {% block head %}
@@ -13,10 +12,19 @@
 {% endblock %}
 
 {% block content %}
-<article class="poem-view" data-view-mode="plain" data-short-code="{{ poem.short_code }}">
+<article class="poem-view{% if poem.inspired_by_text %} has-inspiration{% endif %}"
+         data-view-mode="plain" data-short-code="{{ poem.short_code }}">
 
   <header class="poem-view-head">
-    <h1 class="poem-view-title">{{ page_title }}</h1>
+    <h1 class="poem-view-title">
+      <span class="poem-view-title-main">{{ poem.title or 'A horse poem' }}</span>
+      {% if poem.inspired_by_text %}
+        <span class="poem-view-title-after">
+          based on
+          {% if poem.inspired_by_url %}<a class="poem-after-link" href="{{ poem.inspired_by_url }}" rel="nofollow noopener" target="_blank">{{ poem.inspired_by_text }}</a>{% else %}<cite>{{ poem.inspired_by_text }}</cite>{% endif %}
+        </span>
+      {% endif %}
+    </h1>
 
     <p class="poem-view-attribution">
       {% if poem.author_display_name %}
@@ -31,17 +39,6 @@
       {% endif %}
       {% if poem.published_at %} · <time datetime="{{ published_iso }}">{{ published_human }}</time>{% endif %}
     </p>
-
-    {% if poem.inspired_by_text %}
-      <p class="poem-view-after">
-        After
-        {% if poem.inspired_by_url %}
-          <a class="poem-after-link" href="{{ poem.inspired_by_url }}" rel="nofollow noopener" target="_blank">{{ poem.inspired_by_text }}</a>
-        {% else %}
-          <cite>{{ poem.inspired_by_text }}</cite>
-        {% endif %}
-      </p>
-    {% endif %}
 
     <div class="poem-view-controls">
       <button type="button" class="btn-sec poem-view-toggle" id="poem-view-toggle"

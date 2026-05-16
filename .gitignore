@@ -34,3 +34,4 @@ data/poet.db
 data/poet.db-journal
 data/poet.db-wal
 data/poet.db-shm
+.claude/launch.json

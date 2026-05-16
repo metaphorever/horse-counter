@@ -1444,9 +1444,20 @@ def poem_permalink(short_code):
         published_iso   = dt.isoformat()
         published_human = dt.strftime('%b %-d, %Y') if os.name != 'nt' else dt.strftime('%b %#d, %Y')
 
+    # Page title folds in attribution-to-existing-work: "Title based on Source".
+    # Attribution presence is itself the flag — there's no tag for it; the
+    # title makes the relationship visible everywhere the title appears
+    # (browser tab, og:title, social previews).
+    base_title = poem.get('title') or 'A horse poem'
+    page_title = (
+        f'{base_title} based on {poem["inspired_by_text"]}'
+        if poem.get('inspired_by_text') else base_title
+    )
+
     return render_template(
         'poem.html',
         poem            = poem,
+        page_title      = page_title,
         grouped_tags    = grouped_tags,
         og_description  = og_description,
         permalink_url   = request.url,

@@ -921,19 +921,21 @@ body.dragging .drop-zones {
 }
 .poem-view-head { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #e0d4b0; }
 .poem-view-title {
-  font: 700 1.8rem 'Playfair Display', Georgia, serif;
   color: #2d2316; margin: 0 0 8px;
+  font: 700 1.8rem 'Playfair Display', Georgia, serif;
+  display: flex; flex-direction: column; gap: 2px;
 }
+.poem-view-title-main { font: inherit; }
+.poem-view-title-after {
+  font: italic 1rem 'Playfair Display', Georgia, serif;
+  color: #5a3a18; font-weight: 400;
+}
+.poem-view-title-after cite { font-style: italic; }
 .poem-view-attribution {
   font: 13px 'Courier Prime','Courier New',monospace; color: #6b5430;
   margin: 0;
 }
-.poem-attr-link { color: #5a3a18; text-decoration: underline; text-decoration-style: dotted; }
-.poem-view-after {
-  margin: 6px 0 0;
-  font: italic 14px Georgia, serif; color: #5a3a18;
-}
-.poem-view-after cite { font-style: italic; }
+.poem-attr-link  { color: #5a3a18; text-decoration: underline; text-decoration-style: dotted; }
 .poem-after-link { color: #5a3a18; text-decoration: underline; text-decoration-style: dotted; }
 .poem-view-controls { margin-top: 10px; }
 .poem-view-toggle {
