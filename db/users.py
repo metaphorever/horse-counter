@@ -2,6 +2,7 @@
 db/users.py — User table helpers for poet.horse.
 """
 
+import json
 import re
 import time
 
@@ -81,3 +82,36 @@ def create_user(clerk_id: str, slug: str, display_name: str) -> dict:
         ).fetchone()
         conn.execute('COMMIT')
         return dict(row)
+
+
+# ── Preferences (preferences_json) ────────────────────────────────────────────
+
+def get_preferences(user_id: int) -> dict:
+    """Return the parsed preferences_json dict (empty if missing or malformed)."""
+    with get_db() as conn:
+        row = conn.execute(
+            'SELECT preferences_json FROM users WHERE id = ?', (user_id,)
+        ).fetchone()
+    if not row:
+        return {}
+    try:
+        prefs = json.loads(row['preferences_json'] or '{}')
+        return prefs if isinstance(prefs, dict) else {}
+    except (TypeError, ValueError):
+        return {}
+
+
+def update_preferences(user_id: int, updates: dict) -> dict:
+    """
+    Shallow-merge `updates` into preferences_json. None values are dropped
+    (i.e. won't overwrite existing keys with None). Returns the merged dict.
+    """
+    clean = {k: v for k, v in updates.items() if v is not None}
+    current = get_preferences(user_id)
+    current.update(clean)
+    with get_db() as conn:
+        conn.execute(
+            'UPDATE users SET preferences_json = ? WHERE id = ?',
+            (json.dumps(current, ensure_ascii=False), user_id),
+        )
+    return current

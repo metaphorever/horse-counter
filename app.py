@@ -47,7 +47,9 @@ from clerk_auth import verify_clerk_token, CLERK_PUBLISHABLE_KEY
 from db.users import (
     get_user_by_id, get_user_by_clerk_id, get_user_by_slug,
     create_user, validate_slug, slug_available,
+    get_preferences, update_preferences,
 )
+from db.stable import list_stable_horses, bulk_add_stable_horses
 from auth import TumblrManager
 from matcher import (
     HorseDictionary, ChainCounter,
@@ -315,6 +317,69 @@ def setup_account():
         display_name=display_name,
         error=error,
     )
+
+
+# ── Account sync (Phase 0.5) ──────────────────────────────────────────────────
+
+# Preference keys synced from localStorage. Keep stable names — clients clear
+# the matching local keys after a successful sync.
+_SYNCABLE_PREF_KEYS = ('poem_name', 'poem_tumblr', 'page_size')
+
+
+@app.route('/me/sync', methods=['POST'])
+def me_sync():
+    """
+    Merge anonymous localStorage state into the logged-in user's account.
+
+    Body (all fields optional):
+        {
+          "stable":     [{name, display, url, remaining}, ...],
+          "poem_name":  "...",
+          "poem_tumblr": "...",
+          "page_size":  "25"
+        }
+
+    Returns the merged server-side state so the client can replace its in-memory
+    copy and clear local storage:
+        { ok: true, stable: [...], preferences: {...}, added: <int> }
+    """
+    user = g.get('current_user')
+    if user is None:
+        return jsonify({'error': 'Not signed in'}), 401
+
+    body = request.get_json(silent=True) or {}
+
+    # ── stable horses ─────────────────────────────────────────────────────────
+    raw_stable = body.get('stable') or []
+    cleaned = []
+    if isinstance(raw_stable, list):
+        for h in raw_stable[:200]:  # hard cap, defensive
+            if not isinstance(h, dict):
+                continue
+            name = (h.get('name') or '').strip()
+            if not name:
+                continue
+            cleaned.append({
+                'name':      name[:200],
+                'display':   (h.get('display') or name)[:200],
+                'url':       (h.get('url') or '')[:500],
+                'remaining': max(1, min(99, int(h.get('remaining') or 1))),
+            })
+    added = bulk_add_stable_horses(user['id'], cleaned) if cleaned else 0
+
+    # ── preferences ───────────────────────────────────────────────────────────
+    pref_updates = {}
+    for key in _SYNCABLE_PREF_KEYS:
+        if key in body and body[key] not in (None, ''):
+            pref_updates[key] = str(body[key])[:80]
+    prefs = update_preferences(user['id'], pref_updates) if pref_updates else get_preferences(user['id'])
+
+    return jsonify({
+        'ok':          True,
+        'added':       added,
+        'stable':      list_stable_horses(user['id']),
+        'preferences': prefs,
+    })
 
 
 # ── Poet profile ──────────────────────────────────────────────────────────────
@@ -844,11 +909,21 @@ def callback():
 def poetry_editor():
     import json
     is_admin = bool(session.get('logged_in'))
-    # Admin uses server-persisted stable; public starts from empty (loads
-    # from localStorage on the client side).
-    stable = load_stable() if is_admin else []
+    # Admin uses the shared file-based stable. Logged-in users get their
+    # per-account stable from the DB. Anonymous users start from empty and
+    # the client hydrates from localStorage.
+    if is_admin:
+        stable = load_stable()
+        prefs  = {}
+    elif g.get('current_user'):
+        stable = list_stable_horses(g.current_user['id'])
+        prefs  = get_preferences(g.current_user['id'])
+    else:
+        stable = []
+        prefs  = {}
     return render_template('poetry.html',
         stable_json=json.dumps(stable),
+        user_prefs_json=json.dumps(prefs),
         optional_tags_json=json.dumps(OPTIONAL_TAGS),
     )
 
