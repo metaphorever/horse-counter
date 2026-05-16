@@ -285,18 +285,34 @@ def search_dictionary(query: str, dictionary) -> Dict:
 
 
 def short_horses(dictionary, max_len: int = 3) -> List[Dict]:
+    """Return horses with names of `max_len` characters or fewer.
+
+    1- and 2-letter results group together (small sets, easy to scan).
+    3-letter results are sub-grouped by first letter so the editor can render
+    each letter as a collapsed disclosure — there are too many 3-letter
+    horses to scan as one flat list. The grouping is encoded in
+    `matched_term` so the existing group-aware renderer picks it up.
+    """
     results = []
     for name, registrations in dictionary.horses.items():
-        if len(name) <= max_len:
-            reg = registrations[0]
-            results.append({
-                'name':         name,
-                'display':      reg.get('display_name', ' '.join(w.capitalize() for w in name.split())),
-                'url':          reg.get('url', ''),
-                'count':        len(registrations),
-                'matched_term': f'{len(name)} letter{"s" if len(name) != 1 else ""}',
-            })
-    results.sort(key=lambda h: (len(h['name']), h['name']))
+        if len(name) > max_len:
+            continue
+        reg = registrations[0]
+        if len(name) == 3:
+            first = name[0].upper() if name[0].isalpha() else '#'
+            term = f'3 letters — {first}'
+        else:
+            term = f'{len(name)} letter{"s" if len(name) != 1 else ""}'
+        results.append({
+            'name':         name,
+            'display':      reg.get('display_name', ' '.join(w.capitalize() for w in name.split())),
+            'url':          reg.get('url', ''),
+            'count':        len(registrations),
+            'matched_term': term,
+        })
+    # Sort: 1-letter first, then 2-letter, then 3-letter (per-bucket alphabetical).
+    # Within "3 letters — X" buckets, name order is naturally alphabetical.
+    results.sort(key=lambda h: (len(h['name']), h['matched_term'], h['name']))
     return results
 
 

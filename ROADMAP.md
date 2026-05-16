@@ -16,6 +16,7 @@
 - 0.6 ToS / Privacy / Data-Deletion pages ✅ — `/terms`, `/privacy`, `/data-deletion`. Plain-English summary box at top of each. Email-based deletion flow. Minimal site-wide footer with legal links. Verified in production 2026-05-15.
 
 - 1.1 Top-level nav + user menu ✅ — full IA in `base.html`: logo, Home, Read Poems (Featured/Browse/Random submenu), Write Poems, Pasture, Count; Sign In / user dropdown (Published, Drafts, My Pasture, Saved Poems, Saved Horses, Edit Profile, Sign Out). Mobile hamburger. `user_required` decorator. Coming-soon stubs for all not-yet-implemented destinations. Verified 2026-05-15.
+- 1.2 Editor pain-fix ✅ — horse-body decoration (legs/head/tail/tilts) stripped from editor chips; chips are now real `<button>`s with 44×44 tap targets, focus ring, and `aria-label`. Canonical tap interaction is a context-aware **chip menu** (Add to poem · Send to My Pasture · Remove for stable chips; Move left/right/to last line · Send back to stable · Send to My Pasture · Remove for poem chips). Keyboard nav with Arrow / Enter / Escape; Escape returns focus to the chip. Drag is preserved with a 6 px movement threshold (sub-threshold release becomes a menu open); during drag, an **ephemeral drop-zone bar** appears at the viewport bottom (Drop to last line · Send to My Pasture · Remove) and disappears on release. New `pasture_horses` table + `POST /me/pasture/add` lights up the menu/zone end-to-end for signed-in users; logged-out users get an inline sign-in prompt. The chip-menu component is intended to be re-used by 1.7's horse popover. Coat colors preserved.
 - 1.22 Attribution footer + Ko-fi support ✅ — Weatherhead citation as `<figure><blockquote cite="…"><figcaption>` with italic serif typography. Plain text Ko-fi link in the footer (🍀 Support poet.horse on Ko-fi). No floating widget — the plain link is the canonical pattern; clover-emoji touchpoints in Phase 2.13 will reuse the same anchor. Verified 2026-05-15.
 - **Nav/footer chrome polish (2026-05-16)** ✅ — nav lifted out of the container and placed above the top fence; footer lifted out and placed below the bottom fence. Both wrapped in full-width tan (`#f0ead8`) bars so they're legible over the grass pattern. Mobile hamburger and dropdowns still work; no structural changes to nav or footer content. Shipped as [PR #10](https://github.com/metaphorever/horse-counter/pull/10).
 
@@ -25,9 +26,8 @@
 
 Next natural cluster — pick up in order:
 
-1. **1.2 Editor pain-fix** `[sonnet · medium]` — strip horse-body decoration from chips, add "drop to last line" zone, click-to-add button on every chip.
-2. **1.3 Tag taxonomy + selection UI** `[sonnet · medium]` — seed tag categories, editor chip-cloud UI, per-category suggestion affordance.
-3. **1.5 Poem permalink renderer** `[sonnet · medium]` — full `/p/<short_code>` page with title, attribution, tags, plain/pasture toggle, Open Graph tags.
+1. **1.3 Tag taxonomy + selection UI** `[sonnet · medium]` — seed tag categories, editor chip-cloud UI, per-category suggestion affordance.
+2. **1.5 Poem permalink renderer** `[sonnet · medium]` — full `/p/<short_code>` page with title, attribution, tags, plain/pasture toggle, Open Graph tags.
 
 **Known open bugs (track separately in `TODO.md`):**
 - Tumblr post CSS desync — Tumblr appears to strip `class` attributes; horse tile structural styling is lost on new posts. Likely needs data-attribute selectors or inlined structural CSS. **Deprioritized** — most Tumblr users view in dashboard mode where CSS is stripped anyway. Revisit only after the website CSS is finalized.
@@ -185,16 +185,22 @@ Goal: poet.horse is a complete website that lets anyone compose, publish, and re
 - Mobile: collapses to a hamburger; submenus expand inline.
 - Acceptance: every top-level link resolves; user-menu items are reachable; submenu structure works keyboard-only and on touch.
 
-### 1.2 Editor pain-fix: drop zone + click-to-add + decoration strip `[sonnet · medium]`
+### 1.2 Editor pain-fix: chip menu + drop zones + decoration strip `[sonnet · medium]` ✅ shipped 2026-05-16
 
-- Strip horse-body decoration (legs, coat shapes) from chips inside [templates/poetry.html](templates/poetry.html).
-- Keep coat color palette and famous shimmer.
-- Increase tap targets (44×44 minimum), increase spacing.
-- Keep current drag interactions.
-- **Add "drop to last line" zone** at the bottom of the stable area — drops add the horse to the final line of the current poem regardless of scroll position.
-- **Add an explicit click-to-add affordance** on every chip ("→ poem" button) — clicking adds the chip to the current line (or last line if no line is focused).
-- This is an interim fix targeting the specific drag-distance pain point on long poems. Full rethink is Phase 2.1.
-- Acceptance: every chip is keyboard-focusable; the drop zone catches drags from anywhere in the stable; the add-button works on touch without triggering drag.
+After a design conversation with the owner the brief shifted from "click-to-add affordance + drop zone" to a more coherent **all-three-inputs-live** model (no modes, no gates):
+
+- **Decoration strip.** Removed `<span class="legs">` and the `::before`/`::after` head/tail pseudo-elements from editor chips. Stable nth-child tilts and the per-poem-tile tilt are gone too — per the cross-cutting UI-vs-display commitment, editor chips keep only coat color and (for famous horses) shimmer. Body-part whimsy belongs in pasture-mode display surfaces.
+- **Chip as button.** Every chip is a real `<button type="button">` with 44×44 minimum tap target, `aria-label`, and a `:focus-visible` outline. Keyboard activation is standard Enter/Space.
+- **Canonical interaction: chip menu.** Tap (or Enter/Space on a focused chip) opens a small popover anchored to the chip with context-aware actions:
+  - Stable chip: Add to poem (last line) · Send to My Pasture · Remove from stable
+  - Poem chip: Move left · Move right · Move to last line · Send back to stable · Send to My Pasture · Remove from poem
+  Menu is positioned with viewport-collision (`position: fixed`), focus-trapped via Arrow keys, ESC returns focus to the originating chip.
+- **Drag preserved with click discrimination.** Pointer events with a 6 px movement threshold. Below threshold on release → chip menu opens. Past threshold → drag. The previous touch/mouse forks collapsed into a single `pointerdown`/`pointermove`/`pointerup` flow.
+- **Ephemeral drop zones.** A drop-zone bar slides up from the viewport bottom only while `body.dragging` is set (Drop to last line · Send to My Pasture · Remove). No permanent UI furniture for users who never drag. `pasture` zone is hidden for anon users (they get a sign-in toast from the menu instead). Per-line `.drop-target` highlights are kept.
+- **Pasture backend.** New `pasture_horses` table (per-user, name-keyed). `POST /me/pasture/add` accepts `{name, display, url}`, returns `{ok, added}`. Logged-out → JSON 401 with a sign-in message that the client surfaces as a toast.
+- **Reuse target.** The chip-menu component is shaped to be reused for the 1.7 published-poem horse popover (same anchored-popover primitive, different item list).
+
+Acceptance criteria met: every chip is keyboard-focusable; menu opens with Enter/Space; arrows navigate; ESC closes; drag still works on mouse and touch; the drop-zone bar catches drags from anywhere in the stable; menu actions work for both stable and poem chips on desktop and mobile viewports. Verified locally with the editor at /poetry, including 401 on logged-out pasture POST. Shipped as PR against `master`.
 
 ### 1.3 Tag taxonomy + selection UI `[sonnet · medium]`
 
