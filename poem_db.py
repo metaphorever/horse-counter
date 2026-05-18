@@ -44,6 +44,17 @@ def _compute_counts(lines: List[List[Dict]]) -> Dict[str, int]:
     return {'horse_count': horse_count, 'word_count': word_count}
 
 
+def _unique_horse_names(lines: List[List[Dict]]) -> List[str]:
+    seen, result = set(), []
+    for line in lines:
+        for h in line:
+            n = h.get('name', '')
+            if n and n not in seen:
+                seen.add(n)
+                result.append(n)
+    return result
+
+
 def save_poem(
     lines:                 List[List[Dict]],
     title:                 str            = '',
@@ -93,6 +104,12 @@ def save_poem(
                 ),
             )
             poem_id = cur.lastrowid
+            # Index horse occurrences for fast "poems featuring X" lookups
+            for name in _unique_horse_names(lines):
+                conn.execute(
+                    "INSERT OR IGNORE INTO horse_occurrences (poem_id, horse_name) VALUES (?, ?)",
+                    (poem_id, name),
+                )
             conn.execute("COMMIT")
         except Exception:
             conn.execute("ROLLBACK")
@@ -143,6 +160,25 @@ def update_poem_status(
                 "UPDATE poems SET status = ?, edited_at = ? WHERE id = ?",
                 (status, now, poem_id),
             )
+
+
+def get_poems_featuring_horse(horse_name: str, limit: int = 5) -> List[Dict]:
+    """
+    Return up to `limit` published poems that contain `horse_name`.
+    Uses the horse_occurrences index for O(log n) lookup.
+    """
+    with get_db() as conn:
+        rows = conn.execute(
+            """SELECT p.id, p.short_code, p.title, p.author_display_name,
+                      p.author_user_id, p.horse_count, p.published_at
+               FROM poems p
+               JOIN horse_occurrences ho ON ho.poem_id = p.id
+               WHERE ho.horse_name = ? AND p.status = 'published'
+               ORDER BY p.published_at DESC
+               LIMIT ?""",
+            (horse_name, limit),
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def list_published(limit: int = 50, offset: int = 0) -> List[Dict]:

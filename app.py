@@ -60,12 +60,22 @@ from matcher import (
 from post_builder import extract_post
 from famous import FamousHorses
 from db.conn import init_db
-from poem_db import save_poem as save_poem_db, get_poem_by_short_code, list_published as list_published_poems
+from poem_db import (
+    save_poem as save_poem_db,
+    get_poem_by_short_code,
+    list_published as list_published_poems,
+    get_poems_featuring_horse,
+)
 from db.tags import (
     list_categories_with_tags,
     apply_tags_to_poem,
     suggest_tag,
     tags_for_poem,
+)
+from horse_collections import (
+    get_horse_states,
+    toggle_pasture,
+    toggle_saved_horse,
 )
 from poem_submissions import (
     create_for_poem      as create_poem_submission,
@@ -90,10 +100,33 @@ from submissions import (
     save_submission, load_pending, load_submission, update_status,
 )
 
+# ── Horse tile appearance (mirrors JS in poetry.html / poem_permalink.html) ───
+
+_COATS = [
+    {'bg': '#7a3520', 'fg': '#f5ecd7'},
+    {'bg': '#1c1c1c', 'fg': '#e8d5b0'},
+    {'bg': '#7a7a7a', 'fg': '#f0ead6'},
+    {'bg': '#8b3a1f', 'fg': '#fae8c8'},
+    {'bg': '#c8961a', 'fg': '#2a1800'},
+    {'bg': '#c8bfaa', 'fg': '#1c1008'},
+    {'bg': '#4a2812', 'fg': '#ead8b8'},
+    {'bg': '#8a6a5a', 'fg': '#f0e4d0'},
+]
+
+def _tile_style(name: str) -> dict:
+    h = sum(ord(c) for c in name)
+    coat = _COATS[h % len(_COATS)]
+    return {
+        'style': f"--bg:{coat['bg']};--fg:{coat['fg']}",
+        'cls':   ' rev' if h % 2 == 0 else '',
+    }
+
+
 # ── App setup ─────────────────────────────────────────────────────────────────
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
+app.jinja_env.globals['tile_style'] = _tile_style
 app.permanent_session_lifetime = SESSION_LIFETIME_SECONDS
 
 # ── Initialise singletons ─────────────────────────────────────────────────────
@@ -1408,18 +1441,11 @@ def admin_dictionary_delete():
 @app.route('/p/<short_code>')
 def poem_permalink(short_code):
     """
-    Public permalink for a poem (Phase 1.5).
+    Public permalink for a poem (Phase 1.5/1.6/1.7).
 
     Renders title + attribution + optional "After ___" caption + grouped tags
-    + Open Graph meta tags. Plain-mode is the only fully-styled mode in this
-    phase; the toggle wires up to a `data-view-mode` attribute so 1.6 can
-    layer pasture-mode styling without changing this scaffold.
-
-    Unpublished poems (status != 'published') are accessible to the author
-    and to admins; everyone else gets a 404. The public-link-leakage angle
-    is acceptable for MVP — short codes are long enough that guessing them
-    is impractical and the worst case is a draft poem being viewable by
-    someone who already has the URL.
+    + Open Graph meta tags. Pasture mode is the permalink default (1.6);
+    horse chips are interactive with the popover (1.7).
     """
     from datetime import datetime, timezone
 
@@ -1558,6 +1584,78 @@ def admin_poem_reject():
     reject_poem_submission(sub_id, reviewer_user_id=None, review_notes=notes)
     flash('Rejected.', 'ok')
     return redirect(url_for('admin_poem_queue'))
+
+
+# ── Horse collection API ──────────────────────────────────────────────────────
+
+@app.route('/horse/state', methods=['POST'])
+def horse_state():
+    """
+    Return save/pasture state for a list of horse names for the logged-in user.
+    POST {names: ["foo", "bar"]}
+    Returns {foo: {saved, in_pasture}, bar: {...}}
+    Logged-out: all false.
+    """
+    data  = request.get_json(silent=True) or {}
+    names = [n for n in (data.get('names') or []) if isinstance(n, str)][:50]
+    user  = g.get('current_user')
+    if not user or not names:
+        return jsonify({n: {'saved': False, 'in_pasture': False} for n in names})
+    states = get_horse_states(user['id'], names)
+    return jsonify(states)
+
+
+@app.route('/horse/save', methods=['POST'])
+def horse_save():
+    """Toggle blue-ribbon save on a horse. Requires login."""
+    user = g.get('current_user')
+    if not user:
+        return jsonify({'error': 'login_required'}), 401
+    data = request.get_json(silent=True) or {}
+    name    = (data.get('name') or '').strip()
+    display = (data.get('display') or name).strip()
+    url     = (data.get('url') or '').strip()
+    if not name:
+        return jsonify({'error': 'name required'}), 400
+    result = toggle_saved_horse(user['id'], name, display, url)
+    return jsonify(result)
+
+
+@app.route('/horse/pasture', methods=['POST'])
+def horse_pasture_toggle():
+    """Toggle a horse in/out of the user's pasture. Requires login."""
+    user = g.get('current_user')
+    if not user:
+        return jsonify({'error': 'login_required'}), 401
+    data = request.get_json(silent=True) or {}
+    name    = (data.get('name') or '').strip()
+    display = (data.get('display') or name).strip()
+    url     = (data.get('url') or '').strip()
+    if not name:
+        return jsonify({'error': 'name required'}), 400
+    result = toggle_pasture(user['id'], name, display, url)
+    return jsonify(result)
+
+
+@app.route('/horse/poems', methods=['POST'])
+def horse_poems():
+    """Return published poems featuring a given horse name (up to 5)."""
+    data  = request.get_json(silent=True) or {}
+    name  = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'poems': []})
+    poems = get_poems_featuring_horse(name, limit=5)
+    # Trim to what the popover needs — no full lines_json
+    result = [
+        {
+            'short_code':    p['short_code'],
+            'title':         p['title'] or '',
+            'author':        p['author_display_name'] or '',
+            'horse_count':   p['horse_count'],
+        }
+        for p in poems
+    ]
+    return jsonify({'poems': result})
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

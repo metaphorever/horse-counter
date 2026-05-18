@@ -182,7 +182,7 @@ CREATE INDEX IF NOT EXISTS idx_stable_user_added ON stable_horses(user_id, added
 
 -- ── Pasture horses (per-user, server-side) ───────────────────────────────────
 -- Long-term per-user collection of horses the user wants to keep around. Distinct
--- from `stable_horses` (the current composition's working pool) and from a future
+-- from `stable_horses` (the current composition's working pool) and from
 -- `saved_horses` (sentiment / blue-ribbon). Anonymous users do not have a pasture;
 -- the editor's "Send to My Pasture" action prompts them to sign in.
 CREATE TABLE IF NOT EXISTS pasture_horses (
@@ -195,3 +195,28 @@ CREATE TABLE IF NOT EXISTS pasture_horses (
 );
 
 CREATE INDEX IF NOT EXISTS idx_pasture_user_added ON pasture_horses(user_id, added_at DESC);
+
+-- ── Horse occurrences (per-poem horse index) ──────────────────────────────────
+-- Populated at poem-save time. Used for fast "poems featuring this horse" lookups.
+-- One row per (poem, horse name); duplicates within a poem are counted as one.
+CREATE TABLE IF NOT EXISTS horse_occurrences (
+    poem_id     INTEGER NOT NULL REFERENCES poems(id) ON DELETE CASCADE,
+    horse_name  TEXT    NOT NULL,    -- normalized name (matches dictionary key)
+    PRIMARY KEY (poem_id, horse_name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_horse_occ_name ON horse_occurrences(horse_name);
+
+-- ── Saved horses (blue-ribbon sentiment collection) ───────────────────────────
+-- Private per-user collection. Feeds admin popularity stats but never surfaced
+-- publicly as a count. Distinct from Pasture.
+CREATE TABLE IF NOT EXISTS saved_horses (
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name        TEXT    NOT NULL,    -- normalized horse name
+    display     TEXT    NOT NULL,
+    url         TEXT    NOT NULL DEFAULT '',
+    saved_at    REAL    NOT NULL,
+    PRIMARY KEY (user_id, name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_saved_horses_user_saved ON saved_horses(user_id, saved_at DESC);

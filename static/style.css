@@ -1284,6 +1284,187 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
 .modal-name-row input { flex: 1; margin: 0; }
 .text-muted       { color: #aaa; }
 
+/* ── Poem permalink (pasture view) ── */
+.poem-permalink-box { margin-top: 32px; }
+.poem-permalink-title {
+  font: 700 1.5rem/1.25 'Playfair Display', Georgia, serif;
+  margin-bottom: 8px;
+}
+.poem-permalink-meta {
+  font: 12px 'Courier Prime', 'Courier New', monospace;
+  color: #8a7050;
+  margin-bottom: 20px;
+}
+.poem-permalink-meta a { color: #5a7a2a; }
+
+.poem-pasture-view {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 10px 24px;
+  background: #f0ead8;
+  border-radius: 2px;
+  border: 1px solid #d9c88f;
+}
+.pasture-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: flex-end;
+  padding-top: 10px;
+}
+/* Pasture chips are interactive — override cursor from horse-tile */
+.pasture-chip {
+  cursor: pointer;
+  border: none;
+  background: none;
+  outline-offset: 3px;
+}
+.pasture-chip:hover   { filter: brightness(1.08); }
+.pasture-chip:focus-visible { outline: 3px solid #5a7a2a; }
+/* Slight scattered angles for the fridge-magnet feel */
+.pasture-line:nth-child(5n+1) .pasture-chip:nth-child(3n+1) { transform: rotate(-1.6deg); }
+.pasture-line:nth-child(5n+1) .pasture-chip:nth-child(3n+2) { transform: rotate(0.9deg);  }
+.pasture-line:nth-child(5n+2) .pasture-chip:nth-child(3n+1) { transform: rotate(1.4deg);  }
+.pasture-line:nth-child(5n+2) .pasture-chip:nth-child(3n+2) { transform: rotate(-0.7deg); }
+.pasture-line:nth-child(5n+3) .pasture-chip:nth-child(3n+1) { transform: rotate(-1.2deg); }
+.pasture-line:nth-child(5n+3) .pasture-chip:nth-child(3n+2) { transform: rotate(1.8deg);  }
+
+/* ── Horse popover ── */
+.horse-popover {
+  position: absolute;
+  z-index: 500;
+  width: 260px;
+  background: #faf5e9;
+  border-radius: 3px;
+  box-shadow: 3px 4px 16px rgba(0,0,0,.22), 0 0 0 1px rgba(139,105,20,.18);
+  padding: 16px 16px 14px;
+  font: 13px Georgia, serif;
+  color: #2d2316;
+}
+.horse-popover[hidden] { display: none; }
+
+.popover-close {
+  position: absolute;
+  top: 8px; right: 36px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  color: #a08060;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 2px;
+  box-shadow: none;
+  margin: 0;
+}
+.popover-close:hover { color: #6b3a10; background: #f0ead8; }
+
+/* Blue-ribbon save toggle */
+.popover-ribbon {
+  position: absolute;
+  top: 8px; right: 8px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 2px;
+  box-shadow: none;
+  margin: 0;
+  opacity: 0.35;
+  transition: opacity .15s, transform .12s;
+}
+.popover-ribbon:hover   { opacity: 0.8; transform: scale(1.15); }
+.popover-ribbon.ribbon-on { opacity: 1; }
+.popover-ribbon:focus-visible { outline: 2px solid #5a7a2a; outline-offset: 2px; }
+
+.popover-name {
+  font: 700 1rem/1.2 'Playfair Display', Georgia, serif;
+  margin-bottom: 6px;
+  padding-right: 44px; /* clear close + ribbon */
+}
+.popover-pq-link {
+  display: inline-block;
+  font: 11px 'Courier Prime', 'Courier New', monospace;
+  color: #5a7a2a;
+  text-decoration: none;
+  border-bottom: 1px solid #b5d68a;
+  margin-bottom: 12px;
+}
+.popover-pq-link:hover { color: #3d5a1a; border-bottom-color: #3d5a1a; }
+
+.popover-actions { margin-bottom: 10px; }
+.popover-pasture-btn {
+  width: 100%;
+  padding: 7px 12px;
+  background: #f5e9c8;
+  color: #6b5430;
+  border: 2px solid #c4a96b;
+  box-shadow: 2px 2px 0 #c4a96b;
+  border-radius: 2px;
+  cursor: pointer;
+  font: 700 11px 'Courier Prime', 'Courier New', monospace;
+  text-align: center;
+  margin: 0;
+}
+.popover-pasture-btn:hover  { background: #ede0b0; }
+.popover-pasture-btn:active { transform: translate(2px,2px); box-shadow: none; }
+.popover-pasture-btn[data-state="in"] {
+  background: #eaf5e0;
+  color: #3a5a1a;
+  border-color: #b5d68a;
+  box-shadow: 2px 2px 0 #b5d68a;
+}
+.popover-pasture-btn[data-state="in"]:hover { background: #d4ecb8; }
+
+/* Sign-in prompt */
+.popover-signin-prompt {
+  font: 12px 'Courier Prime', 'Courier New', monospace;
+  color: #6b5430;
+  background: #fdf5e0;
+  border: 1px solid #c4a030;
+  border-radius: 2px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+}
+.popover-signin-link { color: #5a7a2a; font-weight: 700; }
+@keyframes signin-flash {
+  0%   { background: #fdf5e0; }
+  30%  { background: #f5e8b8; }
+  100% { background: #fdf5e0; }
+}
+.popover-signin-prompt.signin-flash { animation: signin-flash .5s ease; }
+
+/* Poems section */
+.popover-poems-section { border-top: 1px solid #e0d4b0; padding-top: 10px; }
+.popover-poems-head {
+  font: 700 10px 'Courier Prime', 'Courier New', monospace;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #8a7050;
+  margin-bottom: 6px;
+}
+.popover-poem-link {
+  display: block;
+  font: 12px 'Courier Prime', 'Courier New', monospace;
+  color: #5a7a2a;
+  text-decoration: none;
+  padding: 3px 0;
+  border-bottom: 1px solid #e8d9b0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.popover-poem-link:last-child { border-bottom: none; }
+.popover-poem-link:hover { color: #3a5a1a; text-decoration: underline; }
+.popover-poems-loading,
+.popover-poems-none {
+  font: italic 11px 'Courier Prime', 'Courier New', monospace;
+  color: #a08060;
+}
+
 /* Poetry-page wider layout */
 @media (min-width: 900px) {
   .container.wide        { max-width: 1200px; }

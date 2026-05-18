@@ -155,4 +155,213 @@
   });
 })();
 </script>
+
+{# ── 1.7 Horse popover ──────────────────────────────────────────────────────── #}
+<div id="horse-popover" class="horse-popover" role="dialog" aria-modal="true" aria-label="Horse details" hidden>
+  <button class="popover-close" id="popover-close" aria-label="Close">×</button>
+  <button class="popover-ribbon" id="popover-ribbon" aria-label="Save this horse" aria-pressed="false" title="Save horse">
+    <span aria-hidden="true">🎀</span>
+  </button>
+  <div class="popover-name" id="popover-name"></div>
+  <a class="popover-pq-link" id="popover-pq-link" target="_blank" rel="noopener nofollow">View on PedigreeQuery →</a>
+  <div class="popover-actions">
+    <button class="popover-pasture-btn" id="popover-pasture-btn" type="button"></button>
+  </div>
+  <div class="popover-signin-prompt" id="popover-signin-prompt" hidden>
+    <a href="/sign-in" class="popover-signin-link">Sign in</a>
+    <span id="popover-signin-msg"></span>
+  </div>
+  <div class="popover-poems-section" id="popover-poems-section">
+    <div class="popover-poems-head">Poems featuring this horse</div>
+    <div class="popover-poems-list" id="popover-poems-list"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const IS_LOGGED_IN = {{ (current_user is not none) | tojson }};
+  const THIS_CODE    = {{ poem.short_code | tojson }};
+
+  const popover     = document.getElementById('horse-popover');
+  const pName       = document.getElementById('popover-name');
+  const pPqLink     = document.getElementById('popover-pq-link');
+  const pRibbon     = document.getElementById('popover-ribbon');
+  const pPastureBtn = document.getElementById('popover-pasture-btn');
+  const pPoems      = document.getElementById('popover-poems-list');
+  const pPoemsSec   = document.getElementById('popover-poems-section');
+  const pSignin     = document.getElementById('popover-signin-prompt');
+  const pSigninMsg  = document.getElementById('popover-signin-msg');
+  const pClose      = document.getElementById('popover-close');
+
+  let currentHorse = null;  // {name, display, url}
+  let horseStates  = {};    // {name: {saved, in_pasture}}
+
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  async function apiPost(url, body){
+    try {
+      const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+      return r.ok ? r.json() : null;
+    } catch(e){ return null; }
+  }
+
+  // Pre-load save/pasture state for all chips on the page.
+  async function loadPageStates(){
+    const names = [...document.querySelectorAll('.poem-horse[data-name]')].map(el => el.dataset.name);
+    if (!names.length || !IS_LOGGED_IN) return;
+    const data = await apiPost('/horse/state', {names});
+    if (data) horseStates = data;
+  }
+
+  // ── Open / close ─────────────────────────────────────────────────────────────
+  function openPopover(el){
+    const name    = el.dataset.name || '';
+    const display = el.textContent.trim();
+    const url     = el.tagName === 'A' ? el.href : (el.dataset.url || '');
+    currentHorse  = {name, display, url};
+
+    pName.textContent     = display;
+    pPqLink.href          = url || '#';
+    pPqLink.style.display = url ? '' : 'none';
+
+    const state = horseStates[name] || {saved: false, in_pasture: false};
+    updateRibbon(state.saved);
+    updatePastureBtn(state.in_pasture);
+    pSignin.hidden = true;
+
+    pPoems.innerHTML = '<span class="popover-poems-loading">Loading…</span>';
+    fetchPoems(name);
+
+    positionPopover(el);
+    popover.hidden = false;
+    trapFocus();
+    pClose.focus();
+  }
+
+  function closePopover(){
+    popover.hidden = true;
+    currentHorse = null;
+    releaseFocus();
+  }
+
+  function positionPopover(el){
+    const rect  = el.getBoundingClientRect();
+    const pw    = 260, margin = 8;
+    const vw    = window.innerWidth;
+    const scrollY = window.scrollY;
+
+    let left = rect.left + window.scrollX;
+    let top  = rect.bottom + scrollY + margin;
+
+    if (left + pw > vw - margin) left = vw - pw - margin;
+    if (left < margin) left = margin;
+    const ph = popover.offsetHeight || 240;
+    if (top + ph > scrollY + window.innerHeight - margin)
+      top = rect.top + scrollY - ph - margin;
+    if (top < scrollY + margin) top = scrollY + margin;
+
+    popover.style.left = left + 'px';
+    popover.style.top  = top  + 'px';
+  }
+
+  // ── Ribbon ────────────────────────────────────────────────────────────────────
+  function updateRibbon(saved){
+    pRibbon.setAttribute('aria-pressed', String(saved));
+    pRibbon.classList.toggle('ribbon-on', saved);
+    pRibbon.title = saved ? 'Saved — click to remove' : 'Save this horse';
+  }
+
+  pRibbon.addEventListener('click', async ()=>{
+    if (!IS_LOGGED_IN){ showSigninPrompt('to save horses to your collection.'); return; }
+    const h = currentHorse; if (!h) return;
+    const data = await apiPost('/horse/save', {name: h.name, display: h.display, url: h.url});
+    if (data){
+      if (!horseStates[h.name]) horseStates[h.name] = {saved:false, in_pasture:false};
+      horseStates[h.name].saved = data.saved;
+      updateRibbon(data.saved);
+    }
+  });
+
+  // ── Pasture button ────────────────────────────────────────────────────────────
+  function updatePastureBtn(inPasture){
+    pPastureBtn.textContent   = inPasture ? 'Remove from my pasture' : 'Add to my pasture';
+    pPastureBtn.dataset.state = inPasture ? 'in' : 'out';
+  }
+
+  pPastureBtn.addEventListener('click', async ()=>{
+    if (!IS_LOGGED_IN){ showSigninPrompt('to add horses to your pasture.'); return; }
+    const h = currentHorse; if (!h) return;
+    const data = await apiPost('/horse/pasture', {name: h.name, display: h.display, url: h.url});
+    if (data){
+      if (!horseStates[h.name]) horseStates[h.name] = {saved:false, in_pasture:false};
+      horseStates[h.name].in_pasture = data.in_pasture;
+      updatePastureBtn(data.in_pasture);
+      pSignin.hidden = true;
+    }
+  });
+
+  // ── Sign-in prompt ────────────────────────────────────────────────────────────
+  function showSigninPrompt(msg){
+    pSigninMsg.textContent = ' ' + msg;
+    pSignin.hidden = false;
+    pSignin.classList.remove('signin-flash');
+    void pSignin.offsetWidth;
+    pSignin.classList.add('signin-flash');
+  }
+
+  // ── Poems featuring ───────────────────────────────────────────────────────────
+  async function fetchPoems(name){
+    const data = await apiPost('/horse/poems', {name});
+    if (!data){ pPoems.innerHTML = ''; return; }
+    if (!data.poems.length){ pPoems.innerHTML = '<span class="popover-poems-none">None yet</span>'; return; }
+    pPoems.innerHTML = data.poems
+      .filter(p => p.short_code !== THIS_CODE)
+      .slice(0, 5)
+      .map(p => {
+        const title  = p.title || '(untitled)';
+        const author = p.author ? ` by ${esc(p.author)}` : '';
+        return `<a class="popover-poem-link" href="/p/${esc(p.short_code)}">${esc(title)}${author}</a>`;
+      }).join('') || '<span class="popover-poems-none">None yet</span>';
+  }
+
+  // ── Focus trap ────────────────────────────────────────────────────────────────
+  const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  let prevFocus = null;
+
+  function trapFocus(){ prevFocus = document.activeElement; document.addEventListener('keydown', onKey); }
+  function releaseFocus(){ document.removeEventListener('keydown', onKey); if (prevFocus) prevFocus.focus(); }
+
+  function onKey(e){
+    if (e.key === 'Escape'){ closePopover(); return; }
+    if (e.key !== 'Tab') return;
+    const els = [...popover.querySelectorAll(FOCUSABLE)].filter(el => !el.hidden && el.offsetParent !== null);
+    if (!els.length) return;
+    const [first, last] = [els[0], els[els.length-1]];
+    if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  }
+
+  // ── Dismiss on outside click ──────────────────────────────────────────────────
+  document.addEventListener('mousedown', e => {
+    if (!popover.hidden && !popover.contains(e.target) && !e.target.closest('.poem-horse'))
+      closePopover();
+  });
+
+  pClose.addEventListener('click', closePopover);
+
+  // ── Wire chips — intercept click on poem-horse elements ──────────────────────
+  document.querySelectorAll('.poem-horse[data-name]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.preventDefault();  // stop <a> from navigating
+      if (!popover.hidden && currentHorse && currentHorse.name === el.dataset.name)
+        closePopover();
+      else
+        openPopover(el);
+    });
+  });
+
+  document.addEventListener('DOMContentLoaded', loadPageStates);
+  loadPageStates();  // also run now if DOM is already ready
+})();
+</script>
 {% endblock %}
