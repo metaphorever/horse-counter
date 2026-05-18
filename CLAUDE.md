@@ -205,7 +205,7 @@ Log label: **Claude error, caught by [Clover / testing / next session]** — nam
 
 1. Confirm model and effort match current phase (rule 1)
 2. Check for open testing holds or override flags from prior sessions
-3. Git status — reconcile against agreed workflow before touching anything
+3. Sync master before doing anything: `git fetch origin && git -C . merge --ff-only origin/master` (on the master branch). If fast-forward is not possible, investigate before proceeding. New session branches must always start from a verified-current master — all recent phase merges happen via GitHub PRs and local master will be stale if not explicitly synced.
 4. Scan most recent session log — verify any referenced files or symbols still exist
 5. Context check — if something feels unfamiliar or inconsistent with project history, flag it before proceeding
 
@@ -238,8 +238,10 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: 1.6.1 — Hotfix: restore submission flow end-to-end**
-**Status: NOT STARTED — BLOCKING 1.7**
-**Model: Sonnet · Effort: high (TBD pending root-cause)**
+**PHASE: 1.8 — Featured / Browse / Random**
+**Status: NOT STARTED**
+**Model: Sonnet · Effort: high**
 
-Discovered 2026-05-18: production poem submission flow is broken (toast error on `/submit/poem`, nothing reaches the admin queue). Next session diagnoses and fixes. **1.7 (horse popover) is paused** — per rule 14, untested 1.6 pauses 1.7, and 1.6 can't be tested until basic poem-posting → submission-queue → permalink-routing works end-to-end. Bug captured in ROADMAP under "Active blockers."
+Previously completed this session:
+- **1.6.1** — Submission flow hotfix (merged to master).
+- **1.7** — Horse popover (popover card, ribbon save, pasture toggle, poems-featuring list; merged to master 2026-05-18). VPS deployment pending: run `python3 -m tools.init_db` then restart `poet-horse.service` to create the `horse_occurrences` and `saved_horses` tables.
