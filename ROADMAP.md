@@ -33,7 +33,7 @@ VPS provisioning, SQLite schema, short-code permalinks, Clerk auth, localStorage
 - 1.15 Poet profile `/u/<slug>` `[sonnet · medium]`
 - 1.16 RSS feed `[sonnet · low]`
 - 1.17 Rate limiting `[sonnet · low]`
-- 1.18 One-shot import of legacy data `[sonnet · medium]`
+- ~~1.18 One-shot import of legacy data~~ — **STRUCK 2026-05-17.** Fresh launch instead; see `spec/product.md` "Permanently out of scope." Old poems stay on Tumblr / wherever they already are; nothing imported into the new explicit-ToS environment.
 - 1.19 Save (Blue Ribbon) + Pasture collections `[sonnet · medium]`
 - 1.20 Cross-post queue (admin-flagged, Tumblr connector) `[sonnet · high]`
 - 1.21 Soft sign-in prompts `[sonnet · low]`
@@ -68,6 +68,8 @@ Surfaced items not yet committed to a phase. Promote to a phase when ready.
 - **Profile bios made of horses** — required: profile bios must obey the constraint too. On-brand enforcement of the site's central rule. Pair with 1.15 (poet profiles).
 - **Profile external links** — short list of links on a profile to personal sites / social platforms / contact methods. Explicit answer to "no DMs on poet.horse" — take connection off-platform. Pair with 1.15.
 - **"Response to" attribution variant** — extend the Phase 1.5 attribution flag (`inspired_by_text` / `inspired_by_url`) so the URL can point at a poet.horse permalink and the UI reads as a reply rather than an external citation. Tentative — "fun and pretty low cost to build in with the current structure but it doesn't need to block anything currently in dev." Doesn't bump 1.7–1.21.
+- **Remove PIN admin auth** — Clover, 2026-05-17: *"PIN can be pruned out whenever now that Clerk is online."* Replace the dual-auth surface (`app.py:122` `_is_admin()`) with a single Clerk-only role check. Resolves the "Clerk role and PIN admin are independent" open design question. Coordinate with: adding admin-promotion UI so Clerk users can be elevated without DB surgery.
+- **Remove legacy JSON submission backend** — Clover, 2026-05-17: *"same with old json submission path."* Delete `submissions.py` (JSON queue) and the associated admin surfaces (`/submissions`, `/queue`, etc.); SQLite-backed poem submissions become the only path. Resolves the "Dual submission backends" open design question. Order: do this after 1.13 (admin moderation queue overhaul) which already plans the new poem-first review UI.
 
 ---
 
@@ -78,6 +80,22 @@ Resolve before the relevant phase starts.
 - **In-pasture horse interaction details** — popover shape confirmed (name, link, poems-featuring, add-to-pasture, ribbon-save). Exact transition / placement / dismissal behavior is a Phase 1.7 design call.
 - **Editor chip interactions (one-page builder)** — drag-primary vs click-primary vs hybrid for the Phase 2 rethink. Phase 1.2 shipped a hybrid pain-fix; Phase 2.1 is the full redesign with prototype routes.
 - **Image-card export technique** — Phase 2.3 needs an owner pick between `html2canvas` client-side and a server-side Playwright render.
+
+### Surfaced by migration audit (2026-05-17)
+
+These came out of the step-5 audit of the current codebase. They're not bugs to fix this session — they're decisions or design conversations to have before the relevant phase.
+
+- **Schema migrations are unversioned and run every boot.** `db/seed.py:apply_migrations()` uses `PRAGMA table_info` guards. Works at current scale; will hurt if a Phase 2 migration is expensive (e.g. FTS5 indexing all poems). Decide: introduce a version table / alembic / nothing-yet — before Phase 2 starts.
+- **Dual submission backends.** ~~Should consolidate before Phase 1.8.~~ **Resolved 2026-05-17:** legacy JSON path scheduled for removal — see backlog entry "Remove legacy JSON submission backend." SQLite becomes the only submission path.
+- **View-mode resolution runs client-side.** The plain/pasture fallback chain (server pref → localStorage → `prefers-reduced-motion` → pasture) is implemented in JS on the permalink page. If JS is disabled or breaks, accessibility-driven fallback doesn't run. Server should compute the effective mode and emit it directly. Decide before next renderer touch (probably Phase 1.7 or 1.8).
+- **Datamuse API has no graceful degradation.** `poetry.py` fetches rhymes/synonyms over the network with an in-memory cache only; on outage or rate-limit the user sees "no results" silently. Decide: stale-cache fallback, explicit "API unavailable" UX, or feature-flag-disable behavior.
+- **Clerk role and PIN admin are independent auth systems.** ~~Decide before any "co-maintainer" scenario.~~ **Resolved 2026-05-17:** PIN scheduled for removal — see backlog entry "Remove PIN admin auth." Open follow-up: admin-promotion UI so Clerk users can be elevated without DB surgery.
+- **No automated test suite exists.** Verification is manual + production smoke. Each shipped phase increases the regression surface. Decide when the cost/benefit flips — probably tied to either "first co-maintainer joins" or "Phase 2 starts touching renderer in non-obvious ways."
+
+### Bugs (small, drop into next available PR)
+
+- **`poems.lines_json` schema comment is outdated.** `db/schema.sql:36` describes a different shape than the code stores. Code passes raw JSON through so it's invisible at runtime but misleading on read. Fix the comment.
+- **Admin PIN logout has no UI affordance.** `/logout` exists but isn't linked from the admin nav. A PIN-logged-in admin can't sign out without typing the URL. Add a link.
 
 ---
 
@@ -133,3 +151,9 @@ These bind every phase. Pulled forward from the pre-migration ROADMAP because th
 - **Ads / tracking distinction clarified (2026-05-17)** · `[pre-migration — provenance unknown, surfaced this session]` — the archived Phase 4.2 already permits polite Carbon-style banner ads; the cross-cutting "no tracking" rule applies to pixels / SDKs / fingerprinting, not to ads themselves. Default user-facing policy: "we may run ads but you can block them if you want, we don't go out of our way to hoover up your data but we are not the place to expect real privacy shields." Not new — formalizing what was implicit.
 - **AI submissions out of scope (2026-05-17)** · `[Clover proposed, Claude approved]` — stated rule: "AI get the same restriction as under 13s — if you can successfully pretend to be an adult human there's nothing I can do to stop you but please behave and post good poems." The horse-name constraint does most of the enforcement work. Site does not attempt detection; rule is stated and the constraint is the filter.
 - **No DMs, no comment sections (2026-05-17)** · `[Clover proposed, Claude approved]` — connection happens off-platform via profile external links. Reply-via-your-own-poem is the engagement model.
+- **bs4 intentionally NOT in `requirements.txt`** · `[Clover proposed, Claude approved]` — used by `post_builder.py` (Tumblr NPF parsing) and `scraper.py`. VPS has bs4 installed out-of-band; local dev `.venv-local` has it via manual install. Rationale: "bs4 is used for scraping and database parsing, not a concern for what we are doing now and doesn't need to be in the dev deploy package." Do not "fix" by adding to requirements.txt as a fly-by cleanup. Revisit only if a feature outside scraper/Tumblr-NPF needs it.
+- **Poem visibility via short-code obscurity** · `[pre-migration — provenance unknown]` — drafts at `/p/<short_code>` are accessible to anyone with the URL. Short code is ~64 bits of entropy. Explicit MVP choice: privacy-through-obscurity, not access control. Revisit before any feature that auto-shares draft URLs.
+- **Tumblr OAuth tokens stored unencrypted on disk** · `[pre-migration — provenance unknown]` — `tumblr_tokens.json` plain JSON. Acceptable for hobby-tier risk; revisit if site scope grows or VPS environment changes.
+- **Draft TTL: 1 hour, silent expiry** · `[pre-migration — provenance unknown]` — drafts in `queue_handler.py` expire after 3600s with no UI warning or auto-save fallback. Known UX gap; auto-save to localStorage planned but unspecced.
+- **Legacy utility files remain in repo root** · `[pre-migration — provenance unknown]` — `scraper.py`, `build_db.py`, `build_famous.py`, `fix_single_letters.py`, `validate_links.py`, `prototypes/`, `tumblr-theme.html`, `poem_store.py` (dead, pre-SQLite). Not imported by the app. Move to `scripts/legacy/` (or delete `poem_store.py` outright) in a separate cleanup PR.
+- **Dictionary load failure is silent** · `[pre-migration — provenance unknown]` — `matcher.py:57` falls back through rich → legacy → error-to-stdout, then continues with `dictionary.loaded = False`. Routes still work but search returns nothing. Add a startup health check / louder log before Phase 2.

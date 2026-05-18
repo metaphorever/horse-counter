@@ -90,6 +90,7 @@ Failure is specific and narrow: the site becomes a net negative. Three concrete 
 - **Comment sections / complicated reply structures.** "Reply" via your own poem is the engagement model.
 - **SPA / heavy JS framework.** Web 1.0 ethos: static where possible, light JS, view-source-able.
 - **Addictive engagement loops.** "Fun and engaging, but not 'addictive.'"
+- **Importing the legacy `data/poems/*.json` and counting-horses Tumblr archive.** Added 2026-05-17: *"I am thinking of doing a fresh launch rather than importing old poems to keep everything on the new site under the new explicit TOS."* Cleaner consent story; older work stays on Tumblr or wherever it already is. Strikes the archived Phase 1.18 from the plan.
 
 ### On the table but not committed
 

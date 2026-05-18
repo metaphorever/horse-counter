@@ -70,6 +70,31 @@ Adjust at session start if the work is clearly more or less consequential than t
 
 ---
 
+## Build / run / test / deploy commands
+
+Authoritative source is `spec/technical.md`. Quick reference:
+
+**Install:** `uv pip install -r requirements.txt` (user preference; standard `pip` also works)
+
+**Migrate DB:** `python -m tools.init_db --seed-tags` (idempotent; safe to run on every change)
+
+**Run dev server:** `python app.py` → http://localhost:5000
+
+**Tests:** none exist. Manual verification + production smoke. Whether to add a suite is an open design question — see `ROADMAP.md`.
+
+**Deploy (manual, until Phase 1.23):**
+```bash
+# On VPS (zap.rupture.net):
+cd /data/home/metaphorever/horse-counter
+git pull origin master
+/home/metaphorever/.venv/bin/uv pip install -r requirements.txt   # if deps changed
+systemctl --user restart poet-horse.service
+```
+
+Health check + DB admin patterns live in `DEPLOYMENT.md`.
+
+---
+
 ## Git workflow options
 
 Decide during Phase 0. Record the decision and reasoning in `spec/technical.md`.
