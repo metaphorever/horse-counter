@@ -59,6 +59,7 @@ from matcher import (
 )
 from post_builder import extract_post
 from famous import FamousHorses
+from db.conn import init_db
 from poem_db import save_poem as save_poem_db, get_poem_by_short_code, list_published as list_published_poems
 from db.tags import (
     list_categories_with_tags,
@@ -98,6 +99,7 @@ app.permanent_session_lifetime = SESSION_LIFETIME_SECONDS
 # ── Initialise singletons ─────────────────────────────────────────────────────
 
 print("Initialising Horse Counter...")
+init_db()
 dictionary     = HorseDictionary(HORSES_RICH_FILE, HORSES_LEGACY_FILE, HORSE_OVERRIDES_FILE)
 famous_horses  = FamousHorses(FAMOUS_HORSES_FILE)
 tumblr         = TumblrManager()
@@ -486,11 +488,10 @@ def featured():
 
 @app.route('/browse')
 def browse():
-    return render_template('coming_soon.html',
-        title='Browse Poems',
-        description='Sortable, filterable feed of all published poems. Coming in Phase 1.8.',
-        roadmap_task='1.8',
-    )
+    """Minimal index of every published poem. Replaced by the full sortable /
+    filterable feed in Phase 1.8."""
+    poems = list_published_poems(limit=500, offset=0)
+    return render_template('poem_index.html', poems=poems)
 
 
 @app.route('/random')
