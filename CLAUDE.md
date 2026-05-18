@@ -238,8 +238,8 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: Migration — Adopting claude-project-template workflow**
-**Status: IN PROGRESS**
-**Model: Opus · Effort: high**
+**PHASE: 1.6.1 — Hotfix: restore submission flow end-to-end**
+**Status: NOT STARTED — BLOCKING 1.7**
+**Model: Sonnet · Effort: high (TBD pending root-cause)**
 
-Steps 1–8 of MIGRATION.md. On close, the next phase is 1.7 (horse popover in pasture mode) — model and effort per ROADMAP. The pre-migration ROADMAP recorded Phase 0 as closed and Phase 1 mid-flight through 1.6.
+Discovered 2026-05-18: production poem submission flow is broken (toast error on `/submit/poem`, nothing reaches the admin queue). Next session diagnoses and fixes. **1.7 (horse popover) is paused** — per rule 14, untested 1.6 pauses 1.7, and 1.6 can't be tested until basic poem-posting → submission-queue → permalink-routing works end-to-end. Bug captured in ROADMAP under "Active blockers."
