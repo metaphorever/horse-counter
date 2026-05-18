@@ -220,6 +220,8 @@ Log label: **Claude error, caught by [Clover / testing / next session]** — nam
 5. Push per agreed git workflow (recorded in `spec/technical.md`)
 6. State next session: phase, model, effort, any holds to clear
 
+**Hard stop: once step 3 begins, no new code.** Any "one more thing" after the session log is drafted belongs to the next session. If Clover asks for additional work after step 3, Claude names the rule, adds the item to ROADMAP.md, and closes. No exceptions without an explicit named override logged in the session file.
+
 ---
 
 ## Session setup
@@ -238,8 +240,7 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: 1.6.1 — Hotfix: restore submission flow end-to-end**
-**Status: NOT STARTED — BLOCKING 1.7**
-**Model: Sonnet · Effort: high (TBD pending root-cause)**
+**PHASE: 1.8 — Featured / Browse / Random**
+**Model: Sonnet · Effort: high**
 
-Discovered 2026-05-18: production poem submission flow is broken (toast error on `/submit/poem`, nothing reaches the admin queue). Next session diagnoses and fixes. **1.7 (horse popover) is paused** — per rule 14, untested 1.6 pauses 1.7, and 1.6 can't be tested until basic poem-posting → submission-queue → permalink-routing works end-to-end. Bug captured in ROADMAP under "Active blockers."
+`/browse` stub shipped in 1.6.1 (minimal poem index). 1.8 fills it out: Featured (admin-curated), full Browse polish, and Random. Spec session before coding if the exact UX for Featured curation isn't clear.

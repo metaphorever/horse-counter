@@ -10,6 +10,10 @@ Phase 1.3 introduced:
     * poems.inspired_by_url     — optional source link
     * tag_categories            — seeded with four MVP categories
     * tags                      — seeded with curated baselines per category
+
+Pre-1.8 fix: dedup_tag_taxonomy() collapses duplicate taxonomy rows that
+accumulated on DBs created before tag_categories.slug / tags.slug had a UNIQUE
+constraint, then enforces the constraint via named indexes going forward.
 """
 
 import time
@@ -141,6 +145,83 @@ def seed_tag_taxonomy() -> None:
         conn.execute('COMMIT')
 
 
+def dedup_tag_taxonomy() -> None:
+    """Collapse duplicate tag_categories / tags rows and enforce UNIQUE on slug.
+
+    Root cause: if the production DB was created from a schema.sql version that
+    lacked the UNIQUE constraint on these columns, INSERT OR IGNORE in
+    seed_tag_taxonomy() is a no-op (nothing to ignore), so every boot inserts
+    fresh copies of the full taxonomy. This runs before seeding to repair that
+    state and then creates named UNIQUE indexes so the constraint holds on future
+    boots regardless of how the table was originally created.
+    """
+    with get_db() as conn:
+        conn.execute('BEGIN')
+        try:
+            # --- tag_categories ---
+            dup_cats = conn.execute("""
+                SELECT slug, MIN(id) AS keep_id
+                FROM tag_categories
+                GROUP BY slug COLLATE NOCASE
+                HAVING COUNT(*) > 1
+            """).fetchall()
+            for cat in dup_cats:
+                # Reparent tags from all duplicate category rows to the canonical one.
+                conn.execute(
+                    "UPDATE tags SET category_id = ? WHERE category_id IN "
+                    "(SELECT id FROM tag_categories WHERE slug = ? COLLATE NOCASE AND id != ?)",
+                    (cat['keep_id'], cat['slug'], cat['keep_id']),
+                )
+                conn.execute(
+                    "DELETE FROM tag_categories WHERE slug = ? COLLATE NOCASE AND id != ?",
+                    (cat['slug'], cat['keep_id']),
+                )
+
+            # --- tags ---
+            dup_tags = conn.execute("""
+                SELECT slug, MIN(id) AS keep_id
+                FROM tags
+                GROUP BY slug COLLATE NOCASE
+                HAVING COUNT(*) > 1
+            """).fetchall()
+            for tag in dup_tags:
+                # Drop poem_tags rows that would create a PK conflict after the remap
+                # (poem already tagged with the canonical tag id).
+                conn.execute(
+                    "DELETE FROM poem_tags "
+                    "WHERE tag_id != ? "
+                    "  AND tag_id IN (SELECT id FROM tags WHERE slug = ? COLLATE NOCASE) "
+                    "  AND poem_id IN (SELECT poem_id FROM poem_tags WHERE tag_id = ?)",
+                    (tag['keep_id'], tag['slug'], tag['keep_id']),
+                )
+                conn.execute(
+                    "UPDATE poem_tags SET tag_id = ? WHERE tag_id IN "
+                    "(SELECT id FROM tags WHERE slug = ? COLLATE NOCASE AND id != ?)",
+                    (tag['keep_id'], tag['slug'], tag['keep_id']),
+                )
+                conn.execute(
+                    "DELETE FROM tags WHERE slug = ? COLLATE NOCASE AND id != ?",
+                    (tag['slug'], tag['keep_id']),
+                )
+
+            # Enforce uniqueness via named indexes. Safe if the column-level UNIQUE
+            # autoindex already exists — IF NOT EXISTS checks the index name, not the
+            # column, so this is additive and harmless when the constraint is already
+            # present. Must run after dedup or it will fail on remaining conflicts.
+            conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_tag_categories_slug "
+                "ON tag_categories(slug COLLATE NOCASE)"
+            )
+            conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_tags_slug "
+                "ON tags(slug COLLATE NOCASE)"
+            )
+            conn.execute('COMMIT')
+        except Exception:
+            conn.execute('ROLLBACK')
+            raise
+
+
 _OBSOLETE_TAG_SLUGS = (
     # Briefly seeded in 1.3 then pulled — attribution to an existing work is a
     # flag derived from poems.inspired_by_text, not a tag.
@@ -168,5 +249,6 @@ def cleanup_obsolete_tags() -> None:
 
 def run_all() -> None:
     apply_migrations()
+    dedup_tag_taxonomy()   # must run before seed — cleans up pre-constraint duplicates
     seed_tag_taxonomy()
     cleanup_obsolete_tags()
