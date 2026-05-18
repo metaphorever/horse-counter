@@ -6,7 +6,7 @@ Navigation doc for the project. Full pre-migration history lives in `sessions/pr
 
 ## 🛑 Active blockers
 
-- **1.6.1 — Submission flow broken end-to-end (production).** Discovered 2026-05-18 by Clover while attempting to test the 1.6 view-mode toggle. Composing a poem at `/poetry` and submitting via `/submit/poem` returns a toast error; nothing reaches the admin queue at `/admin/poem-queue`. **Blocks:** any user-side testing of 1.5 (permalink renderer) and 1.6 (two-mode renderer), which means 1.7 (horse popover, depends on 1.6 being verified) is paused per rule 14. **Next session is the diagnosis + fix**, not 1.7. Root cause unknown — could be regression from 1.3 tag-taxonomy validation, a 1.6 preferences endpoint interaction, production-only config, or something else. Local reproduction needed before guessing.
+_None — 1.6.1 cleared 2026-05-18. 1.7 is unblocked._
 
 ---
 
@@ -24,13 +24,13 @@ VPS provisioning, SQLite schema, short-code permalinks, Clerk auth, localStorage
 - 1.3 Tag taxonomy + attribution + trust scaffold
 - 1.5 Poem permalink renderer + Open Graph
 - 1.6 Two-mode poem renderer (plain / pasture)
+- 1.6.1 Submission flow restored (`init_db()` at boot; root cause: app never applied schema migrations, so the production DB was missing Phase 1.3's `inspired_by_*` columns and `/submit/poem` 500'd on INSERT). Shipped 2026-05-18 (PR #23).
 - 1.22 Attribution footer + Ko-fi support
 - Nav/footer chrome polish (2026-05-16)
 
 **Remaining (rough order):**
-- **1.6.1 Hotfix — Restore submission flow end-to-end** `[sonnet · high (TBD)]` — see "Active blockers" above. Must clear before 1.7.
-- 1.7 Horse popover in pasture mode `[sonnet · high]` — **PAUSED on 1.6.1 + 1.6 manual verification**
-- 1.8 Featured / Browse / Random `[sonnet · high]`
+- 1.7 Horse popover in pasture mode `[sonnet · high]` — next up; 1.6 verified end-to-end 2026-05-18
+- 1.8 Featured / Browse / Random `[sonnet · high]` — `/browse` currently ships a temporary flat-list stub (shipped 2026-05-18 PR #23) so there's a path to every published poem; replace with the real sortable/filterable feed here. `/featured` and `/random` are still coming-soon stubs.
 - 1.9 Empty-line warning at publish `[haiku · low]`
 - 1.10 Export: copy as text / HTML / .txt `[sonnet · low]`
 - 1.11 Plain-text print stylesheet `[sonnet · medium]`
@@ -76,7 +76,9 @@ Surfaced items not yet committed to a phase. Promote to a phase when ready.
 - **Profile external links** — short list of links on a profile to personal sites / social platforms / contact methods. Explicit answer to "no DMs on poet.horse" — take connection off-platform. Pair with 1.15.
 - **"Response to" attribution variant** — extend the Phase 1.5 attribution flag (`inspired_by_text` / `inspired_by_url`) so the URL can point at a poet.horse permalink and the UI reads as a reply rather than an external citation. Tentative — "fun and pretty low cost to build in with the current structure but it doesn't need to block anything currently in dev." Doesn't bump 1.7–1.21.
 - **Remove PIN admin auth** — Clover, 2026-05-17: *"PIN can be pruned out whenever now that Clerk is online."* Replace the dual-auth surface (`app.py:122` `_is_admin()`) with a single Clerk-only role check. Resolves the "Clerk role and PIN admin are independent" open design question. Coordinate with: adding admin-promotion UI so Clerk users can be elevated without DB surgery.
-- **Remove legacy JSON submission backend** — Clover, 2026-05-17: *"same with old json submission path."* Delete `submissions.py` (JSON queue) and the associated admin surfaces (`/submissions`, `/queue`, etc.); SQLite-backed poem submissions become the only path. Resolves the "Dual submission backends" open design question. Order: do this after 1.13 (admin moderation queue overhaul) which already plans the new poem-first review UI.
+- **Remove legacy JSON submission backend** — Clover, 2026-05-17: *"same with old json submission path."* Delete `submissions.py` (JSON queue) and the associated admin surfaces (`/submissions`, `/queue`, etc.); SQLite-backed poem submissions become the only path. Resolves the "Dual submission backends" open design question. Order: do this after 1.13 (admin moderation queue overhaul) which already plans the new poem-first review UI. **Surfaced again 2026-05-18:** Clover hit `/submissions` out of muscle memory while looking for the poem queue and saw the empty legacy view — confirms this is a real foot-gun, not theoretical.
+- **Surface admin tools in the `/me` user menu** — Clover, 2026-05-18: while looking for the poem queue, navigated to the wrong URL because there's no menu entry for it. For users with `role='admin'`, the user-menu dropdown (`templates/base.html`) should grow an **Admin** section listing `/admin/poem-queue`, `/admin/dictionary`, and (until the legacy purge lands) `/submissions`. Section header + visual divider, distinct from the user's own collections. Pair with the legacy-purge backlog item — once both ship, the muscle-memory-to-old-URL trap goes away.
+- **Drop "100% horse" wording from poetry-related output** — Clover, 2026-05-18: poems are 100% horse by definition (every word is a real horse name), so the density label adds no signal. Counter posts (variable density) are the only place "X% horse" carries meaning. Audit and remove from poem tags, post bodies, editor footer (`stat-words` row already says it), and any poem template surface. Leave counter-side density math alone.
 
 ---
 
