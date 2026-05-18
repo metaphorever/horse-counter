@@ -2,14 +2,59 @@
 {% block title %}Browse Poems — poet.horse{% endblock %}
 {% block content %}
 
-<div class="text-page">
-  <h1>Poems</h1>
-  <p class="text-page-updated">
-    Every published poem. Sortable / filterable feed lands in Phase 1.8.
+<div class="text-page browse-page">
+  <h1>Browse Poems</h1>
+
+  <form class="browse-filters" method="get" action="{{ url_for('browse') }}">
+    <div class="browse-filter-row">
+      <label class="browse-filter-label" for="browse-sort">Sort</label>
+      <select class="browse-select" id="browse-sort" name="sort" onchange="this.form.submit()">
+        <option value="newest"  {% if sort == 'newest'  %}selected{% endif %}>Newest first</option>
+        <option value="oldest"  {% if sort == 'oldest'  %}selected{% endif %}>Oldest first</option>
+        <option value="most"    {% if sort == 'most'    %}selected{% endif %}>Most horses</option>
+        <option value="fewest"  {% if sort == 'fewest'  %}selected{% endif %}>Fewest horses</option>
+      </select>
+
+      <label class="browse-filter-label" for="browse-tag">Tag</label>
+      <select class="browse-select" id="browse-tag" name="tag" onchange="this.form.submit()">
+        <option value="">Any tag</option>
+        {% for cat in all_tags %}
+          <optgroup label="{{ cat.label }}">
+            {% for tag in cat.tags %}
+              <option value="{{ tag.slug }}" {% if tag_slug == tag.slug %}selected{% endif %}>{{ tag.label }}</option>
+            {% endfor %}
+          </optgroup>
+        {% endfor %}
+      </select>
+
+      <label class="browse-filter-check">
+        <input type="checkbox" name="attributed" value="1"
+               {% if attributed %}checked{% endif %}
+               onchange="this.form.submit()">
+        Based on existing works
+      </label>
+
+      {% if sort != 'newest' or tag_slug or attributed %}
+        <a class="browse-clear" href="{{ url_for('browse') }}">Clear filters</a>
+      {% endif %}
+    </div>
+  </form>
+
+  <p class="browse-count">
+    {% if total == 0 %}
+      No poems match.
+    {% elif total == 1 %}
+      1 poem
+    {% else %}
+      {{ total }} poems
+    {% endif %}
+    {% if total_pages > 1 %} · page {{ page }} of {{ total_pages }}{% endif %}
   </p>
 
   {% if not poems %}
-    <p>No poems published yet. <a href="{{ url_for('poetry_editor') }}">Write the first one →</a></p>
+    {% if total == 0 and not (tag_slug or attributed) %}
+      <p>No poems published yet. <a href="{{ url_for('poetry_editor') }}">Write the first one →</a></p>
+    {% endif %}
   {% else %}
     <ul class="poem-index">
       {% for p in poems %}
@@ -19,12 +64,7 @@
           </a>
           <span class="poem-index-meta">
             {% if p.author_display_name %}
-              · by
-              {% if p.author_link_url %}
-                <a href="{{ p.author_link_url }}" target="_blank" rel="nofollow noopener">{{ p.author_display_name }}</a>
-              {% else %}
-                {{ p.author_display_name }}
-              {% endif %}
+              · by {{ p.author_display_name }}
             {% else %}
               · anonymous
             {% endif %}
@@ -34,6 +74,28 @@
         </li>
       {% endfor %}
     </ul>
+  {% endif %}
+
+  {% if total_pages > 1 %}
+  <nav class="browse-pagination" aria-label="Page navigation">
+    {% set base_args = {'sort': sort} %}
+    {% if tag_slug %}{% set _ = base_args.update({'tag': tag_slug}) %}{% endif %}
+    {% if attributed %}{% set _ = base_args.update({'attributed': '1'}) %}{% endif %}
+
+    {% if page > 1 %}
+      <a class="browse-page-btn" href="{{ url_for('browse', page=page-1, **base_args) }}">&larr; Prev</a>
+    {% else %}
+      <span class="browse-page-btn browse-page-disabled">&larr; Prev</span>
+    {% endif %}
+
+    <span class="browse-page-info">{{ page }} / {{ total_pages }}</span>
+
+    {% if page < total_pages %}
+      <a class="browse-page-btn" href="{{ url_for('browse', page=page+1, **base_args) }}">Next &rarr;</a>
+    {% else %}
+      <span class="browse-page-btn browse-page-disabled">Next &rarr;</span>
+    {% endif %}
+  </nav>
   {% endif %}
 </div>
 {% endblock %}

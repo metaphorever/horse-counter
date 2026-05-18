@@ -240,7 +240,7 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: 1.8 — Featured / Browse / Random**
-**Model: Sonnet · Effort: high**
+**PHASE: 1.9 — Empty-line warning at publish**
+**Model: Haiku · Effort: low**
 
-`/browse` stub shipped in 1.6.1 (minimal poem index). 1.8 fills it out: Featured (admin-curated), full Browse polish, and Random. Spec session before coding if the exact UX for Featured curation isn't clear.
+1.8 shipped. Next: warn at publish time when a poem has empty lines (intentional blank vs accidental strip).

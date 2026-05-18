@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Admin: Featured & Tags — poet.horse{% endblock %}
+{% block content %}
+
+<div class="text-page admin-featured-page">
+  <h1>Featured &amp; Tags</h1>
+
+  {# ── Featured sections ─────────────────────────────────────────────────── #}
+  <section class="admin-section">
+    <h2>Featured Sections</h2>
+    <p class="text-page-updated">Each section appears as a labelled group on <a href="{{ url_for('featured') }}">/featured</a>. Any tag can be featured — public or admin-only.</p>
+
+    {% if sections %}
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Label</th>
+          <th>Tag</th>
+          <th>Order</th>
+          <th>Active</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sec in sections %}
+        <tr class="{% if not sec.active %}admin-row-inactive{% endif %}">
+          <form method="post" action="{{ url_for('admin_featured_section_update', section_id=sec.id) }}">
+            <td>
+              <input class="admin-input" type="text" name="label" value="{{ sec.section_label }}"
+                     placeholder="{{ sec.tag_label }}">
+            </td>
+            <td class="admin-td-meta">
+              {{ sec.tag_label }}
+              {% if sec.admin_only %}<span class="tag-admin-badge">admin</span>{% endif %}
+            </td>
+            <td>
+              <input class="admin-input admin-input-narrow" type="number" name="sort_order"
+                     value="{{ sec.sort_order }}" min="0" step="1">
+            </td>
+            <td>
+              <select class="admin-select-sm" name="active">
+                <option value="1" {% if sec.active %}selected{% endif %}>Yes</option>
+                <option value="0" {% if not sec.active %}selected{% endif %}>No</option>
+              </select>
+            </td>
+            <td class="admin-td-actions">
+              <button class="btn-sec" type="submit">Save</button>
+          </form>
+              <form method="post" action="{{ url_for('admin_featured_section_remove', section_id=sec.id) }}"
+                    onsubmit="return confirm('Remove this featured section?')">
+                <button class="btn-danger" type="submit">Remove</button>
+              </form>
+            </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No featured sections yet.</p>
+    {% endif %}
+
+    <h3>Add a section</h3>
+    <form class="admin-form-inline" method="post" action="{{ url_for('admin_featured_section_add') }}">
+      <label>Tag
+        <select class="admin-select" name="tag_id" required>
+          <option value="">— choose a tag —</option>
+          {% for cat in all_cats %}
+            <optgroup label="{{ cat.label }}{% if cat.admin_only %} (admin){% endif %}">
+              {% for tag in cat.tags %}
+                <option value="{{ tag.id }}">{{ tag.label }}</option>
+              {% endfor %}
+            </optgroup>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Custom header <span class="admin-hint">(optional — falls back to tag label)</span>
+        <input class="admin-input" type="text" name="label" maxlength="120">
+      </label>
+      <label>Order
+        <input class="admin-input admin-input-narrow" type="number" name="sort_order" value="0" min="0">
+      </label>
+      <button class="btn-sec" type="submit">Add section</button>
+    </form>
+  </section>
+
+  <hr>
+
+  {# ── Admin-only tag categories ─────────────────────────────────────────── #}
+  <section class="admin-section">
+    <h2>Admin-Only Tag Categories</h2>
+    <p class="text-page-updated">These categories and their tags are invisible to regular users. Use them for curation signals like Featured, Staff Pick, etc.</p>
+
+    {% if admin_cats %}
+      {% for cat in admin_cats %}
+      <div class="admin-cat-block">
+        <h3 class="admin-cat-head">{{ cat.label }} <span class="admin-hint">({{ cat.behavior }})</span></h3>
+        {% if cat.tags %}
+          <ul class="admin-tag-list">
+            {% for tag in cat.tags %}<li class="admin-tag-item">{{ tag.label }} <code class="admin-slug">{{ tag.slug }}</code></li>{% endfor %}
+          </ul>
+        {% else %}
+          <p class="admin-hint">No tags yet.</p>
+        {% endif %}
+        <form class="admin-form-inline admin-form-compact" method="post" action="{{ url_for('admin_tag_add') }}">
+          <input type="hidden" name="category_id" value="{{ cat.id }}">
+          <input class="admin-input" type="text" name="label" placeholder="New tag label" maxlength="60" required>
+          <button class="btn-sec" type="submit">Add tag</button>
+        </form>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p>No admin-only categories yet.</p>
+    {% endif %}
+
+    <h3>Create admin-only category</h3>
+    <form class="admin-form-inline" method="post" action="{{ url_for('admin_tag_category_add') }}">
+      <input type="hidden" name="admin_only" value="1">
+      <label>Label
+        <input class="admin-input" type="text" name="label" maxlength="60" required>
+      </label>
+      <label>Behavior
+        <select class="admin-select" name="behavior">
+          <option value="multi_select">Multi-select</option>
+          <option value="single_select">Single-select</option>
+        </select>
+      </label>
+      <label>Order
+        <input class="admin-input admin-input-narrow" type="number" name="sort_order" value="0" min="0">
+      </label>
+      <button class="btn-sec" type="submit">Create category</button>
+    </form>
+  </section>
+
+  <hr>
+
+  {# ── Public tag categories (read-only view; full editor is Phase 1.4) ─── #}
+  <section class="admin-section">
+    <h2>Public Tag Categories</h2>
+    <p class="text-page-updated">Read-only here. Full taxonomy editing comes in Phase 1.4. To add a tag to a public category, use the form below.</p>
+
+    {% for cat in all_cats %}
+      {% if not cat.admin_only %}
+      <div class="admin-cat-block">
+        <h3 class="admin-cat-head">{{ cat.label }} <span class="admin-hint">({{ cat.behavior }})</span></h3>
+        {% if cat.tags %}
+          <ul class="admin-tag-list">
+            {% for tag in cat.tags %}<li class="admin-tag-item">{{ tag.label }} <code class="admin-slug">{{ tag.slug }}</code></li>{% endfor %}
+          </ul>
+        {% else %}
+          <p class="admin-hint">No tags yet.</p>
+        {% endif %}
+        <form class="admin-form-inline admin-form-compact" method="post" action="{{ url_for('admin_tag_add') }}">
+          <input type="hidden" name="category_id" value="{{ cat.id }}">
+          <input class="admin-input" type="text" name="label" placeholder="New tag label" maxlength="60" required>
+          <button class="btn-sec" type="submit">Add tag</button>
+        </form>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </section>
+
+</div>
+{% endblock %}

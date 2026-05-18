@@ -30,7 +30,7 @@ VPS provisioning, SQLite schema, short-code permalinks, Clerk auth, localStorage
 - **1.7 Horse popover in pasture mode** (2026-05-18) — horse_occurrences/pasture_horses/saved_horses tables, popover with save/pasture/poems-featuring, focus-trapped + ESC/outside-click dismiss, logged-out prompts, `/p/<short>` now renders full permalink template
 
 **Remaining (rough order):**
-- 1.8 Featured / Browse / Random `[sonnet · high]` — `/browse` stub exists from 1.6.1; needs Featured + Random + full browse polish
+- **1.8 Featured / Browse / Random** (2026-05-18) — two-tier tag system (public + admin-only `tag_categories.admin_only`), `featured_sections` table, `/browse` with pagination/sort/tag-filter/attribution-filter, `/random` redirect, `/featured` page driven by admin-curated sections, `/admin/featured` management page, per-poem admin tag editor on poem page
 - 1.9 Empty-line warning at publish `[haiku · low]`
 - 1.10 Export: copy as text / HTML / .txt `[sonnet · low]`
 - 1.11 Plain-text print stylesheet `[sonnet · medium]`
