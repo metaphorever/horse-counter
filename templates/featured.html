@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Featured Poems — poet.horse{% endblock %}
+{% block content %}
+
+<div class="text-page">
+  <h1>Featured</h1>
+
+  {% if not sections %}
+    <p class="text-page-updated">Nothing featured yet — check back soon.</p>
+  {% else %}
+    {% for sec in sections %}
+    <section class="featured-section">
+      <h2 class="featured-section-head">{{ sec.display_label }}</h2>
+      {% if not sec.poems %}
+        <p class="featured-empty">No poems in this section yet.</p>
+      {% else %}
+        <ul class="poem-index">
+          {% for p in sec.poems %}
+            <li class="poem-index-item">
+              <a class="poem-index-title" href="{{ url_for('poem_permalink', short_code=p.short_code) }}">
+                {% if p.title %}{{ p.title }}{% else %}<em>untitled</em>{% endif %}
+              </a>
+              <span class="poem-index-meta">
+                {% if p.author_display_name %}
+                  · by {{ p.author_display_name }}
+                {% else %}
+                  · anonymous
+                {% endif %}
+                · {{ p.horse_count }} horse{{ 's' if p.horse_count != 1 else '' }}
+                {% if p.published_at %} · {{ p.published_at|datefmt }}{% endif %}
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </section>
+    {% endfor %}
+  {% endif %}
+
+  <p class="featured-browse-link"><a href="{{ url_for('browse') }}">Browse all poems →</a></p>
+</div>
+{% endblock %}

@@ -71,16 +71,86 @@
     {% endfor %}
   </section>
 
-  {% if grouped_tags %}
+  {% if grouped_tags or (is_admin and editor_pub_cats) %}
   <section class="poem-view-tags" aria-label="Tags">
     {% for cat in grouped_tags %}
       <div class="poem-tag-group{% if cat.behavior == 'content_warning' %} cw{% endif %}">
         <span class="poem-tag-cat">{{ cat.label }}</span>
         <span class="poem-tag-list">
-          {% for tag in cat.tags %}<a class="poem-tag" href="/tag/{{ tag.slug }}">{{ tag.label }}</a>{% if not loop.last %} {% endif %}{% endfor %}
+          {% for tag in cat.tags %}<a class="poem-tag" href="/browse?tag={{ tag.slug }}">{{ tag.label }}</a>{% if not loop.last %} {% endif %}{% endfor %}
         </span>
       </div>
     {% endfor %}
+    {% if is_admin %}
+    <details class="admin-tag-editor">
+      <summary class="admin-tag-edit-btn">Edit public tags</summary>
+      <form class="admin-tag-editor-form" method="post"
+            action="{{ url_for('poem_tags_update', short_code=poem.short_code) }}">
+        <input type="hidden" name="tier" value="public">
+        {% for cat in editor_pub_cats %}
+          <div class="admin-tag-editor-cat">
+            <span class="admin-tag-editor-cat-label">{{ cat.label }}</span>
+            <div class="admin-tag-editor-checks">
+              {% for tag in cat.tags %}
+                <label class="admin-tag-check">
+                  <input type="checkbox" name="tag_ids" value="{{ tag.id }}"
+                         {% if tag.id in applied_tag_ids %}checked{% endif %}>
+                  {{ tag.label }}
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+        <button class="btn-sec" type="submit">Save public tags</button>
+      </form>
+    </details>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if is_admin %}
+  <section class="poem-view-tags poem-admin-tags" aria-label="Admin tags">
+    {% if grouped_admin_tags %}
+      {% for cat in grouped_admin_tags %}
+        <div class="poem-tag-group poem-tag-group-admin">
+          <span class="poem-tag-cat">{{ cat.label }} <span class="tag-admin-badge">admin</span></span>
+          <span class="poem-tag-list">
+            {% for tag in cat.tags %}<span class="poem-tag poem-tag-admin">{{ tag.label }}</span>{% if not loop.last %} {% endif %}{% endfor %}
+          </span>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="poem-tag-group">
+        <span class="poem-tag-cat">Admin tags <span class="tag-admin-badge">admin</span></span>
+        <span class="poem-tag-list admin-hint">none applied</span>
+      </div>
+    {% endif %}
+    {% if editor_adm_cats %}
+    <details class="admin-tag-editor">
+      <summary class="admin-tag-edit-btn">Edit admin tags</summary>
+      <form class="admin-tag-editor-form" method="post"
+            action="{{ url_for('poem_tags_update', short_code=poem.short_code) }}">
+        <input type="hidden" name="tier" value="admin">
+        {% for cat in editor_adm_cats %}
+          <div class="admin-tag-editor-cat">
+            <span class="admin-tag-editor-cat-label">{{ cat.label }}</span>
+            <div class="admin-tag-editor-checks">
+              {% for tag in cat.tags %}
+                <label class="admin-tag-check">
+                  <input type="checkbox" name="tag_ids" value="{{ tag.id }}"
+                         {% if tag.id in applied_tag_ids %}checked{% endif %}>
+                  {{ tag.label }}
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+        <button class="btn-sec" type="submit">Save admin tags</button>
+      </form>
+    </details>
+    {% else %}
+      <p class="admin-hint" style="margin-top:6px">No admin tag categories yet — <a href="{{ url_for('admin_featured') }}">create one</a>.</p>
+    {% endif %}
   </section>
   {% endif %}
 

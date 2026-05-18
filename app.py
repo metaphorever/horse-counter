@@ -65,12 +65,26 @@ from poem_db import (
     get_poem_by_short_code,
     list_published as list_published_poems,
     get_poems_featuring_horse,
+    browse_poems,
+    count_browse_poems,
+    get_random_published,
+    get_poems_for_tag_slug,
 )
 from db.tags import (
     list_categories_with_tags,
+    list_all_categories_with_tags,
+    list_admin_only_categories_with_tags,
     apply_tags_to_poem,
+    update_poem_tags,
     suggest_tag,
     tags_for_poem,
+    create_tag_category,
+    create_tag,
+    list_featured_sections,
+    list_all_featured_sections,
+    add_featured_section,
+    update_featured_section,
+    remove_featured_section,
 )
 from horse_collections import (
     get_horse_states,
@@ -512,28 +526,172 @@ def count():
 
 @app.route('/featured')
 def featured():
-    return render_template('coming_soon.html',
-        title='Featured Poems',
-        description='A hand-curated rotation of poems. Coming in Phase 1.8.',
-        roadmap_task='1.8',
-    )
+    sections = list_featured_sections()
+    for sec in sections:
+        sec['display_label'] = sec['section_label'] or sec['tag_label']
+        sec['poems'] = get_poems_for_tag_slug(sec['tag_slug'], limit=20)
+    return render_template('featured.html', sections=sections)
 
+
+_BROWSE_PER_PAGE = 20
 
 @app.route('/browse')
 def browse():
-    """Minimal index of every published poem. Replaced by the full sortable /
-    filterable feed in Phase 1.8."""
-    poems = list_published_poems(limit=500, offset=0)
-    return render_template('poem_index.html', poems=poems)
+    sort       = request.args.get('sort', 'newest')
+    tag_slug   = request.args.get('tag') or None
+    attributed = request.args.get('attributed') == '1'
+    try:
+        page = max(1, int(request.args.get('page', 1)))
+    except (ValueError, TypeError):
+        page = 1
+
+    poems      = browse_poems(sort=sort, tag_slug=tag_slug, page=page,
+                               per_page=_BROWSE_PER_PAGE, attributed=attributed)
+    total      = count_browse_poems(tag_slug=tag_slug, attributed=attributed)
+    total_pages = max(1, -(-total // _BROWSE_PER_PAGE))  # ceiling div
+
+    all_tags   = list_categories_with_tags()  # public tags only for the filter UI
+    return render_template(
+        'poem_index.html',
+        poems       = poems,
+        sort        = sort,
+        tag_slug    = tag_slug,
+        attributed  = attributed,
+        page        = page,
+        total_pages = total_pages,
+        total       = total,
+        all_tags    = all_tags,
+    )
 
 
 @app.route('/random')
 def random_poem():
-    return render_template('coming_soon.html',
-        title='Random Poem',
-        description='A random published poem, every time. Coming in Phase 1.8.',
-        roadmap_task='1.8',
+    code = get_random_published()
+    if code:
+        return redirect(url_for('poem_permalink', short_code=code))
+    flash('No published poems yet — be the first!', 'info')
+    return redirect(url_for('browse'))
+
+
+# ── Admin: featured sections + tag management (Phase 1.8) ─────────────────────
+
+@app.route('/admin/featured')
+@login_required
+def admin_featured():
+    sections   = list_all_featured_sections()
+    admin_cats = list_admin_only_categories_with_tags()
+    all_cats   = list_all_categories_with_tags()
+    return render_template(
+        'admin_featured.html',
+        sections   = sections,
+        admin_cats = admin_cats,
+        all_cats   = all_cats,
     )
+
+
+@app.route('/admin/featured/section/add', methods=['POST'])
+@login_required
+def admin_featured_section_add():
+    try:
+        tag_id     = int(request.form.get('tag_id', 0))
+        label      = (request.form.get('label') or '').strip()
+        sort_order = int(request.form.get('sort_order') or 0)
+    except (ValueError, TypeError):
+        flash('Invalid input.', 'error')
+        return redirect(url_for('admin_featured'))
+    result = add_featured_section(tag_id, label=label, sort_order=sort_order)
+    if result is None:
+        flash('That tag is already a featured section.', 'error')
+    else:
+        flash('Featured section added.', 'success')
+    return redirect(url_for('admin_featured'))
+
+
+@app.route('/admin/featured/section/<int:section_id>/update', methods=['POST'])
+@login_required
+def admin_featured_section_update(section_id):
+    label      = request.form.get('label')
+    active_raw = request.form.get('active')
+    try:
+        sort_order = int(request.form['sort_order']) if 'sort_order' in request.form else None
+    except (ValueError, TypeError):
+        sort_order = None
+    active = (active_raw == '1') if active_raw is not None else None
+    update_featured_section(section_id, label=label, sort_order=sort_order, active=active)
+    flash('Section updated.', 'success')
+    return redirect(url_for('admin_featured'))
+
+
+@app.route('/admin/featured/section/<int:section_id>/remove', methods=['POST'])
+@login_required
+def admin_featured_section_remove(section_id):
+    remove_featured_section(section_id)
+    flash('Featured section removed.', 'success')
+    return redirect(url_for('admin_featured'))
+
+
+@app.route('/admin/tag-category/add', methods=['POST'])
+@login_required
+def admin_tag_category_add():
+    label      = (request.form.get('label') or '').strip()
+    behavior   = request.form.get('behavior', 'multi_select')
+    admin_only = request.form.get('admin_only') == '1'
+    try:
+        sort_order = int(request.form.get('sort_order') or 0)
+    except (ValueError, TypeError):
+        sort_order = 0
+    result = create_tag_category(label, behavior=behavior, admin_only=admin_only, sort_order=sort_order)
+    if result is None:
+        flash(f'Category "{label}" already exists or label is invalid.', 'error')
+    else:
+        flash(f'Category "{label}" created.', 'success')
+    return redirect(url_for('admin_featured'))
+
+
+@app.route('/admin/tag/add', methods=['POST'])
+@login_required
+def admin_tag_add():
+    try:
+        category_id = int(request.form.get('category_id', 0))
+    except (ValueError, TypeError):
+        flash('Invalid category.', 'error')
+        return redirect(url_for('admin_featured'))
+    label  = (request.form.get('label') or '').strip()
+    result = create_tag(category_id, label)
+    if result is None:
+        flash(f'Tag "{label}" already exists in that category or label is invalid.', 'error')
+    else:
+        flash(f'Tag "{label}" created.', 'success')
+    return redirect(url_for('admin_featured'))
+
+
+@app.route('/poem/<short_code>/tags', methods=['POST'])
+@login_required
+def poem_tags_update(short_code):
+    poem = get_poem_by_short_code(short_code)
+    if not poem:
+        flash('Poem not found.', 'error')
+        return redirect(url_for('browse'))
+
+    tier = request.form.get('tier', 'public')  # 'public' | 'admin'
+    try:
+        new_ids = [int(t) for t in request.form.getlist('tag_ids') if t]
+    except (ValueError, TypeError):
+        flash('Invalid tag data.', 'error')
+        return redirect(url_for('poem_permalink', short_code=short_code))
+
+    # Keep tags from the tier we're not editing so they survive the replace.
+    current = tags_for_poem(poem['id'])
+    if tier == 'public':
+        keep_ids = [r['id'] for r in current if r['admin_only']]
+    else:
+        keep_ids = [r['id'] for r in current if not r['admin_only']]
+
+    user = g.get('current_user')
+    applied_by = user['id'] if user else None
+    update_poem_tags(poem['id'], keep_ids + new_ids, applied_by=applied_by)
+    flash('Tags updated.', 'success')
+    return redirect(url_for('poem_permalink', short_code=short_code))
 
 
 @app.route('/pasture')
@@ -1473,20 +1631,29 @@ def poem_permalink(short_code):
                 error=f'No poem found with code "{short_code}"',
             ), 404
 
-    # Group approved tags by category for grouped display.
-    tag_rows = tags_for_poem(poem['id'])
-    grouped_tags = []
-    seen = {}
+    # Group approved tags by category; split into public vs admin-only tiers.
+    tag_rows    = tags_for_poem(poem['id'])
+    grouped_tags       = []  # public tags — shown to everyone
+    grouped_admin_tags = []  # admin-only tags — shown to admins only
+    seen_pub, seen_adm = {}, {}
     for r in tag_rows:
-        cat_key = r['cat_id']
+        cat_key    = r['cat_id']
+        is_adm     = bool(r['admin_only'])
+        seen       = seen_adm if is_adm else seen_pub
+        group_list = grouped_admin_tags if is_adm else grouped_tags
         if cat_key not in seen:
             seen[cat_key] = {
                 'label':    r['cat_label'],
                 'behavior': r['behavior'],
                 'tags':     [],
             }
-            grouped_tags.append(seen[cat_key])
+            group_list.append(seen[cat_key])
         seen[cat_key]['tags'].append({'slug': r['slug'], 'label': r['label']})
+
+    # For the admin per-poem tag editor, expose all tag categories + which are applied.
+    applied_tag_ids = {r['id'] for r in tag_rows}
+    editor_pub_cats  = list_categories_with_tags() if _is_admin() else []
+    editor_adm_cats  = list_admin_only_categories_with_tags() if _is_admin() else []
 
     # Open Graph description: first non-empty line's horse list + total count.
     first_line_horses = ''
@@ -1543,14 +1710,18 @@ def poem_permalink(short_code):
 
     return render_template(
         'poem.html',
-        poem            = poem,
-        page_title      = page_title,
-        grouped_tags    = grouped_tags,
-        og_description  = og_description,
-        permalink_url   = request.url,
-        published_iso   = published_iso,
-        published_human = published_human,
-        server_view_mode = server_mode,
+        poem              = poem,
+        page_title        = page_title,
+        grouped_tags      = grouped_tags,
+        grouped_admin_tags = grouped_admin_tags,
+        applied_tag_ids   = applied_tag_ids,
+        editor_pub_cats   = editor_pub_cats,
+        editor_adm_cats   = editor_adm_cats,
+        og_description    = og_description,
+        permalink_url     = request.url,
+        published_iso     = published_iso,
+        published_human   = published_human,
+        server_view_mode  = server_mode,
     )
 
 

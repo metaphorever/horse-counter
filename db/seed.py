@@ -23,9 +23,10 @@ from db.conn import get_db
 
 _COLUMN_MIGRATIONS = [
     # (table, column, ddl-fragment)
-    ('users', 'trust_level',      "TEXT NOT NULL DEFAULT 'pending'"),
-    ('poems', 'inspired_by_text', "TEXT NOT NULL DEFAULT ''"),
-    ('poems', 'inspired_by_url',  "TEXT NOT NULL DEFAULT ''"),
+    ('users',          'trust_level',  "TEXT NOT NULL DEFAULT 'pending'"),
+    ('poems',          'inspired_by_text', "TEXT NOT NULL DEFAULT ''"),
+    ('poems',          'inspired_by_url',  "TEXT NOT NULL DEFAULT ''"),
+    ('tag_categories', 'admin_only',   "INTEGER NOT NULL DEFAULT 0"),
 ]
 
 

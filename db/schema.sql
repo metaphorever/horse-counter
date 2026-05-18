@@ -207,6 +207,21 @@ CREATE TABLE IF NOT EXISTS horse_occurrences (
 
 CREATE INDEX IF NOT EXISTS idx_horse_occ_name ON horse_occurrences(horse_name);
 
+-- ── Featured sections ────────────────────────────────────────────────────────
+-- Each row pins a tag to a slot on the /featured page with a custom header.
+-- Any tag (public or admin-only) can be featured. sort_order controls the
+-- display sequence. active=0 hides the section without deleting it.
+CREATE TABLE IF NOT EXISTS featured_sections (
+    id          INTEGER PRIMARY KEY,
+    tag_id      INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+    label       TEXT    NOT NULL DEFAULT '',  -- custom header; falls back to tag label
+    sort_order  INTEGER NOT NULL DEFAULT 0,
+    active      INTEGER NOT NULL DEFAULT 1,
+    created_at  REAL    NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_featured_sections_active_order ON featured_sections(active, sort_order);
+
 -- ── Saved horses (blue-ribbon sentiment collection) ───────────────────────────
 -- Private per-user collection. Feeds admin popularity stats but never surfaced
 -- publicly as a count. Distinct from Pasture.

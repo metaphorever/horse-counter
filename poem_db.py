@@ -191,3 +191,79 @@ def list_published(limit: int = 50, offset: int = 0) -> List[Dict]:
             (limit, offset),
         ).fetchall()
     return [_row_to_poem(r) for r in rows]
+
+
+_BROWSE_SORTS = {
+    'newest':  'p.published_at DESC',
+    'oldest':  'p.published_at ASC',
+    'most':    'p.horse_count DESC, p.published_at DESC',
+    'fewest':  'p.horse_count ASC, p.published_at DESC',
+}
+
+
+def _browse_where(tag_slug: Optional[str], attributed: bool) -> tuple:
+    """Build the WHERE clause and params for browse queries."""
+    clauses = ["p.status = 'published'"]
+    params: List = []
+    if tag_slug:
+        clauses.append(
+            "p.id IN (SELECT pt.poem_id FROM poem_tags pt "
+            "JOIN tags t ON t.id = pt.tag_id "
+            "WHERE t.slug = ? AND pt.status = 'approved')"
+        )
+        params.append(tag_slug)
+    if attributed:
+        clauses.append("p.inspired_by_text != ''")
+    return " AND ".join(clauses), params
+
+
+def browse_poems(
+    sort:       str           = 'newest',
+    tag_slug:   Optional[str] = None,
+    page:       int           = 1,
+    per_page:   int           = 20,
+    attributed: bool          = False,
+) -> List[Dict]:
+    order = _BROWSE_SORTS.get(sort, _BROWSE_SORTS['newest'])
+    where, params = _browse_where(tag_slug, attributed)
+    offset = (max(1, page) - 1) * per_page
+    sql = f"SELECT p.* FROM poems p WHERE {where} ORDER BY {order} LIMIT ? OFFSET ?"
+    with get_db() as conn:
+        rows = conn.execute(sql, params + [per_page, offset]).fetchall()
+    return [_row_to_poem(r) for r in rows]
+
+
+def count_browse_poems(
+    tag_slug:   Optional[str] = None,
+    attributed: bool          = False,
+) -> int:
+    where, params = _browse_where(tag_slug, attributed)
+    sql = f"SELECT COUNT(*) FROM poems p WHERE {where}"
+    with get_db() as conn:
+        return conn.execute(sql, params).fetchone()[0]
+
+
+def get_poems_for_tag_slug(tag_slug: str, limit: int = 20) -> List[Dict]:
+    """Return up to `limit` published poems that carry the given tag slug."""
+    with get_db() as conn:
+        rows = conn.execute(
+            """SELECT p.id, p.short_code, p.title, p.author_display_name,
+                      p.author_user_id, p.horse_count, p.published_at
+                 FROM poems p
+                 JOIN poem_tags pt ON pt.poem_id = p.id
+                 JOIN tags t ON t.id = pt.tag_id
+                WHERE t.slug = ? AND p.status = 'published' AND pt.status = 'approved'
+                ORDER BY p.published_at DESC
+                LIMIT ?""",
+            (tag_slug, limit),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_random_published() -> Optional[str]:
+    """Return the short_code of a random published poem, or None if none exist."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT short_code FROM poems WHERE status='published' ORDER BY RANDOM() LIMIT 1"
+        ).fetchone()
+    return row['short_code'] if row else None
