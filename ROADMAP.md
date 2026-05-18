@@ -6,7 +6,7 @@ Navigation doc for the project. Full pre-migration history lives in `sessions/pr
 
 ## 🛑 Active blockers
 
-- **1.6.1 — Submission flow broken end-to-end (production).** Discovered 2026-05-18 by Clover while attempting to test the 1.6 view-mode toggle. Composing a poem at `/poetry` and submitting via `/submit/poem` returns a toast error; nothing reaches the admin queue at `/admin/poem-queue`. **Blocks:** any user-side testing of 1.5 (permalink renderer) and 1.6 (two-mode renderer), which means 1.7 (horse popover, depends on 1.6 being verified) is paused per rule 14. **Next session is the diagnosis + fix**, not 1.7. Root cause unknown — could be regression from 1.3 tag-taxonomy validation, a 1.6 preferences endpoint interaction, production-only config, or something else. Local reproduction needed before guessing.
+None.
 
 ---
 
@@ -26,11 +26,11 @@ VPS provisioning, SQLite schema, short-code permalinks, Clerk auth, localStorage
 - 1.6 Two-mode poem renderer (plain / pasture)
 - 1.22 Attribution footer + Ko-fi support
 - Nav/footer chrome polish (2026-05-16)
+- **1.6.1 Hotfix — Restore submission flow end-to-end** (2026-05-18) — `init_db()` at app startup, `/browse` poem index stub, mobile chip touch-drag fix
+- **1.7 Horse popover in pasture mode** (2026-05-18) — horse_occurrences/pasture_horses/saved_horses tables, popover with save/pasture/poems-featuring, focus-trapped + ESC/outside-click dismiss, logged-out prompts, `/p/<short>` now renders full permalink template
 
 **Remaining (rough order):**
-- **1.6.1 Hotfix — Restore submission flow end-to-end** `[sonnet · high (TBD)]` — see "Active blockers" above. Must clear before 1.7.
-- 1.7 Horse popover in pasture mode `[sonnet · high]` — **PAUSED on 1.6.1 + 1.6 manual verification**
-- 1.8 Featured / Browse / Random `[sonnet · high]`
+- 1.8 Featured / Browse / Random `[sonnet · high]` — `/browse` stub exists from 1.6.1; needs Featured + Random + full browse polish
 - 1.9 Empty-line warning at publish `[haiku · low]`
 - 1.10 Export: copy as text / HTML / .txt `[sonnet · low]`
 - 1.11 Plain-text print stylesheet `[sonnet · medium]`
