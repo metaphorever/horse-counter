@@ -91,12 +91,16 @@ body {
   background-image: url('/static/grass.svg');
   background-size: 40px 40px;
   color: #2d2316;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 .container {
   max-width: 820px;
   margin: 0 auto;
   padding: 20px 16px 40px;
+  flex: 1;
 }
 
 /* ── Fence divider ── */
