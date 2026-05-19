@@ -77,12 +77,14 @@ CREATE INDEX IF NOT EXISTS idx_poems_created_at         ON poems(created_at DESC
 --   'single_select'    — at most one tag from this category per poem (e.g. Poem Type)
 --   'multi_select'     — any number of tags from this category (e.g. Theme)
 --   'content_warning'  — like multi_select, but display layer treats them as warnings
+-- admin_only: 1 = hidden from public; used for curation signals (Featured, Staff Pick, etc.)
 CREATE TABLE IF NOT EXISTS tag_categories (
     id          INTEGER PRIMARY KEY,
     slug        TEXT    NOT NULL UNIQUE COLLATE NOCASE,
     label       TEXT    NOT NULL,
     behavior    TEXT    NOT NULL DEFAULT 'multi_select',
     sort_order  INTEGER NOT NULL DEFAULT 0,
+    admin_only  INTEGER NOT NULL DEFAULT 0,
     created_at  REAL    NOT NULL
 );
 

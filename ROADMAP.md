@@ -46,6 +46,7 @@ VPS provisioning, SQLite schema, short-code permalinks, Clerk auth, localStorage
 - 1.19 Save (Blue Ribbon) + Pasture collections `[sonnet · medium]`
 - 1.20 Cross-post queue (admin-flagged, Tumblr connector) `[sonnet · high]`
 - 1.21 Soft sign-in prompts `[sonnet · low]`
+- 1.27 Save draft from poem builder `[sonnet · medium]` — "Save draft" button sits next to "Post poem"; greyed out + subtle "sign in to save drafts" tooltip when logged out. Clicking opens the same title / attribution / tag modal as publish, but submits to draft storage instead of the approval queue. Draft saves poem text, stable selection, and all metadata. Horse chip menu gains a "Send to stable for [draft poem title]" entry so horses can be assigned to an in-progress draft from the pasture. Untitled drafts auto-named "Poem #N" (N = creation order) — surfaced as a note in the modal. Drafts appear under the "Drafts" nav item (1.25). Existing `queue_handler.py` 1-hour TTL / silent-expiry is the known gap to resolve here: draft storage needs to be persistent (SQLite), not ephemeral.
 - 1.23 GitHub Actions deploy `[sonnet · medium]`
 - 1.24 DNS cutover + PA shutdown `[haiku · low — owner action]`
 - 1.4 Admin tag management `[sonnet · medium]` — slot after 1.13 ships the queue

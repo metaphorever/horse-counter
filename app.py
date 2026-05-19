@@ -59,7 +59,7 @@ from matcher import (
 )
 from post_builder import extract_post
 from famous import FamousHorses
-from db.conn import init_db
+from db.conn import init_db, get_db
 from poem_db import (
     save_poem as save_poem_db,
     get_poem_by_short_code,
@@ -1652,7 +1652,16 @@ def poem_permalink(short_code):
         seen[cat_key]['tags'].append({'slug': r['slug'], 'label': r['label']})
 
     # For the admin per-poem tag editor, expose all tag categories + which are applied.
+    # Include pending tags in the checked set so the admin sees submitted tag
+    # choices pre-selected rather than empty; saving converts them to approved.
     applied_tag_ids = {r['id'] for r in tag_rows}
+    if _is_admin():
+        with get_db() as _conn:
+            _pending = _conn.execute(
+                "SELECT tag_id FROM poem_tags WHERE poem_id = ? AND status = 'pending'",
+                (poem['id'],),
+            ).fetchall()
+        applied_tag_ids |= {r['tag_id'] for r in _pending}
     editor_pub_cats  = list_categories_with_tags() if _is_admin() else []
     editor_adm_cats  = list_admin_only_categories_with_tags() if _is_admin() else []
 

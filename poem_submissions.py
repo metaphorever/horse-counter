@@ -88,6 +88,12 @@ def approve(
                 "UPDATE poems SET status = 'published', published_at = ?, edited_at = ? WHERE id = ?",
                 (now, now, sub['id']),
             )
+            # Auto-approve any pending poem_tags — admin is making the editorial
+            # call at publish time, implicitly approving the submitter's tag choices.
+            conn.execute(
+                "UPDATE poem_tags SET status = 'approved' WHERE poem_id = ? AND status = 'pending'",
+                (sub['id'],),
+            )
             conn.execute("COMMIT")
         except Exception:
             conn.execute("ROLLBACK")
