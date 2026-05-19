@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Print prototype — poet.horse 1.11</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Smokum&family=Abril+Fatface&family=IM+Fell+English:ital@0;1&family=Playfair+Display+SC:ital,wght@0,400;0,700;1,400&family=Libre+Bodoni:ital,wght@0,400;0,700;1,400&display=swap">
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Prototype chrome (screen only) ─────────────────────────────────── */
+body {
+  background: #b0a890;
+  background-image: repeating-linear-gradient(
+    0deg, transparent, transparent 19px, rgba(0,0,0,.04) 20px
+  );
+  padding: 32px 20px 56px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.proto-note {
+  max-width: 600px;
+  margin: 0 auto 32px;
+  padding: 14px 18px;
+  background: #1a1208;
+  color: #f0eadc;
+  font-size: 12px;
+  line-height: 1.7;
+  border-left: 4px solid #c8a84a;
+}
+.proto-note strong { color: #f5c842; }
+.proto-note code {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  background: rgba(255,255,255,.12);
+  padding: 1px 5px;
+}
+
+/* Single-column stack — wide enough to reflect print proportions */
+.proto-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.proto-card {
+  background: #fffef8;
+  box-shadow: 0 2px 8px rgba(0,0,0,.2), 0 8px 28px rgba(0,0,0,.12);
+  padding: 40px 44px 36px;
+}
+
+.proto-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .18em;
+  color: #aaa;
+  margin-bottom: 24px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #ddd;
+}
+
+/* Demo-only elements: visible on screen, gone in print */
+.demo-sep {
+  font-family: system-ui, sans-serif;
+  font-size: 9px;
+  color: #ccc;
+  letter-spacing: .15em;
+  text-align: center;
+  padding: 8pt 0 4pt;
+  font-variant: normal;
+  text-transform: none;
+  white-space: normal;
+}
+.demo-note {
+  font-family: system-ui, sans-serif;
+  font-size: 9px;
+  color: #bbb;
+  font-variant: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  font-style: italic;
+  white-space: normal;
+  text-decoration: none !important;
+  border: none !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   SHARED PRINT ELEMENTS
+   These apply inside every variant container.
+─────────────────────────────────────────────────────────────────────── */
+
+.variant a { color: inherit; text-decoration: none; }
+
+/*
+  Horse name treatment.
+
+  display:inline keeps the span in normal text flow, so the browser
+  can place line breaks between horse names (at the space between
+  </span> and <span>).
+
+  white-space:nowrap prevents ANY break within a single name — "To Make"
+  is one horse and will never be split across lines. If a name is longer
+  than the text measure, overflow-wrap:break-word on the parent line
+  steps in as a last resort.
+
+  text-decoration underline gives a subtle visual boundary. The gap in
+  the underline at each space-between-spans IS the name separator —
+  no extra glyph needed.
+*/
+.poem-horse {
+  display: inline;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-decoration-color: #c0ad90;
+  text-decoration-thickness: 0.5pt;
+  text-underline-offset: 2.5pt;
+}
+
+/*
+  Turnover (runover) indent.
+  First physical line of each poem line is flush left; wrapped
+  continuation lines are indented 2em — signalling continuation,
+  not a new line break authored by the poet.
+*/
+.poem-line {
+  padding-left: 2em;
+  text-indent: -2em;
+  margin: 0;
+  overflow-wrap: break-word; /* last resort for names longer than the measure */
+}
+
+.print-rule { border: none; height: 0; margin: 0; }
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   VARIANT A — BRITISH REGISTER
+   Bell's Life in London · Tattersalls 1870s–1900s · Epsom race cards
+─────────────────────────────────────────────────────────────────────── */
+.var-british { color: #0f0c06; }
+
+.var-british .print-masthead {
+  font-family: 'Abril Fatface', Georgia, serif;
+  font-size: 30pt;
+  text-align: center;
+  letter-spacing: .06em;
+  line-height: 1;
+  padding-bottom: 6pt;
+  border-bottom: 5px double #0f0c06;
+}
+.var-british .print-poem-title {
+  font-family: 'Abril Fatface', Georgia, serif;
+  font-size: 18pt;
+  text-align: center;
+  letter-spacing: .02em;
+  line-height: 1.15;
+  margin: 12pt 0 3pt;
+}
+.var-british .print-attribution {
+  font-family: 'Playfair Display SC', Georgia, serif;
+  font-size: 8.5pt;
+  text-align: center;
+  letter-spacing: .14em;
+  color: #3a2e18;
+  margin-bottom: 10pt;
+}
+.var-british .print-rule { border-top: 1px solid #0f0c06; margin: 9pt 0; }
+.var-british .poem-line {
+  font-family: 'IM Fell English', Georgia, serif;
+  font-size: 13pt;
+  line-height: 1.65;
+  font-variant: small-caps;
+  letter-spacing: .04em;
+}
+.var-british .print-poem-body { margin: 2pt 0; }
+.var-british .print-tags {
+  margin-top: 11pt;
+  font-family: 'Playfair Display SC', Georgia, serif;
+  font-size: 7.5pt;
+  color: #5a4a28;
+  letter-spacing: .1em;
+}
+.var-british .print-colophon {
+  margin-top: 7pt;
+  font-family: 'IM Fell English', Georgia, serif;
+  font-style: italic;
+  font-size: 8pt;
+  color: #7a6a48;
+  line-height: 1.5;
+}
+.var-british .print-permalink {
+  margin-top: 4pt;
+  padding-top: 6pt;
+  border-top: 1px solid #c8b888;
+  font-family: 'Courier Prime', 'Courier New', monospace;
+  font-size: 7.5pt;
+  color: #7a6a48;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   VARIANT B — AMERICAN REGISTER
+   Spirit of the Times · Kentucky Derby programs · bloodstock papers
+─────────────────────────────────────────────────────────────────────── */
+.var-american { color: #0f0c06; }
+
+.var-american .print-masthead {
+  font-family: 'Smokum', Georgia, serif;
+  font-size: 36pt;
+  text-align: center;
+  line-height: 1;
+  padding-bottom: 6pt;
+  border-bottom: 3px solid #0f0c06;
+}
+.var-american .print-poem-title {
+  font-family: 'Libre Bodoni', Georgia, serif;
+  font-weight: 700;
+  font-size: 14pt;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  line-height: 1.25;
+  margin: 12pt 0 3pt;
+}
+.var-american .print-attribution {
+  font-family: 'Playfair Display SC', Georgia, serif;
+  font-size: 8.5pt;
+  font-style: italic;
+  text-align: center;
+  letter-spacing: .1em;
+  color: #3a2e18;
+  margin-bottom: 12pt;
+}
+.var-american .print-rule { border-top: 2px solid #0f0c06; margin: 10pt 0; }
+.var-american .poem-line {
+  font-family: 'Libre Bodoni', Georgia, serif;
+  font-size: 12pt;
+  line-height: 1.8;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+.var-american .print-poem-body { margin: 2pt 0; }
+.var-american .print-tags {
+  margin-top: 12pt;
+  font-family: 'Playfair Display SC', Georgia, serif;
+  font-size: 7.5pt;
+  font-style: italic;
+  color: #5a4a28;
+  letter-spacing: .08em;
+}
+.var-american .print-colophon {
+  margin-top: 7pt;
+  font-family: 'Libre Bodoni', Georgia, serif;
+  font-style: italic;
+  font-size: 8pt;
+  color: #7a6a48;
+  line-height: 1.5;
+}
+.var-american .print-permalink {
+  margin-top: 4pt;
+  padding-top: 6pt;
+  border-top: 2px solid #c8b888;
+  font-family: 'Courier Prime', 'Courier New', monospace;
+  font-size: 7.5pt;
+  color: #7a6a48;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   VARIANT C — HYBRID  (recommended)
+   Smokum masthead · Abril Fatface title · IM Fell English body
+─────────────────────────────────────────────────────────────────────── */
+.var-hybrid { color: #0f0c06; }
+
+.var-hybrid .print-masthead {
+  font-family: 'Smokum', Georgia, serif;
+  font-size: 32pt;
+  text-align: center;
+  line-height: 1;
+  padding-bottom: 5pt;
+  border-bottom: 5px double #0f0c06;
+}
+.var-hybrid .print-poem-title {
+  font-family: 'Abril Fatface', Georgia, serif;
+  font-size: 20pt;
+  text-align: center;
+  letter-spacing: .03em;
+  line-height: 1.1;
+  margin: 12pt 0 3pt;
+}
+.var-hybrid .print-attribution {
+  font-family: 'Playfair Display SC', Georgia, serif;
+  font-size: 8.5pt;
+  text-align: center;
+  letter-spacing: .14em;
+  color: #3a2e18;
+  margin-bottom: 10pt;
+}
+.var-hybrid .print-rule { border-top: 1px solid #0f0c06; margin: 9pt 0; }
+.var-hybrid .poem-line {
+  font-family: 'IM Fell English', Georgia, serif;
+  font-size: 13pt;
+  line-height: 1.65;
+  font-variant: small-caps;
+  letter-spacing: .04em;
+}
+.var-hybrid .print-poem-body { margin: 2pt 0; }
+.var-hybrid .print-tags {
+  margin-top: 11pt;
+  font-family: 'Playfair Display SC', Georgia, serif;
+  font-size: 7.5pt;
+  color: #5a4a28;
+  letter-spacing: .12em;
+}
+.var-hybrid .print-colophon {
+  margin-top: 7pt;
+  font-family: 'IM Fell English', Georgia, serif;
+  font-style: italic;
+  font-size: 8pt;
+  color: #7a6a48;
+  line-height: 1.5;
+}
+.var-hybrid .print-permalink {
+  margin-top: 4pt;
+  padding-top: 6pt;
+  border-top: 1px solid #c8b888;
+  font-family: 'Courier Prime', 'Courier New', monospace;
+  font-size: 7.5pt;
+  color: #7a6a48;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   PRINT
+   All three variants print on separate pages for paper comparison.
+─────────────────────────────────────────────────────────────────────── */
+@media print {
+  @page { size: auto; margin: 22mm 26mm; }
+
+  body { background: white; padding: 0; }
+  .proto-note { display: none; }
+  .demo-sep, .demo-note { display: none; }
+
+  .proto-stack { max-width: none; gap: 0; }
+
+  .proto-card {
+    box-shadow: none;
+    padding: 0;
+    page-break-after: always;
+  }
+  .proto-card:last-child { page-break-after: avoid; }
+
+  .proto-label {
+    color: #ccc;
+    border-bottom-color: #eee;
+    margin-bottom: 30pt;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="proto-note">
+  <strong>poet.horse — 1.11 print prototype (rev 4 — stress test)</strong><br>
+  Nonsense content designed to hit edge cases: one very long name that forces a
+  turnover, clusters of short names showing underline separation, multi-horse
+  lines that break between names, and short single-name lines for contrast.<br><br>
+  <strong>To print/PDF:</strong> open in Chrome at
+  <code>https://poet.horse/static/print-prototype.html</code> or
+  <code>http://localhost:5000/static/print-prototype.html</code>
+  — each variant lands on its own page.
+</div>
+
+<div class="proto-stack">
+
+  <!-- ── A: BRITISH ─────────────────────────────────────────────── -->
+  <div class="proto-card">
+    <div class="proto-label">A — British · Bell's Life / Tattersalls / Abril Fatface masthead</div>
+    <div class="variant var-british">
+
+      <div class="print-masthead">poet.horse</div>
+      <div class="print-poem-title">A Horse Poem</div>
+      <div class="print-attribution">by Clover &nbsp;·&nbsp; 18 May 2026</div>
+      <hr class="print-rule">
+
+      <div class="print-poem-body">
+        <p class="poem-line"><span class="poem-horse">The Absolute Last And Most Completely Unexpected Winner Of This Fine Afternoon</span></p>
+        <p class="poem-line"><span class="poem-horse">Ed</span> <span class="poem-horse">Bo</span> <span class="poem-horse">Mac</span> <span class="poem-horse">Jo</span></p>
+        <p class="poem-line"><span class="poem-horse">Silver Charm</span></p>
+        <p class="poem-line"><span class="poem-horse">Touch Gold</span> <span class="poem-horse">Free House</span> <span class="poem-horse">Captain Bodgit</span> <span class="poem-horse">Lucky Star</span> <span class="poem-horse">Gold Cup</span> <span class="poem-horse">Bold Ruler</span></p>
+        <p class="poem-line"><span class="poem-horse">Who Would Have Ever Thought This Could Happen Here Today</span></p>
+        <p class="poem-line"><span class="poem-horse">Ned</span></p>
+      </div>
+
+      <hr class="print-rule">
+      <div class="print-tags">Poem type: Limerick</div>
+      <div class="print-colophon">Composed entirely from the names of real, registered horses.</div>
+      <div class="print-permalink">poet.horse/p/VWtksAcCdXs</div>
+    </div>
+  </div>
+
+
+  <!-- ── B: AMERICAN ────────────────────────────────────────────── -->
+  <div class="proto-card">
+    <div class="proto-label">B — American · Spirit of the Times / Kentucky Derby / Smokum masthead</div>
+    <div class="variant var-american">
+
+      <div class="print-masthead">poet.horse</div>
+      <div class="print-poem-title">A Horse Poem</div>
+      <div class="print-attribution">by Clover &nbsp;·&nbsp; 18 May 2026</div>
+      <hr class="print-rule">
+
+      <div class="print-poem-body">
+        <p class="poem-line"><span class="poem-horse">The Absolute Last And Most Completely Unexpected Winner Of This Fine Afternoon</span></p>
+        <p class="poem-line"><span class="poem-horse">Ed</span> <span class="poem-horse">Bo</span> <span class="poem-horse">Mac</span> <span class="poem-horse">Jo</span></p>
+        <p class="poem-line"><span class="poem-horse">Silver Charm</span></p>
+        <p class="poem-line"><span class="poem-horse">Touch Gold</span> <span class="poem-horse">Free House</span> <span class="poem-horse">Captain Bodgit</span> <span class="poem-horse">Lucky Star</span> <span class="poem-horse">Gold Cup</span> <span class="poem-horse">Bold Ruler</span></p>
+        <p class="poem-line"><span class="poem-horse">Who Would Have Ever Thought This Could Happen Here Today</span></p>
+        <p class="poem-line"><span class="poem-horse">Ned</span></p>
+      </div>
+
+      <hr class="print-rule">
+      <div class="print-tags">Poem type: Limerick</div>
+      <div class="print-colophon">Composed entirely from the names of real, registered horses.</div>
+      <div class="print-permalink">poet.horse/p/VWtksAcCdXs</div>
+    </div>
+  </div>
+
+
+  <!-- ── C: HYBRID ─────────────────────────────────────────────── -->
+  <div class="proto-card">
+    <div class="proto-label">C — Hybrid · Smokum masthead + Abril title + IM Fell body (recommended)</div>
+    <div class="variant var-hybrid">
+
+      <div class="print-masthead">poet.horse</div>
+      <div class="print-poem-title">A Horse Poem</div>
+      <div class="print-attribution">by Clover &nbsp;·&nbsp; 18 May 2026</div>
+      <hr class="print-rule">
+
+      <div class="print-poem-body">
+        <p class="poem-line"><span class="poem-horse">The Absolute Last And Most Completely Unexpected Winner Of This Fine Afternoon</span></p>
+        <p class="poem-line"><span class="poem-horse">Ed</span> <span class="poem-horse">Bo</span> <span class="poem-horse">Mac</span> <span class="poem-horse">Jo</span></p>
+        <p class="poem-line"><span class="poem-horse">Silver Charm</span></p>
+        <p class="poem-line"><span class="poem-horse">Touch Gold</span> <span class="poem-horse">Free House</span> <span class="poem-horse">Captain Bodgit</span> <span class="poem-horse">Lucky Star</span> <span class="poem-horse">Gold Cup</span> <span class="poem-horse">Bold Ruler</span></p>
+        <p class="poem-line"><span class="poem-horse">Who Would Have Ever Thought This Could Happen Here Today</span></p>
+        <p class="poem-line"><span class="poem-horse">Ned</span></p>
+      </div>
+
+      <hr class="print-rule">
+      <div class="print-tags">Poem type: Limerick</div>
+      <div class="print-colophon">Composed entirely from the names of real, registered horses.</div>
+      <div class="print-permalink">poet.horse/p/VWtksAcCdXs</div>
+    </div>
+  </div>
+
+</div><!-- /proto-stack -->
+
+</body>
+</html>

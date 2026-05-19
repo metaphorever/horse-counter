@@ -1,0 +1,261 @@
+/* ── Screen: hide print-only elements ──────────────────────────────────── */
+.print-head,
+.print-colophon { display: none; }
+
+
+/* ── Print ──────────────────────────────────────────────────────────────── */
+@media print {
+
+  @page { size: auto; margin: 22mm 26mm; }
+
+  /* Show print-only elements */
+  .print-head,
+  .print-colophon { display: block; }
+
+  /* Strip grass background */
+  body {
+    background: white !important;
+    background-image: none !important;
+  }
+
+  /* Release container from screen max-width */
+  .container {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Hide chrome */
+  .site-nav-bar,
+  .site-footer-bar,
+  .fence,
+  .poem-view-controls,
+  .poem-view-footer,
+  .poem-admin-tags,
+  .admin-tag-editor,
+  #horse-popover { display: none !important; }
+
+  /* ── Layout ───────────────────────────────────────────────────────────────
+     Two-column grid for the header band:
+       col 1 — Smokum corner logo
+       col 2 — poem title + attribution (text-align: center within the column)
+     Everything after the header spans both columns.
+     Separator is a border-top on poem-view-body, spanning full width.
+  ───────────────────────────────────────────────────────────────────────── */
+  .poem-view {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    column-gap: 18pt;
+    align-items: center;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  .print-head {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .poem-view-head {
+    grid-column: 2;
+    grid-row: 1;
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  /* All subsequent children span the full width */
+  .poem-view-body,
+  .poem-view-tags,
+  .poem-admin-tags,
+  .print-colophon,
+  .poem-view-footer { grid-column: 1 / -1; }
+
+  /* ── Corner masthead ──────────────────────────────────────────────────── */
+  .print-masthead {
+    font-family: 'Smokum', Georgia, serif;
+    font-size: 20pt;
+    line-height: 1;
+    color: #0f0c06;
+    text-align: left;
+  }
+
+  /* ── Poem header ──────────────────────────────────────────────────────── */
+  .poem-view-title {
+    display: block;
+    font-family: 'Abril Fatface', Georgia, serif;
+    font-size: 30pt;
+    font-weight: normal;
+    text-align: center;
+    letter-spacing: 0.03em;
+    line-height: 1.1;
+    color: #0f0c06;
+    margin: 0 0 4pt;
+  }
+
+  .poem-view-title-main { display: block; font: inherit; }
+
+  .poem-view-title-after {
+    display: block;
+    font-family: 'IM Fell English', Georgia, serif;
+    font-size: 17pt;
+    font-style: italic;
+    font-weight: normal;
+    text-align: center;
+    letter-spacing: 0;
+    color: #3a2e18;
+    margin-top: 3pt;
+  }
+
+  .poem-view-attribution {
+    font-family: 'Playfair Display SC', Georgia, serif;
+    font-size: 13pt;
+    font-weight: normal;
+    text-align: center;
+    letter-spacing: 0.1em;
+    color: #3a2e18;
+    margin: 4pt 0 0;
+  }
+
+  .poem-attr-link,
+  .poem-after-link { color: inherit; text-decoration: none; }
+
+  /* ── Poem body ────────────────────────────────────────────────────────── */
+  .poem-view-body {
+    padding: 0;
+    margin: 0;
+    background: none !important;
+    width: auto !important;
+    min-height: 0 !important;
+    border-top: 1px solid #0f0c06;
+    margin-top: 10pt;
+    padding-top: 6pt;
+  }
+
+  /*
+    Turnover (runover) indent.
+    First physical line flush left; wrapped continuation lines indented
+    2em to signal continuation rather than an authored line break.
+  */
+  .poem-line-out {
+    font-family: 'IM Fell English', Georgia, serif;
+    font-size: 20pt;
+    font-weight: normal;
+    line-height: 1.6;
+    font-variant: small-caps;
+    letter-spacing: 0.04em;
+    color: #0f0c06;
+    padding: 0;
+    padding-left: 2em;
+    text-indent: -2em;
+    margin: 0;
+    overflow-wrap: break-word;
+  }
+
+  .poem-line-out:empty::before { content: '\00A0'; }
+
+  /*
+    Horse chip reset — strips all pasture-mode decoration.
+    Thin underline marks each name's extent; the gap between
+    consecutive names is the separator.
+  */
+  .poem-horse,
+  a.poem-horse {
+    display: inline !important;
+    white-space: nowrap;
+    background: none !important;
+    background-color: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    color: #0f0c06 !important;
+    font-size: inherit !important;
+    font-family: inherit !important;
+    font-variant: inherit !important;
+    letter-spacing: inherit !important;
+    line-height: inherit !important;
+    box-shadow: none !important;
+    transform: none !important;
+    animation: none !important;
+    text-decoration: underline !important;
+    text-decoration-color: #c0ad90 !important;
+    text-decoration-thickness: 0.5pt !important;
+    text-underline-offset: 3pt !important;
+  }
+
+  .poem-horse::before,
+  .poem-horse::after { display: none !important; }
+
+  /* ── Tags ─────────────────────────────────────────────────────────────── */
+  .poem-view-tags {
+    display: block;
+    margin-top: 14pt;
+    padding-top: 10pt;
+    border-top: 1px solid #0f0c06;
+  }
+
+  .poem-tag-group { display: block; margin-bottom: 4pt; }
+
+  .poem-tag-cat {
+    font-family: 'Playfair Display SC', Georgia, serif;
+    font-size: 11pt;
+    font-weight: normal;
+    letter-spacing: 0.1em;
+    color: #5a4a28;
+    text-transform: none;
+    min-width: 0;
+  }
+
+  .poem-tag-list { display: inline; }
+
+  .poem-tag {
+    display: inline;
+    font-family: 'Playfair Display SC', Georgia, serif;
+    font-size: 11pt;
+    color: #5a4a28;
+    text-decoration: none;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 0;
+  }
+
+  .poem-tag::after { content: ',\00A0'; }
+  .poem-tag:last-child::after { content: ''; }
+  .poem-tag-group.cw .poem-tag { color: #7a2020; }
+  .tag-admin-badge { display: none !important; }
+
+  /* ── Colophon ─────────────────────────────────────────────────────────── */
+  .print-colophon {
+    margin-top: 14pt;
+    padding-top: 10pt;
+    border-top: 1px solid #c8b888;
+    font-family: 'IM Fell English', Georgia, serif;
+    font-style: italic;
+    font-size: 16pt;
+    color: #7a6a48;
+    line-height: 1.5;
+  }
+
+  .print-permalink-url {
+    display: block;
+    font-family: 'Courier Prime', 'Courier New', monospace;
+    font-style: normal;
+    font-size: 15pt;
+    color: #7a6a48;
+    margin-top: 3pt;
+  }
+
+  /* ── Page-break hints ─────────────────────────────────────────────────── */
+  .poem-view { page-break-inside: avoid; }
+  .poem-view-head { page-break-after: avoid; }
+
+  /* Suppress browser's automatic URL-after-link rendering */
+  a::after { content: none !important; }
+}
