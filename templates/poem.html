@@ -158,6 +158,11 @@
     <span class="poem-view-stat">{{ poem.horse_count }} horse{{ 's' if poem.horse_count != 1 else '' }}</span>
     <span class="poem-view-stat">{{ poem.word_count }} word{{ 's' if poem.word_count != 1 else '' }}</span>
     <span class="poem-view-stat"><code>{{ poem.short_code }}</code></span>
+    <span class="poem-export-btns" aria-label="Export">
+      <button class="poem-export-btn" id="export-copy-text" type="button">Copy text</button>
+      <button class="poem-export-btn" id="export-copy-html" type="button">Copy HTML</button>
+      <button class="poem-export-btn" id="export-dl-txt"   type="button">&#x2193; .txt</button>
+    </span>
   </footer>
 
 </article>
@@ -432,6 +437,70 @@
 
   document.addEventListener('DOMContentLoaded', loadPageStates);
   loadPageStates();  // also run now if DOM is already ready
+})();
+</script>
+
+{# ── 1.10 Export ─────────────────────────────────────────────────────────── #}
+<script>
+(function(){
+  function poemLines(){
+    return Array.from(document.querySelectorAll('.poem-line-out')).map(function(line){
+      return Array.from(line.querySelectorAll('[data-name]'))
+        .map(function(chip){ return chip.textContent.trim(); }).join(' ');
+    });
+  }
+
+  function buildPlainText(){ return poemLines().join('\n'); }
+
+  function buildTxtFile(){
+    var titleEl = document.querySelector('.poem-view-title-main');
+    var attrEl  = document.querySelector('.poem-view-attribution');
+    var codeEl  = document.querySelector('.poem-view-footer code');
+    var title   = titleEl ? titleEl.textContent.trim() : '';
+    var attr    = attrEl  ? attrEl.textContent.trim().replace(/\s+/g,' ') : '';
+    var code    = codeEl  ? codeEl.textContent.trim() : '';
+    var parts   = [];
+    if (title) parts.push(title);
+    if (attr)  parts.push(attr);
+    parts.push('', buildPlainText(), '');
+    if (code)  parts.push('—\nhttps://poet.horse/p/' + code);
+    return parts.join('\n');
+  }
+
+  function flash(btn, msg){
+    var orig = btn.textContent;
+    btn.textContent = msg;
+    btn.disabled = true;
+    setTimeout(function(){ btn.textContent = orig; btn.disabled = false; }, 1500);
+  }
+
+  function copyTo(text, btn){
+    navigator.clipboard.writeText(text)
+      .then(function(){ flash(btn, 'Copied!'); })
+      .catch(function(){ flash(btn, 'Failed'); });
+  }
+
+  var copyText = document.getElementById('export-copy-text');
+  if (copyText) copyText.addEventListener('click', function(){ copyTo(buildPlainText(), copyText); });
+
+  var copyHtml = document.getElementById('export-copy-html');
+  if (copyHtml) copyHtml.addEventListener('click', function(){
+    var body = document.querySelector('.poem-view-body');
+    copyTo(body ? body.innerHTML.trim() : '', copyHtml);
+  });
+
+  var dlTxt = document.getElementById('export-dl-txt');
+  if (dlTxt) dlTxt.addEventListener('click', function(){
+    var titleEl = document.querySelector('.poem-view-title-main');
+    var slug = (titleEl ? titleEl.textContent.trim() : 'poem')
+      .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'poem';
+    var blob = new Blob([buildTxtFile()], {type:'text/plain'});
+    var a = document.createElement('a');
+    a.download = slug + '.txt';
+    a.href = URL.createObjectURL(blob);
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
 })();
 </script>
 {% endblock %}

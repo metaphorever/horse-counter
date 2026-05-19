@@ -31,8 +31,10 @@ VPS provisioning, SQLite schema, short-code permalinks, Clerk auth, localStorage
 
 **Remaining (rough order):**
 - **1.8 Featured / Browse / Random** (2026-05-18) — two-tier tag system (public + admin-only `tag_categories.admin_only`), `featured_sections` table, `/browse` with pagination/sort/tag-filter/attribution-filter, `/random` redirect, `/featured` page driven by admin-curated sections, `/admin/featured` management page, per-poem admin tag editor on poem page
-- **1.9 Empty-line warning at publish** (2026-05-18) — mid-poem empty line detection at submit time; modal warning with "Remove empty lines" / "Keep them" choice; "Remember my choice" checkbox persists preference to localStorage (anonymous) or `/me/preferences` (logged-in). ⚠ Pending Clover live-site verification before 1.10 starts.
-- 1.10 Export: copy as text / HTML / .txt `[sonnet · low]`
+- **1.9 Empty-line warning at publish** (2026-05-18) — mid-poem empty line detection at submit time; modal warning with "Remove empty lines" / "Keep them" choice; "Remember my choice" checkbox persists preference to localStorage (anonymous) or `/me/preferences` (logged-in). ✅ Verified by Clover.
+- **1.10 Export: copy as text / HTML / .txt** (2026-05-18) — three buttons in the poem footer: copy plain text (horse names), copy HTML chip markup, download .txt with title/attribution/URL header. All client-side.
+- 1.25 Nav / IA polish `[sonnet · low]` — labels: "Drafts" (was "Unpublished / WIP"), "My Poems" (was "Published Poems"); remove redundant "Home" nav item; workshop verb for Write Poems (write / create / compose); promote Featured / Browse / Random from submenu to standalone top-level items; `/` redirects to `/featured`
+- 1.26 Horse search area rework `[sonnet · medium]` — short names link → button; random horse button moves to search panel and loads results into the search display area (count = per-page setting); pasture horses button loads all user's pasture horses alphabetically with pagination; replace inline wildcard explanation with a compact help/how-to button covering the full search → stable → poem → publish pipeline
 - 1.11 Plain-text print stylesheet `[sonnet · medium]`
 - 1.12 Reader-mode toggle (site-wide) `[sonnet · medium]`
 - 1.13 Admin moderation queue overhaul `[sonnet · high]`
@@ -44,6 +46,7 @@ VPS provisioning, SQLite schema, short-code permalinks, Clerk auth, localStorage
 - 1.19 Save (Blue Ribbon) + Pasture collections `[sonnet · medium]`
 - 1.20 Cross-post queue (admin-flagged, Tumblr connector) `[sonnet · high]`
 - 1.21 Soft sign-in prompts `[sonnet · low]`
+- 1.27 Save draft from poem builder `[sonnet · medium]` — "Save draft" button sits next to "Post poem"; greyed out + subtle "sign in to save drafts" tooltip when logged out. Clicking opens the same title / attribution / tag modal as publish, but submits to draft storage instead of the approval queue. Draft saves poem text, stable selection, and all metadata. Horse chip menu gains a "Send to stable for [draft poem title]" entry so horses can be assigned to an in-progress draft from the pasture. Untitled drafts auto-named "Poem #N" (N = creation order) — surfaced as a note in the modal. Drafts appear under the "Drafts" nav item (1.25). Existing `queue_handler.py` 1-hour TTL / silent-expiry is the known gap to resolve here: draft storage needs to be persistent (SQLite), not ephemeral.
 - 1.23 GitHub Actions deploy `[sonnet · medium]`
 - 1.24 DNS cutover + PA shutdown `[haiku · low — owner action]`
 - 1.4 Admin tag management `[sonnet · medium]` — slot after 1.13 ships the queue
