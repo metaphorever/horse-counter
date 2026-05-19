@@ -453,7 +453,8 @@ def me_sync():
 # value-validated below so the endpoint never becomes a free-form key/value
 # store on the user row.
 _USER_PREF_WRITES = {
-    'poem_view_mode': lambda v: v if v in ('plain', 'pasture') else None,
+    'poem_view_mode':    lambda v: v if v in ('plain', 'pasture') else None,
+    'strip_empty_lines': lambda v: bool(v) if isinstance(v, bool) else None,
 }
 
 
