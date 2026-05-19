@@ -1001,6 +1001,15 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
   font: 11px 'Courier Prime','Courier New',monospace; color: #8a7050;
 }
 .poem-view-footer code { color: #6b5430; }
+.poem-export-btns { margin-left: auto; display: flex; gap: 5px; align-items: center; }
+.poem-export-btn {
+  font: 11px 'Courier Prime','Courier New',monospace;
+  color: #8a7050; background: none;
+  border: 1px solid #c4a96b; border-radius: 2px;
+  padding: 2px 7px; cursor: pointer;
+}
+.poem-export-btn:hover:not(:disabled) { color: #2d2316; border-color: #8a7050; }
+.poem-export-btn:disabled { opacity: 0.55; cursor: default; }
 
 @media (max-width: 520px){
   .poem-view { padding: 18px 16px; margin: 12px; }
