@@ -20,6 +20,10 @@
          {% if server_view_mode %}data-server-mode="{{ server_view_mode }}"{% endif %}
          {% if current_user %}data-signed-in="1"{% endif %}>
 
+  <div class="print-head" aria-hidden="true">
+    <div class="print-masthead">poet.horse</div>
+  </div>
+
   <header class="poem-view-head">
     <h1 class="poem-view-title">
       <span class="poem-view-title-main">{{ poem.title or 'A horse poem' }}</span>
@@ -153,6 +157,11 @@
     {% endif %}
   </section>
   {% endif %}
+
+  <div class="print-colophon" aria-hidden="true">
+    Composed entirely from the names of real, registered horses.
+    <span class="print-permalink-url">{{ permalink_url }}</span>
+  </div>
 
   <footer class="poem-view-footer">
     <span class="poem-view-stat">{{ poem.horse_count }} horse{{ 's' if poem.horse_count != 1 else '' }}</span>
