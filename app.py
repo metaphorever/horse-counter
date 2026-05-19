@@ -1728,7 +1728,7 @@ def poem_permalink(short_code):
         editor_pub_cats   = editor_pub_cats,
         editor_adm_cats   = editor_adm_cats,
         og_description    = og_description,
-        permalink_url     = request.url,
+        permalink_url     = f'https://poet.horse/p/{short_code}',
         published_iso     = published_iso,
         published_human   = published_human,
         server_view_mode  = server_mode,

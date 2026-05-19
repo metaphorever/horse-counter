@@ -36,17 +36,15 @@
   #horse-popover { display: none !important; }
 
   /* ── Layout ───────────────────────────────────────────────────────────────
-     Two-column grid for the header band:
-       col 1 — Smokum corner logo
-       col 2 — poem title + attribution (text-align: center within the column)
-     Everything after the header spans both columns.
-     Separator is a border-top on poem-view-body, spanning full width.
+     .poem-view is a relative-positioned block. The Smokum corner logo
+     (.print-head) is absolutely positioned top-left so it doesn't affect
+     flow. The title (.poem-view-head) is full-width with symmetric padding
+     that reserves space for the logo — its center is the page center.
+     Separator is a border-top on .poem-view-body, spanning full width.
   ───────────────────────────────────────────────────────────────────────── */
   .poem-view {
-    display: grid;
-    grid-template-columns: max-content 1fr;
-    column-gap: 18pt;
-    align-items: center;
+    display: block;
+    position: relative;
     max-width: none;
     margin: 0;
     padding: 0;
@@ -57,24 +55,24 @@
   }
 
   .print-head {
-    grid-column: 1;
-    grid-row: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
   }
 
+  /*
+    Symmetric padding reserves space for the logo on both sides so the title
+    is genuinely centered on the full page width (the midpoint of the padded
+    area equals the page midpoint). Wrapping lines stay clear of the logo.
+  */
   .poem-view-head {
-    grid-column: 2;
-    grid-row: 1;
+    padding-left: 80pt;
+    padding-right: 80pt;
+    text-align: center;
     border-bottom: none;
     margin-bottom: 0;
     padding-bottom: 0;
   }
-
-  /* All subsequent children span the full width */
-  .poem-view-body,
-  .poem-view-tags,
-  .poem-admin-tags,
-  .print-colophon,
-  .poem-view-footer { grid-column: 1 / -1; }
 
   /* ── Corner masthead ──────────────────────────────────────────────────── */
   .print-masthead {
@@ -253,7 +251,7 @@
   }
 
   /* ── Page-break hints ─────────────────────────────────────────────────── */
-  .poem-view { page-break-inside: avoid; }
+  /* Keep header + first poem line together; allow natural breaks in long poems */
   .poem-view-head { page-break-after: avoid; }
 
   /* Suppress browser's automatic URL-after-link rendering */
