@@ -179,6 +179,8 @@ If a phase ships UI, user-facing behavior, or anything with judgment calls that 
 
 "Haven't tested yet" pauses the next phase. It is not worked around.
 
+**Testing happens on the live site, not the preview pane.** This is a Flask app with server-side rendering, SQLite, Clerk auth, and Datamuse API calls. The Claude preview pane renders static HTML only — it cannot run the server, execute database queries, process form submissions, or call external APIs. Anything that involves a route, a database read/write, auth state, or an API call must be tested by deploying to the VPS and verifying at `poet.horse` (or the staging equivalent). Do not claim a feature is working based on preview-pane inspection alone.
+
 ### 15. Direction check at breakpoints
 
 After a subsystem completes, before switching areas:
@@ -203,9 +205,17 @@ Log label: **Claude error, caught by [Clover / testing / next session]** — nam
 
 ## Session open checklist
 
-1. Confirm model and effort match current phase (rule 1)
-2. Check for open testing holds or override flags from prior sessions
-3. Git status — reconcile against agreed workflow before touching anything
+> **⚠ Git-first. No exceptions.**
+> Before reading any file, referencing any code, or reporting project state:
+> 1. `git fetch origin`
+> 2. `git log --oneline origin/master -15`
+> 3. Fast-forward the worktree: `git merge --ff-only origin/master`
+>
+> The local worktree may be arbitrarily stale. Treat any file read before these steps as potentially outdated. Do not report phase status, open holds, or what's "next" until the worktree reflects `origin/master`. This rule exists because a session opened from a stale worktree gave Clover an inaccurate status report (2026-05-18).
+
+1. **Git-first** — fetch, check, fast-forward (see above) before anything else
+2. Confirm model and effort match current phase (rule 1)
+3. Check for open testing holds or override flags from prior sessions
 4. Scan most recent session log — verify any referenced files or symbols still exist
 5. Context check — if something feels unfamiliar or inconsistent with project history, flag it before proceeding
 
@@ -240,7 +250,7 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: 1.9 — Empty-line warning at publish**
-**Model: Haiku · Effort: low**
+**PHASE: 1.10 — Export: copy as text / HTML / .txt**
+**Model: Sonnet · Effort: low**
 
-1.8 shipped. Next: warn at publish time when a poem has empty lines (intentional blank vs accidental strip).
+1.9 shipped (pending Clover's live-site verification). Next: export options on the poem page.

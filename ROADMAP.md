@@ -31,7 +31,7 @@ VPS provisioning, SQLite schema, short-code permalinks, Clerk auth, localStorage
 
 **Remaining (rough order):**
 - **1.8 Featured / Browse / Random** (2026-05-18) — two-tier tag system (public + admin-only `tag_categories.admin_only`), `featured_sections` table, `/browse` with pagination/sort/tag-filter/attribution-filter, `/random` redirect, `/featured` page driven by admin-curated sections, `/admin/featured` management page, per-poem admin tag editor on poem page
-- 1.9 Empty-line warning at publish `[haiku · low]`
+- **1.9 Empty-line warning at publish** (2026-05-18) — mid-poem empty line detection at submit time; modal warning with "Remove empty lines" / "Keep them" choice; "Remember my choice" checkbox persists preference to localStorage (anonymous) or `/me/preferences` (logged-in). ⚠ Pending Clover live-site verification before 1.10 starts.
 - 1.10 Export: copy as text / HTML / .txt `[sonnet · low]`
 - 1.11 Plain-text print stylesheet `[sonnet · medium]`
 - 1.12 Reader-mode toggle (site-wide) `[sonnet · medium]`
@@ -77,6 +77,7 @@ Surfaced items not yet committed to a phase. Promote to a phase when ready.
 - **"Response to" attribution variant** — extend the Phase 1.5 attribution flag (`inspired_by_text` / `inspired_by_url`) so the URL can point at a poet.horse permalink and the UI reads as a reply rather than an external citation. Tentative — "fun and pretty low cost to build in with the current structure but it doesn't need to block anything currently in dev." Doesn't bump 1.7–1.21.
 - **Remove PIN admin auth** — Clover, 2026-05-17: *"PIN can be pruned out whenever now that Clerk is online."* Replace the dual-auth surface (`app.py:122` `_is_admin()`) with a single Clerk-only role check. Resolves the "Clerk role and PIN admin are independent" open design question. Coordinate with: adding admin-promotion UI so Clerk users can be elevated without DB surgery.
 - **Remove legacy JSON submission backend** — Clover, 2026-05-17: *"same with old json submission path."* Delete `submissions.py` (JSON queue) and the associated admin surfaces (`/submissions`, `/queue`, etc.); SQLite-backed poem submissions become the only path. Resolves the "Dual submission backends" open design question. Order: do this after 1.13 (admin moderation queue overhaul) which already plans the new poem-first review UI.
+- **Per-poem line alignment + freeform positioning** — poet-controlled display formatting for artistic intent. Two parts: (1) per-line or per-poem alignment toggle (left / center / right), needed for concrete poetry where shape is meaning; (2) freeform mode that records relative pixel positions per horse, enabling arbitrary visual layouts. Both touch `lines_json` shape and the renderer. The freeform mode is a significant data model change and a new editing paradigm. Slot near or after Phase 2 editor rethink (2.1). Do not conflate with the Phase 1.9 empty-line warning — that's a publish-time data hygiene check; this is a display/authorship feature.
 
 ---
 

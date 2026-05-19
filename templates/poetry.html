@@ -143,7 +143,18 @@
 
     <div id="modal-tag-sections" class="modal-tag-sections"></div>
 
-    <div class="modal-actions">
+    <div id="empty-line-warning" class="msg warn" style="display:none">
+      This poem has empty lines — intentional or accidental?
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-primary" onclick="resolveEmptyLines(true)">Remove empty lines</button>
+        <button class="btn-sec" onclick="resolveEmptyLines(false)">Keep them</button>
+      </div>
+      <label style="display:block;margin-top:8px;font-size:12px;cursor:pointer">
+        <input type="checkbox" id="empty-line-remember"> Remember my choice
+      </label>
+    </div>
+
+    <div id="modal-actions" class="modal-actions">
       <button class="btn-primary" onclick="submitPoemPublic()">{% if is_admin %}Submit to queue{% else %}Submit for review{% endif %}</button>
       <button class="btn-sec" onclick="closeModal()">Cancel</button>
     </div>
@@ -1309,6 +1320,8 @@ async function suggestTagInline(categoryId, categoryLabel){
 // ── Post modal ────────────────────────────────────────────────────────────────
 function openModal(){
   document.getElementById('modal-err').style.display='none';
+  document.getElementById('empty-line-warning').style.display='none';
+  document.getElementById('modal-actions').style.display='';
   // Pre-fill attribution: logged-in users from their synced preferences,
   // anonymous users from localStorage.
   const nameEl   = document.getElementById('modal-submitter-name');
@@ -1328,12 +1341,55 @@ async function submitPoemPublic(){
   const flat = lines.flat();
   if(!flat.length) return;
 
+  // Check for mid-poem empty lines (trailing empty is the normal cursor; ignore it).
+  const trimmed = lines.slice();
+  while(trimmed.length > 1 && trimmed[trimmed.length-1].length === 0) trimmed.pop();
+  const hasEmpty = trimmed.some(l => l.length === 0);
+
+  if(hasEmpty){
+    const stored = isLoggedIn
+      ? userPrefs.strip_empty_lines
+      : (() => { const v = localStorage.getItem('horse-strip-empty-lines'); return v === 'true' ? true : v === 'false' ? false : undefined; })();
+
+    if(stored === true){
+      lines = lines.filter(l => l.length > 0);
+      if(!lines.length) lines = [[]];
+    } else if(stored !== false){
+      // No saved preference — ask the user.
+      document.getElementById('empty-line-warning').style.display='';
+      document.getElementById('modal-actions').style.display='none';
+      return;
+    }
+    // stored === false: keep as-is, fall through to submit
+  }
+
+  await _doSubmitPoem();
+}
+
+async function resolveEmptyLines(strip){
+  const remember = document.getElementById('empty-line-remember').checked;
+  if(remember){
+    localStorage.setItem('horse-strip-empty-lines', String(strip));
+    if(isLoggedIn){
+      userPrefs.strip_empty_lines = strip;
+      apiPost('/me/preferences', { strip_empty_lines: strip });
+    }
+  }
+  if(strip){
+    lines = lines.filter(l => l.length > 0);
+    if(!lines.length) lines = [[]];
+  }
+  document.getElementById('empty-line-warning').style.display='none';
+  document.getElementById('modal-actions').style.display='';
+  await _doSubmitPoem();
+}
+
+async function _doSubmitPoem(){
   const submitterName   = (document.getElementById('modal-submitter-name')?.value   || '').trim();
   const submitterTumblr = (document.getElementById('modal-submitter-tumblr')?.value || '').trim().replace(/^@/, '');
   const poemTitle       = (document.getElementById('modal-title')?.value            || '').trim();
   if(!isLoggedIn){
     // Anonymous: persist attribution locally so the modal pre-fills next time.
-    // Logged-in users' attribution comes from their profile + preferences.
     try{
       localStorage.setItem('horse-poem-name',   submitterName);
       localStorage.setItem('horse-poem-tumblr', submitterTumblr);
