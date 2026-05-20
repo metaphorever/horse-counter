@@ -250,7 +250,7 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: 1.10 — Export: copy as text / HTML / .txt**
+**PHASE: 1.25 — Nav / IA polish**
 **Model: Sonnet · Effort: low**
 
-1.9 shipped (pending Clover's live-site verification). Next: export options on the poem page.
+1.10 and 1.11 shipped and verified. Next: nav label cleanup, promote Featured/Browse/Random to top-level, `/` redirects to `/featured`.
