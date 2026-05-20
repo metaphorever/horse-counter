@@ -30,23 +30,12 @@
 
     <div class="nav-body" id="nav-body">
       <div class="nav-left">
-        <a class="nav-item" href="{{ url_for('index') }}">Home</a>
-
-        <div class="nav-group" data-nav-group>
-          <button class="nav-item nav-item-btn"
-                  aria-expanded="false" aria-haspopup="true">
-            Read Poems <span class="nav-caret" aria-hidden="true">&#x25BE;</span>
-          </button>
-          <div class="nav-sub" role="menu">
-            <a class="nav-sub-item" href="{{ url_for('featured') }}"      role="menuitem">Featured</a>
-            <a class="nav-sub-item" href="{{ url_for('browse') }}"        role="menuitem">Browse</a>
-            <a class="nav-sub-item" href="{{ url_for('random_poem') }}"   role="menuitem">Random</a>
-          </div>
-        </div>
-
-        <a class="nav-item" href="{{ url_for('poetry_editor') }}">Write Poems</a>
+        <a class="nav-item" href="{{ url_for('featured') }}">Featured</a>
+        <a class="nav-item" href="{{ url_for('browse') }}">Browse</a>
+        <a class="nav-item" href="{{ url_for('random_poem') }}">Random</a>
+        <a class="nav-item" href="{{ url_for('poetry_editor') }}">Wrangle a Poem</a>
         <a class="nav-item" href="{{ url_for('pasture') }}">Pasture</a>
-        <a class="nav-item" href="{{ url_for('count') }}">Count horses in text</a>
+        <a class="nav-item" href="{{ url_for('count') }}">Count a Poem</a>
       </div>
 
       <div class="nav-right">
@@ -58,8 +47,8 @@
               <span class="nav-caret" aria-hidden="true">&#x25BE;</span>
             </button>
             <div class="nav-sub nav-sub-right" role="menu">
-              <a class="nav-sub-item" href="{{ url_for('me_published') }}"    role="menuitem">Published Poems</a>
-              <a class="nav-sub-item" href="{{ url_for('me_drafts') }}"       role="menuitem">Unpublished / WIP</a>
+              <a class="nav-sub-item" href="{{ url_for('me_published') }}"    role="menuitem">My Poems</a>
+              <a class="nav-sub-item" href="{{ url_for('me_drafts') }}"       role="menuitem">Drafts</a>
               <a class="nav-sub-item" href="{{ url_for('me_pasture') }}"      role="menuitem">My Pasture</a>
               <a class="nav-sub-item" href="{{ url_for('me_saved_poems') }}"  role="menuitem">Saved Poems</a>
               <a class="nav-sub-item" href="{{ url_for('me_saved_horses') }}" role="menuitem">Saved Horses</a>
