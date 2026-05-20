@@ -45,7 +45,7 @@
 
   {# ── URL tab ── #}
   <div id="tab-url" class="tab {% if active_tab == 'url' %}on{% endif %}">
-    <form method="post" action="/">
+    <form method="post" action="/count">
       <input type="hidden" name="type" value="url">
       <input type="text" name="url" placeholder="https://blog.tumblr.com/post/123"
              value="{{ form.url or '' }}">
@@ -55,7 +55,7 @@
 
   {# ── Text tab ── #}
   <div id="tab-text" class="tab {% if active_tab == 'text' %}on{% endif %}">
-    <form method="post" action="/">
+    <form method="post" action="/count">
       <input type="hidden" name="type" value="text">
       <textarea name="text" placeholder="Paste text to count horses in...">{{ form.text or '' }}</textarea>
       <button type="submit">Find Horses</button>
@@ -65,7 +65,7 @@
   {# ── Reply tab (admin only) ── #}
   {% if is_admin %}
   <div id="tab-reply" class="tab {% if active_tab == 'reply' %}on{% endif %}">
-    <form method="post" action="/">
+    <form method="post" action="/count">
       <input type="hidden" name="type" value="reply">
       <label>Post URL to reply to:</label>
       <input type="text" name="reply_url" placeholder="https://blog.tumblr.com/post/123"

@@ -283,7 +283,7 @@ def login():
         if check_pin(pin):
             session.permanent = True
             session['logged_in'] = True
-            return redirect(url_for('index'))
+            return redirect(url_for('count'))
         return render_template('login.html', error='Incorrect PIN')
     return render_template('login.html')
 
@@ -300,7 +300,7 @@ def logout():
 def sign_in():
     """Render the Clerk-powered sign-in page."""
     if g.get('current_user') or session.get('logged_in'):
-        return redirect(url_for('index'))
+        return redirect(url_for('featured'))
     return render_template('sign_in.html')
 
 
@@ -332,7 +332,7 @@ def clerk_verify():
     if user:
         session.permanent = True
         session['user_id'] = user['id']
-        return jsonify({'redirect': url_for('index')})
+        return jsonify({'redirect': url_for('featured')})
 
     # First login — stash the Clerk ID and send to slug picker
     session['pending_clerk_id'] = clerk_user_id
@@ -353,7 +353,7 @@ def setup_account():
     if not clerk_id:
         # Not in the middle of a fresh sign-in — redirect appropriately
         if g.get('current_user'):
-            return redirect(url_for('index'))
+            return redirect(url_for('featured'))
         return redirect(url_for('sign_in'))
 
     display_name = session.get('pending_display_name', '')
@@ -378,7 +378,7 @@ def setup_account():
             session.permanent = True
             session['user_id'] = user['id']
             flash('Welcome to poet.horse!', 'ok')
-            return redirect(url_for('index'))
+            return redirect(url_for('featured'))
 
     return render_template('setup_account.html',
         display_name=display_name,
@@ -519,11 +519,6 @@ def user_profile(slug):
 
 
 # ── Public browse / discover stubs (Phase 1.1) ───────────────────────────────
-
-@app.route('/count')
-def count():
-    return redirect(url_for('index'))
-
 
 @app.route('/featured')
 def featured():
@@ -786,10 +781,17 @@ def me_profile():
     )
 
 
-# ── Main page ─────────────────────────────────────────────────────────────────
+# ── Homepage ──────────────────────────────────────────────────────────────────
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 def index():
+    return redirect(url_for('featured'))
+
+
+# ── Horse counter ─────────────────────────────────────────────────────────────
+
+@app.route('/count', methods=['GET', 'POST'])
+def count():
     is_admin = bool(session.get('logged_in'))
 
     if request.method == 'GET':
@@ -987,7 +989,7 @@ def _process_chain(post_data: dict, active_tab: str, form: dict, is_admin: bool 
 @login_required
 def queue_post():
     if not tumblr.authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('count'))
 
     draft_id = request.form.get('id', '')
     draft    = load_draft(draft_id)
@@ -1324,7 +1326,7 @@ def callback():
         )
 
     if tumblr.complete_auth(code, code_verifier):
-        return redirect(url_for('index'))
+        return redirect(url_for('count'))
 
     return render_template('index.html',
         horses_loaded=dictionary.loaded, active_tab='url', form={},
