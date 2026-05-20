@@ -23,6 +23,21 @@ def list_stable_horses(user_id: int) -> list[dict]:
         return [dict(r) for r in rows]
 
 
+def remove_stable_horse(user_id: int, name: str) -> None:
+    with get_db() as conn:
+        conn.execute(
+            "DELETE FROM stable_horses WHERE user_id = ? AND name = ?",
+            (user_id, name),
+        )
+        conn.commit()
+
+
+def clear_stable_horses(user_id: int) -> None:
+    with get_db() as conn:
+        conn.execute("DELETE FROM stable_horses WHERE user_id = ?", (user_id,))
+        conn.commit()
+
+
 def bulk_add_stable_horses(user_id: int, horses: list[dict]) -> int:
     """
     Insert horses for the given user, skipping any whose name already exists

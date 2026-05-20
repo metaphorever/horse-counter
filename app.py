@@ -49,7 +49,7 @@ from db.users import (
     create_user, validate_slug, slug_available,
     get_preferences, update_preferences,
 )
-from db.stable import list_stable_horses, bulk_add_stable_horses
+from db.stable import list_stable_horses, bulk_add_stable_horses, remove_stable_horse, clear_stable_horses
 from db.pasture import add_to_pasture, list_pasture_horses
 from auth import TumblrManager
 from matcher import (
@@ -447,6 +447,50 @@ def me_sync():
         'stable':      list_stable_horses(user['id']),
         'preferences': prefs,
     })
+
+
+@app.route('/me/stable/add', methods=['POST'])
+def me_stable_add():
+    from flask import jsonify
+    user = g.get('current_user')
+    if user is None:
+        return jsonify({'error': 'Not signed in'}), 401
+    data = request.get_json(silent=True) or {}
+    name = (data.get('name') or '').strip()[:200]
+    if not name:
+        return jsonify({'error': 'name required'}), 400
+    horse = {
+        'name':      name,
+        'display':   (data.get('display') or name).strip()[:200],
+        'url':       (data.get('url') or '').strip()[:500],
+        'remaining': max(1, min(99, int(data.get('remaining') or 1))),
+    }
+    bulk_add_stable_horses(user['id'], [horse])
+    return jsonify({'horses': list_stable_horses(user['id'])})
+
+
+@app.route('/me/stable/remove', methods=['POST'])
+def me_stable_remove():
+    from flask import jsonify
+    user = g.get('current_user')
+    if user is None:
+        return jsonify({'error': 'Not signed in'}), 401
+    data = request.get_json(silent=True) or {}
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'name required'}), 400
+    remove_stable_horse(user['id'], name)
+    return jsonify({'horses': list_stable_horses(user['id'])})
+
+
+@app.route('/me/stable/clear', methods=['POST'])
+def me_stable_clear():
+    from flask import jsonify
+    user = g.get('current_user')
+    if user is None:
+        return jsonify({'error': 'Not signed in'}), 401
+    clear_stable_horses(user['id'])
+    return jsonify({'ok': True})
 
 
 # Preference keys clients can write through /me/preferences. Allow-listed and

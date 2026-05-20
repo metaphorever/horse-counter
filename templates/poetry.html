@@ -155,7 +155,7 @@
 </div>
 
 <!-- HELP MODAL -->
-<div class="modal-overlay" id="help-modal" hidden onclick="if(event.target===this)closeHelpModal()">
+<div class="modal-overlay" id="help-modal" onclick="if(event.target===this)closeHelpModal()">
   <div class="modal help-modal-body">
     <h3>How it works</h3>
     <ol class="help-steps">
@@ -743,10 +743,10 @@ async function doPastureHorses(){
 }
 
 function openHelpModal(){
-  document.getElementById('help-modal').removeAttribute('hidden');
+  document.getElementById('help-modal').classList.add('open');
 }
 function closeHelpModal(){
-  document.getElementById('help-modal').setAttribute('hidden', '');
+  document.getElementById('help-modal').classList.remove('open');
 }
 
 function addHistory(q){
@@ -766,6 +766,9 @@ async function addToStable(name, display, url, count=1){
   if(isAdmin){
     const d = await apiPost('/poetry/stable/add', {name, display, url, remaining: count});
     if(d){ stable = d.horses; renderStable(); }
+  } else if(isLoggedIn){
+    const d = await apiPost('/me/stable/add', {name, display, url, remaining: count});
+    if(d){ stable = d.horses; renderStable(); }
   } else {
     saveStableLocal();
   }
@@ -774,16 +777,26 @@ async function addToStable(name, display, url, count=1){
 async function removeFromStable(name){
   stable = stable.filter(h=>h.name!==name);
   renderStable();
-  if(isAdmin) await apiPost('/poetry/stable/remove', {name});
-  else        saveStableLocal();
+  if(isAdmin){
+    await apiPost('/poetry/stable/remove', {name});
+  } else if(isLoggedIn){
+    await apiPost('/me/stable/remove', {name});
+  } else {
+    saveStableLocal();
+  }
 }
 
 async function clearStable(){
   if(!confirm('Clear all horses from the stable?')) return;
   stable = [];
   renderStable();
-  if(isAdmin) await apiPost('/poetry/stable/clear');
-  else        saveStableLocal();
+  if(isAdmin){
+    await apiPost('/poetry/stable/clear');
+  } else if(isLoggedIn){
+    await apiPost('/me/stable/clear');
+  } else {
+    saveStableLocal();
+  }
 }
 
 function renderStable(){
@@ -845,12 +858,14 @@ function removeTile(li,hi){
   const existing = stable.find(h=>h.name===horse.name);
   if(existing){
     existing.remaining = (existing.remaining||1) + 1;
-    if(isAdmin) apiPost('/poetry/stable/add', {name:existing.name, display:existing.display, url:existing.url, remaining:existing.remaining});
-    else saveStableLocal();
+    if(isAdmin)        apiPost('/poetry/stable/add', {name:existing.name, display:existing.display, url:existing.url, remaining:existing.remaining});
+    else if(isLoggedIn) apiPost('/me/stable/add',      {name:existing.name, display:existing.display, url:existing.url, remaining:existing.remaining});
+    else               saveStableLocal();
   } else {
     stable.push({name:horse.name, display:horse.display, url:horse.url, remaining:1});
-    if(isAdmin) apiPost('/poetry/stable/add', {name:horse.name, display:horse.display, url:horse.url, remaining:1});
-    else saveStableLocal();
+    if(isAdmin)        apiPost('/poetry/stable/add', {name:horse.name, display:horse.display, url:horse.url, remaining:1});
+    else if(isLoggedIn) apiPost('/me/stable/add',      {name:horse.name, display:horse.display, url:horse.url, remaining:1});
+    else               saveStableLocal();
   }
   renderPoem();
   renderStable();
@@ -882,11 +897,13 @@ function dropHorseOnLine(horse, li, refHi, insertAfter){
       entry.remaining = (entry.remaining||1) - 1;
       if(entry.remaining <= 0){
         stable = stable.filter(h=>h.name!==horse.name);
-        if(isAdmin) apiPost('/poetry/stable/remove', {name:horse.name});
-        else saveStableLocal();
+        if(isAdmin)        apiPost('/poetry/stable/remove', {name:horse.name});
+        else if(isLoggedIn) apiPost('/me/stable/remove',     {name:horse.name});
+        else               saveStableLocal();
       } else {
-        if(isAdmin) apiPost('/poetry/stable/add', {name:entry.name, display:entry.display, url:entry.url, remaining:entry.remaining});
-        else saveStableLocal();
+        if(isAdmin)        apiPost('/poetry/stable/add', {name:entry.name, display:entry.display, url:entry.url, remaining:entry.remaining});
+        else if(isLoggedIn) apiPost('/me/stable/add',    {name:entry.name, display:entry.display, url:entry.url, remaining:entry.remaining});
+        else               saveStableLocal();
       }
     }
   }
@@ -1279,8 +1296,9 @@ async function sendHorseToPasture(horse, srcType, srcLine, srcIdx){
 function removeHorseFromSource(srcType, srcLine, srcIdx, horse){
   if(srcType==='stable'){
     stable = stable.filter(h=>h.name!==horse.name);
-    if(isAdmin)      apiPost('/poetry/stable/remove', {name:horse.name});
-    else             saveStableLocal();
+    if(isAdmin)        apiPost('/poetry/stable/remove', {name:horse.name});
+    else if(isLoggedIn) apiPost('/me/stable/remove',    {name:horse.name});
+    else               saveStableLocal();
     renderStable();
   } else if(srcType==='poem' && srcLine>=0 && srcIdx>=0){
     lines[srcLine].splice(srcIdx, 1);
