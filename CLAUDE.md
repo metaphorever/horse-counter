@@ -250,7 +250,7 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: 1.25 — Nav / IA polish**
-**Model: Sonnet · Effort: low**
+**PHASE: 1.26 — Horse search area rework**
+**Model: Sonnet · Effort: medium**
 
-1.10 and 1.11 shipped and verified. Next: nav label cleanup, promote Featured/Browse/Random to top-level, `/` redirects to `/featured`.
+1.25 shipped and merged. Next: short names link → button; random horse button moves to search panel and loads results into the search display area; pasture horses button loads all user's pasture horses alphabetically with pagination; replace inline wildcard explanation with a compact help/how-to button covering the full search → stable → poem → publish pipeline.
