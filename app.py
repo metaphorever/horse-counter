@@ -50,7 +50,7 @@ from db.users import (
     get_preferences, update_preferences,
 )
 from db.stable import list_stable_horses, bulk_add_stable_horses
-from db.pasture import add_to_pasture
+from db.pasture import add_to_pasture, list_pasture_horses
 from auth import TumblrManager
 from matcher import (
     HorseDictionary, ChainCounter,
@@ -1374,8 +1374,21 @@ def poetry_search():
 def poetry_random():
     from flask import jsonify
     data = request.get_json(silent=True) or {}
-    n    = min(int(data.get('n', 5)), 20)
+    n    = min(int(data.get('n', 5)), 50)
     return jsonify({'ok': True, 'results': random_horses(dictionary, n)})
+
+
+@app.route('/poetry/pasture-horses', methods=['POST'])
+def poetry_pasture_horses():
+    from flask import jsonify
+    user = g.get('current_user')
+    if user is None:
+        return jsonify({'error': 'Sign in to browse your pasture'}), 401
+    horses = list_pasture_horses(user['id'])
+    horses.sort(key=lambda h: (h.get('display') or h['name']).lower())
+    for h in horses:
+        h.setdefault('count', 1)
+    return jsonify({'ok': True, 'results': horses})
 
 
 @app.route('/poetry/short', methods=['POST'])

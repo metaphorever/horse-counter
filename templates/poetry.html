@@ -41,6 +41,11 @@
             <option value="50">50</option>
           </select>
         </div>
+        <div class="quick-picks">
+          <button class="qp-btn" onclick="doShortNames()">Short names</button>
+          <button class="qp-btn" id="random-btn" onclick="doRandom()">Random</button>
+          {% if current_user %}<button class="qp-btn" id="pasture-btn" onclick="doPastureHorses()">My pasture</button>{% endif %}
+        </div>
         <div id="search-mode" class="search-mode"></div>
         <div id="search-meta" class="search-meta"></div>
         <div id="search-error" class="search-error"></div>
@@ -60,15 +65,7 @@
           <span class="pager-info" id="pager-info"></span>
           <button id="pager-next" onclick="movePage(1)">→</button>
         </div>
-        <div class="search-hint" id="search-hint">
-          <code>dance</code> exact &nbsp;
-          <code>dance*</code> starts &nbsp;
-          <code>*dance</code> ends<br>
-          <code>*dance*</code> anywhere &nbsp;
-          <code>dance *</code> first word &nbsp;
-          <code>* dance</code> last word<br>
-          <a class="short-names-link" onclick="doShortNames()">Browse short names (A, Bo, Ace…)</a>
-        </div>
+        <button class="search-help-btn" onclick="openHelpModal()">? How it works</button>
       </div>
 
       <!-- History -->
@@ -85,7 +82,6 @@
       <div class="stable-head">
         <h3>Stable <span id="stable-count" class="stable-count"></span></h3>
         <div class="stable-controls">
-          <button class="random-btn" id="random-btn" onclick="doRandom()">+ random</button>
           <button class="clear-btn" onclick="clearStable()">Clear all</button>
         </div>
       </div>
@@ -155,6 +151,23 @@
       <button class="btn-sec" onclick="closeModal()">Cancel</button>
     </div>
     <div id="modal-err" class="msg err modal-err" style="display:none"></div>
+  </div>
+</div>
+
+<!-- HELP MODAL -->
+<div class="modal-overlay" id="help-modal" hidden onclick="if(event.target===this)closeHelpModal()">
+  <div class="modal help-modal-body">
+    <h3>How it works</h3>
+    <ol class="help-steps">
+      <li><strong>Search for horses.</strong> Type a word or pattern in the search box — <code>*dance*</code> matches anything containing "dance", <code>dance*</code> starts with it, <code>* dance</code> ends with it. Or use <em>Short names</em> to browse 3-letter-or-fewer horses, <em>Random</em> to get a surprise batch, or <em>My pasture</em> to pull from your saved collection.</li>
+      <li><strong>Add to stable.</strong> Click <em>+ stable</em> next to any horse to move it to your working stable on the right.</li>
+      <li><strong>Build the poem.</strong> Drag horses from the stable into poem lines, or click a horse chip to open its menu. Each horse can appear as many times as it shows up in the dictionary.</li>
+      <li><strong>Post.</strong> When you're happy, click <em>Post poem</em> to give your poem a title and submit it for review.</li>
+    </ol>
+    <p class="help-note">Wildcard syntax: <code>dance</code> exact &nbsp; <code>dance*</code> starts &nbsp; <code>*dance</code> ends &nbsp; <code>*dance*</code> anywhere &nbsp; <code>dance *</code> first word &nbsp; <code>* dance</code> last word</p>
+    <div class="modal-actions">
+      <button class="btn-sec" onclick="closeHelpModal()">Got it</button>
+    </div>
   </div>
 </div>
 
@@ -313,7 +326,6 @@ function setMode(mode){
     document.getElementById('smt-'+m).classList.toggle('on', m===mode);
   });
   document.getElementById('q').placeholder = MODE_PLACEHOLDER[mode];
-  document.getElementById('search-hint').style.display      = mode==='wildcard' ? '' : 'none';
   document.getElementById('page-size-row').style.display    = mode==='wildcard' ? '' : 'none';
   document.getElementById('rhyme-panel').style.display      = 'none';
   document.getElementById('thesaurus-panel').style.display  = 'none';
@@ -692,14 +704,49 @@ async function doShortNames(){
 async function doRandom(){
   const btn = document.getElementById('random-btn');
   btn.disabled = true;
-  btn.textContent = '...';
-  const d = await apiPost('/poetry/random', {n: 5});
+  btn.textContent = '…';
+  document.getElementById('search-meta').textContent = 'Loading…';
+  document.getElementById('search-error').textContent = '';
+  document.getElementById('search-results').innerHTML = '';
+  document.getElementById('search-pager').style.display = 'none';
+  document.getElementById('search-mode').textContent = 'Random horses';
+  const d = await apiPost('/poetry/random', {n: pageSize});
   btn.disabled = false;
-  btn.textContent = '+ random';
+  btn.textContent = 'Random';
   if(!d || !d.results) return;
-  for(const h of d.results){
-    await addToStable(h.name, h.display, h.url, h.count||1);
-  }
+  showVia        = false;
+  searchResults  = d.results;
+  searchCapped   = false;
+  searchPage     = 0;
+  expandedGroups = new Set();
+  renderSearchPage();
+}
+
+async function doPastureHorses(){
+  const btn = document.getElementById('pasture-btn');
+  if(btn){ btn.disabled = true; btn.textContent = '…'; }
+  document.getElementById('search-meta').textContent = 'Loading…';
+  document.getElementById('search-error').textContent = '';
+  document.getElementById('search-results').innerHTML = '';
+  document.getElementById('search-pager').style.display = 'none';
+  document.getElementById('search-mode').textContent = 'My pasture';
+  const d = await apiPost('/poetry/pasture-horses');
+  if(btn){ btn.disabled = false; btn.textContent = 'My pasture'; }
+  if(!d) return;
+  if(d.error){ document.getElementById('search-error').textContent = d.error; return; }
+  showVia        = false;
+  searchResults  = d.results;
+  searchCapped   = false;
+  searchPage     = 0;
+  expandedGroups = new Set();
+  renderSearchPage();
+}
+
+function openHelpModal(){
+  document.getElementById('help-modal').removeAttribute('hidden');
+}
+function closeHelpModal(){
+  document.getElementById('help-modal').setAttribute('hidden', '');
 }
 
 function addHistory(q){
