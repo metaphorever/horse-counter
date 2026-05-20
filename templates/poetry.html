@@ -95,6 +95,11 @@
         <h2>Poem</h2>
         <div class="poem-actions">
           <button class="btn-sec" onclick="clearPoem()">Clear</button>
+          {% if current_user %}
+          <button class="btn-sec" id="save-draft-btn" onclick="openDraftModal()" disabled>Save draft</button>
+          {% else %}
+          <button class="btn-sec" id="save-draft-btn" disabled title="Sign in to save drafts">Save draft</button>
+          {% endif %}
           <button class="btn-primary" id="post-btn" onclick="openModal()" disabled>Post poem</button>
         </div>
       </div>
@@ -154,6 +159,37 @@
   </div>
 </div>
 
+<!-- DRAFT MODAL -->
+<div class="modal-overlay" id="draft-modal">
+  <div class="modal">
+    <h3>Save Draft</h3>
+
+    <label>Title <span class="opt">(optional — leave blank to auto-name)</span>:</label>
+    <input type="text" id="draft-modal-title" placeholder="e.g. Morning field poem" maxlength="120">
+
+    <label>Your name <span class="opt">(optional)</span>:</label>
+    <div class="modal-name-row">
+      <input type="text" id="draft-modal-name"   placeholder="Your name"       maxlength="60">
+      <input type="text" id="draft-modal-tumblr" placeholder="Tumblr @ (no @)" maxlength="32">
+    </div>
+
+    <label>After <span class="opt">(optional)</span>:</label>
+    <div class="modal-name-row">
+      <input type="text" id="draft-modal-inspired-text" placeholder="e.g. Hamlet by William Shakespeare" maxlength="200">
+      <input type="text" id="draft-modal-inspired-url"  placeholder="https://… (optional source link)"   maxlength="300">
+    </div>
+
+    <div id="draft-modal-tag-sections" class="modal-tag-sections"></div>
+
+    <div id="draft-modal-actions" class="modal-actions">
+      <button class="btn-primary" id="draft-modal-submit" onclick="saveDraftFromModal()">Save draft</button>
+      <button class="btn-sec" onclick="closeDraftModal()">Cancel</button>
+    </div>
+    <div id="draft-modal-err" class="msg err modal-err" style="display:none"></div>
+    <div id="draft-modal-ok" class="msg ok" style="display:none"></div>
+  </div>
+</div>
+
 <!-- HELP MODAL -->
 <div class="modal-overlay" id="help-modal" onclick="if(event.target===this)closeHelpModal()">
   <div class="modal help-modal-body">
@@ -182,6 +218,7 @@ let userPrefs       = {{ user_prefs_json|safe }};
 const OPTIONAL_TAGS = {{ optional_tags_json|safe }};
 let TAG_CATEGORIES = {{ tag_categories_json|safe }};  // [{id,slug,label,behavior,tags:[…]}, …]
 let selectedTagIds = new Set();  // tag IDs the user has picked for the current poem
+let draftId        = null;       // ID of the currently active saved draft (null = unsaved)
 
 // ── Horse tile appearance ─────────────────────────────────────────────────────
 const COATS = [
@@ -207,60 +244,119 @@ let drag = null;
 // { horse:{name,display,url}, srcType:'stable'|'poem', srcLine:int, srcIdx:int }
 
 // ── localStorage helpers (anonymous users only) ───────────────────────────────
-function saveStableLocal(){
-  // Only write to localStorage for anonymous users. Logged-in users' stable
-  // is server-backed; persisting client-side would silently shadow the DB.
-  if(isLoggedIn) return;
-  try { localStorage.setItem('horse-stable', JSON.stringify(stable)); } catch(e){}
-}
-function loadStableLocal(){
-  // Fall back to legacy 'horse-pasture' key on first visit after rename
+// Phase 1.27: anonymous state is stored as a single object under 'horse-draft'
+// shape: {lines, stable, title, submitter_name, submitter_tumblr, tag_ids}
+// Migration: if 'horse-stable' exists but 'horse-draft' doesn't, import it.
+
+function saveDraftLocal(){
+  if(isLoggedIn) return;  // logged-in users persist via explicit Save Draft → SQLite
   try {
-    const v = localStorage.getItem('horse-stable') || localStorage.getItem('horse-pasture') || '[]';
-    return JSON.parse(v);
-  } catch{ return []; }
+    const draft = {
+      lines,
+      stable,
+      title:           (document.getElementById('draft-modal-title')?.value || '').trim(),
+      submitter_name:  (document.getElementById('draft-modal-name')?.value  || '').trim(),
+      submitter_tumblr:(document.getElementById('draft-modal-tumblr')?.value || '').trim(),
+      tag_ids:         Array.from(selectedTagIds),
+    };
+    localStorage.setItem('horse-draft', JSON.stringify(draft));
+  } catch(e){}
 }
 
-// ── Account sync (Phase 0.5) ──────────────────────────────────────────────────
-// On first login the user may still have horse-stable / horse-poem-name /
-// horse-poem-tumblr / horse-page-size in localStorage from their logged-out
-// session. Push those to /me/sync, replace in-memory stable from the merged
-// server response, then clear the local copies so localStorage stops being
-// the source of truth for this account.
+function loadDraftLocal(){
+  try {
+    // Migration: lift old horse-stable key into the new shape
+    if(!localStorage.getItem('horse-draft') && localStorage.getItem('horse-stable')){
+      const oldStable = JSON.parse(localStorage.getItem('horse-stable') || '[]');
+      localStorage.setItem('horse-draft', JSON.stringify({
+        lines: [[]],
+        stable: oldStable,
+        title: '', submitter_name: '', submitter_tumblr: '', tag_ids: [],
+      }));
+      localStorage.removeItem('horse-stable');
+    }
+    // Also migrate legacy 'horse-pasture' key
+    if(!localStorage.getItem('horse-draft') && localStorage.getItem('horse-pasture')){
+      const oldStable = JSON.parse(localStorage.getItem('horse-pasture') || '[]');
+      localStorage.setItem('horse-draft', JSON.stringify({
+        lines: [[]],
+        stable: oldStable,
+        title: '', submitter_name: '', submitter_tumblr: '', tag_ids: [],
+      }));
+      localStorage.removeItem('horse-pasture');
+    }
+    const v = localStorage.getItem('horse-draft');
+    return v ? JSON.parse(v) : null;
+  } catch{ return null; }
+}
+
+// ── Account sync (Phase 0.5 / updated 1.27) ──────────────────────────────────
+// On first login the user may have a horse-draft in localStorage from their
+// anonymous session. Save it as a new SQLite draft, then sync preferences.
 async function syncLocalToAccount(){
-  const localStable = loadStableLocal();
+  const localDraft  = loadDraftLocal();
   const poemName    = localStorage.getItem('horse-poem-name');
   const poemTumblr  = localStorage.getItem('horse-poem-tumblr');
   const pageSizeLS  = localStorage.getItem('horse-page-size');
-  if(!localStable.length && !poemName && !poemTumblr && !pageSizeLS) return;
 
-  const d = await apiPost('/me/sync', {
-    stable:      localStable,
-    poem_name:   poemName  || '',
-    poem_tumblr: poemTumblr || '',
-    page_size:   pageSizeLS || '',
-  });
-  if(!d || !d.ok) return;
+  // Save anonymous draft to the account if it has any content
+  if(localDraft && (
+      (localDraft.lines  && localDraft.lines.some(l=>l && l.length > 0)) ||
+      (localDraft.stable && localDraft.stable.length > 0)
+  )){
+    const d = await apiPost('/me/draft/save', {
+      draft_id:        null,
+      title:           localDraft.title || '',
+      lines_json:      JSON.stringify(localDraft.lines  || [[]]),
+      stable_json:     JSON.stringify(localDraft.stable || []),
+      submitter_name:  localDraft.submitter_name  || poemName   || '',
+      submitter_tumblr:localDraft.submitter_tumblr || poemTumblr || '',
+      inspired_by_text:'',
+      inspired_by_url: '',
+      tag_ids_json:    JSON.stringify(localDraft.tag_ids || []),
+    });
+    if(d && d.ok){
+      draftId = d.draft.id;
+      stable  = localDraft.stable || [];
+      lines   = localDraft.lines  || [[]];
+      if(!lines.length) lines = [[]];
+      renderStable();
+      renderPoem();
+    }
+  }
 
-  stable = d.stable || [];
-  userPrefs = d.preferences || userPrefs;
-  renderStable();
-  ['horse-stable','horse-pasture','horse-poem-name','horse-poem-tumblr','horse-page-size']
+  // Sync preferences
+  const prefBody = {};
+  if(poemName)   prefBody.poem_name   = poemName;
+  if(poemTumblr) prefBody.poem_tumblr = poemTumblr;
+  if(pageSizeLS) prefBody.page_size   = pageSizeLS;
+  if(Object.keys(prefBody).length){
+    const p = await apiPost('/me/sync', prefBody);
+    if(p && p.ok) userPrefs = p.preferences || userPrefs;
+  }
+
+  // Clear all legacy local keys
+  ['horse-draft','horse-stable','horse-pasture',
+   'horse-poem-name','horse-poem-tumblr','horse-page-size']
     .forEach(k => { try{ localStorage.removeItem(k); }catch(e){} });
 
-  if(!localStorage.getItem('horse-sync-toast-shown')){
-    showToast('Your horses moved with you — synced to your account.');
+  if(localDraft && !localStorage.getItem('horse-sync-toast-shown')){
+    showToast('Your draft moved with you — saved to your account.');
     try{ localStorage.setItem('horse-sync-toast-shown','1'); }catch(e){}
   }
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // Anonymous users hydrate from localStorage. Logged-in users (admin or
-  // regular) start from the server-rendered stable_json; if there's pending
-  // localStorage data, push it up via /me/sync.
+  // Anonymous users hydrate from horse-draft localStorage (with migration from
+  // legacy horse-stable). Logged-in users start empty; if there's a pending
+  // anonymous draft, syncLocalToAccount() creates a SQLite draft from it.
   if(!isAdmin && !isLoggedIn){
-    stable = loadStableLocal();
+    const saved = loadDraftLocal();
+    if(saved){
+      stable = saved.stable || [];
+      if(saved.lines && saved.lines.length) lines = saved.lines;
+    }
   } else if(isLoggedIn && !isAdmin){
     syncLocalToAccount();
   }
@@ -759,6 +855,9 @@ function addHistory(q){
 }
 
 // ── Stable ────────────────────────────────────────────────────────────────────
+// 1.27: stable is no longer continuously server-synced for Clerk users.
+// It lives in memory and is persisted only when the user saves a draft.
+// Anonymous users auto-persist to horse-draft localStorage.
 async function addToStable(name, display, url, count=1){
   if(stable.find(h=>h.name===name)) return;
   stable.push({name, display, url, remaining: count});
@@ -766,11 +865,8 @@ async function addToStable(name, display, url, count=1){
   if(isAdmin){
     const d = await apiPost('/poetry/stable/add', {name, display, url, remaining: count});
     if(d){ stable = d.horses; renderStable(); }
-  } else if(isLoggedIn){
-    const d = await apiPost('/me/stable/add', {name, display, url, remaining: count});
-    if(d){ stable = d.horses; renderStable(); }
   } else {
-    saveStableLocal();
+    saveDraftLocal();
   }
 }
 
@@ -779,10 +875,8 @@ async function removeFromStable(name){
   renderStable();
   if(isAdmin){
     await apiPost('/poetry/stable/remove', {name});
-  } else if(isLoggedIn){
-    await apiPost('/me/stable/remove', {name});
   } else {
-    saveStableLocal();
+    saveDraftLocal();
   }
 }
 
@@ -792,10 +886,8 @@ async function clearStable(){
   renderStable();
   if(isAdmin){
     await apiPost('/poetry/stable/clear');
-  } else if(isLoggedIn){
-    await apiPost('/me/stable/clear');
   } else {
-    saveStableLocal();
+    saveDraftLocal();
   }
 }
 
@@ -849,7 +941,7 @@ function renderPoem(){
 }
 
 function addLine(){ lines.push([]); renderPoem(); }
-function clearPoem(){ if(!confirm('Clear the poem?')) return; lines=[[]]; renderPoem(); }
+function clearPoem(){ if(!confirm('Clear the poem?')) return; lines=[[]]; renderPoem(); saveDraftLocal(); }
 function removeTile(li,hi){
   const horse = lines[li][hi];
   lines[li].splice(hi,1);
@@ -858,14 +950,12 @@ function removeTile(li,hi){
   const existing = stable.find(h=>h.name===horse.name);
   if(existing){
     existing.remaining = (existing.remaining||1) + 1;
-    if(isAdmin)        apiPost('/poetry/stable/add', {name:existing.name, display:existing.display, url:existing.url, remaining:existing.remaining});
-    else if(isLoggedIn) apiPost('/me/stable/add',      {name:existing.name, display:existing.display, url:existing.url, remaining:existing.remaining});
-    else               saveStableLocal();
+    if(isAdmin) apiPost('/poetry/stable/add', {name:existing.name, display:existing.display, url:existing.url, remaining:existing.remaining});
+    else        saveDraftLocal();
   } else {
     stable.push({name:horse.name, display:horse.display, url:horse.url, remaining:1});
-    if(isAdmin)        apiPost('/poetry/stable/add', {name:horse.name, display:horse.display, url:horse.url, remaining:1});
-    else if(isLoggedIn) apiPost('/me/stable/add',      {name:horse.name, display:horse.display, url:horse.url, remaining:1});
-    else               saveStableLocal();
+    if(isAdmin) apiPost('/poetry/stable/add', {name:horse.name, display:horse.display, url:horse.url, remaining:1});
+    else        saveDraftLocal();
   }
   renderPoem();
   renderStable();
@@ -883,6 +973,8 @@ function updateStats(){
   document.getElementById('stat-count').textContent = count;
   document.getElementById('stat-words').textContent = count ? `${words} words` : '';
   document.getElementById('post-btn').disabled      = count===0;
+  const draftBtn = document.getElementById('save-draft-btn');
+  if(draftBtn && isLoggedIn) draftBtn.disabled = count===0;
 }
 
 function dropHorseOnLine(horse, li, refHi, insertAfter){
@@ -897,13 +989,11 @@ function dropHorseOnLine(horse, li, refHi, insertAfter){
       entry.remaining = (entry.remaining||1) - 1;
       if(entry.remaining <= 0){
         stable = stable.filter(h=>h.name!==horse.name);
-        if(isAdmin)        apiPost('/poetry/stable/remove', {name:horse.name});
-        else if(isLoggedIn) apiPost('/me/stable/remove',     {name:horse.name});
-        else               saveStableLocal();
+        if(isAdmin) apiPost('/poetry/stable/remove', {name:horse.name});
+        else        saveDraftLocal();
       } else {
-        if(isAdmin)        apiPost('/poetry/stable/add', {name:entry.name, display:entry.display, url:entry.url, remaining:entry.remaining});
-        else if(isLoggedIn) apiPost('/me/stable/add',    {name:entry.name, display:entry.display, url:entry.url, remaining:entry.remaining});
-        else               saveStableLocal();
+        if(isAdmin) apiPost('/poetry/stable/add', {name:entry.name, display:entry.display, url:entry.url, remaining:entry.remaining});
+        else        saveDraftLocal();
       }
     }
   }
@@ -1296,9 +1386,8 @@ async function sendHorseToPasture(horse, srcType, srcLine, srcIdx){
 function removeHorseFromSource(srcType, srcLine, srcIdx, horse){
   if(srcType==='stable'){
     stable = stable.filter(h=>h.name!==horse.name);
-    if(isAdmin)        apiPost('/poetry/stable/remove', {name:horse.name});
-    else if(isLoggedIn) apiPost('/me/stable/remove',    {name:horse.name});
-    else               saveStableLocal();
+    if(isAdmin) apiPost('/poetry/stable/remove', {name:horse.name});
+    else        saveDraftLocal();
     renderStable();
   } else if(srcType==='poem' && srcLine>=0 && srcIdx>=0){
     lines[srcLine].splice(srcIdx, 1);
@@ -1307,59 +1396,61 @@ function removeHorseFromSource(srcType, srcLine, srcIdx, horse){
   }
 }
 
-// ── Tag picker (in the publish modal) ─────────────────────────────────────────
-function renderTagSections(){
-  const host = document.getElementById('modal-tag-sections');
+// ── Tag picker (shared by publish and draft modals) ───────────────────────────
+let selectedDraftTagIds = new Set();
+
+function _renderTagSectionsInto(hostId, tagSet, onRerender){
+  const host = document.getElementById(hostId);
   if(!host) return;
   host.innerHTML = TAG_CATEGORIES.map(cat=>{
-    const inputType = cat.behavior === 'single_select' ? 'radio' : 'checkbox';
-    const groupName = `tagcat-${cat.id}`;
-    const warningClass = cat.behavior === 'content_warning' ? ' content-warning' : '';
+    const inputType  = cat.behavior === 'single_select' ? 'radio' : 'checkbox';
+    const ns         = `${hostId}-tagcat-${cat.id}`;
+    const warningCls = cat.behavior === 'content_warning' ? ' content-warning' : '';
     const chips = cat.tags.map(t=>{
-      const checked = selectedTagIds.has(t.id) ? ' checked' : '';
+      const checked = tagSet.has(t.id) ? ' checked' : '';
       const pending = t.status === 'pending' ? ' tag-pending' : '';
       return `
-        <label class="tag-chip${warningClass}${pending}">
-          <input type="${inputType}" name="${groupName}" value="${t.id}" data-cat="${cat.id}"${checked}>
+        <label class=”tag-chip${warningCls}${pending}”>
+          <input type=”${inputType}” name=”${ns}” value=”${t.id}” data-cat=”${cat.id}”${checked}>
           <span>${esc(t.label)}${pending?' <em>(pending)</em>':''}</span>
         </label>`;
     }).join('');
     return `
-      <div class="tag-section" data-cat-id="${cat.id}" data-behavior="${esc(cat.behavior)}">
-        <div class="tag-section-head">
-          <span class="tag-section-label">${esc(cat.label)}</span>
-          <span class="tag-section-hint">${cat.behavior==='single_select' ? 'pick one' : 'pick any'}</span>
+      <div class=”tag-section” data-cat-id=”${cat.id}” data-behavior=”${esc(cat.behavior)}”>
+        <div class=”tag-section-head”>
+          <span class=”tag-section-label”>${esc(cat.label)}</span>
+          <span class=”tag-section-hint”>${cat.behavior==='single_select' ? 'pick one' : 'pick any'}</span>
         </div>
-        <div class="tag-chip-cloud">${chips}</div>
-        <button type="button" class="tag-suggest-btn" data-cat-id="${cat.id}" data-cat-label="${esc(cat.label)}">
+        <div class=”tag-chip-cloud”>${chips}</div>
+        <button type=”button” class=”tag-suggest-btn” data-cat-id=”${cat.id}” data-cat-label=”${esc(cat.label)}”>
           + Suggest a new ${esc(cat.label).toLowerCase()} tag
         </button>
       </div>`;
   }).join('');
 
-  // Wire input changes → selectedTagIds
-  host.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(inp=>{
-    inp.addEventListener('change', e=>{
+  host.querySelectorAll('input[type=”checkbox”], input[type=”radio”]').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
       const id = parseInt(inp.value);
       if(inp.type === 'radio'){
-        // Clear previous radio selections in this category
         const catId = parseInt(inp.dataset.cat);
         const cat = TAG_CATEGORIES.find(c=>c.id===catId);
-        if(cat) cat.tags.forEach(t=>selectedTagIds.delete(t.id));
+        if(cat) cat.tags.forEach(t=>tagSet.delete(t.id));
       }
-      if(inp.checked) selectedTagIds.add(id);
-      else            selectedTagIds.delete(id);
+      if(inp.checked) tagSet.add(id);
+      else            tagSet.delete(id);
     });
   });
 
-  // Wire "+ Suggest" buttons
   host.querySelectorAll('.tag-suggest-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=> suggestTagInline(parseInt(btn.dataset.catId), btn.dataset.catLabel));
+    btn.addEventListener('click', ()=> suggestTagInline(parseInt(btn.dataset.catId), btn.dataset.catLabel, tagSet, onRerender));
   });
 }
 
-async function suggestTagInline(categoryId, categoryLabel){
-  const label = (prompt(`Suggest a new tag for "${categoryLabel}":`, '') || '').trim();
+function renderTagSections(){ _renderTagSectionsInto('modal-tag-sections', selectedTagIds, renderTagSections); }
+function renderDraftTagSections(){ _renderTagSectionsInto('draft-modal-tag-sections', selectedDraftTagIds, renderDraftTagSections); }
+
+async function suggestTagInline(categoryId, categoryLabel, tagSet, onRerender){
+  const label = (prompt(`Suggest a new tag for “${categoryLabel}”:`, '') || '').trim();
   if(!label) return;
   const r = await apiPost('/tags/suggest', { category_id: categoryId, label });
   if(!r){ return; }
@@ -1367,29 +1458,35 @@ async function suggestTagInline(categoryId, categoryLabel){
     showToast(r.error || 'Could not add suggestion');
     return;
   }
-  // Append the new pending tag to its category and re-render
   const cat = TAG_CATEGORIES.find(c=>c.id===categoryId);
   if(cat){
     cat.tags.push({ id: r.tag.id, slug: '', label: r.tag.label, status: 'pending' });
     cat.tags.sort((a,b)=> a.label.localeCompare(b.label));
   }
-  selectedTagIds.add(r.tag.id);
-  renderTagSections();
+  tagSet.add(r.tag.id);
+  if(onRerender) onRerender();
   showToast(`Suggested “${r.tag.label}” — pending admin review.`);
 }
 
 // ── Post modal ────────────────────────────────────────────────────────────────
+function _anonPrefs(){
+  // For anonymous users, pull attribution from horse-draft localStorage.
+  const saved = loadDraftLocal();
+  return {
+    name:   (saved && saved.submitter_name)   || '',
+    tumblr: (saved && saved.submitter_tumblr) || '',
+  };
+}
+
 function openModal(){
   document.getElementById('modal-err').style.display='none';
   document.getElementById('empty-line-warning').style.display='none';
   document.getElementById('modal-actions').style.display='';
-  // Pre-fill attribution: logged-in users from their synced preferences,
-  // anonymous users from localStorage.
+  const prefs  = isLoggedIn ? {name: userPrefs.poem_name||'', tumblr: userPrefs.poem_tumblr||''} : _anonPrefs();
   const nameEl   = document.getElementById('modal-submitter-name');
   const tumblrEl = document.getElementById('modal-submitter-tumblr');
-  if (nameEl)   nameEl.value   = (isLoggedIn ? (userPrefs.poem_name   || '') : (localStorage.getItem('horse-poem-name')   || ''));
-  if (tumblrEl) tumblrEl.value = (isLoggedIn ? (userPrefs.poem_tumblr || '') : (localStorage.getItem('horse-poem-tumblr') || ''));
-  // Reset attribution-to-existing-work fields and tag selection each time.
+  if (nameEl)   nameEl.value   = prefs.name;
+  if (tumblrEl) tumblrEl.value = prefs.tumblr;
   const itext = document.getElementById('modal-inspired-text'); if (itext) itext.value = '';
   const iurl  = document.getElementById('modal-inspired-url');  if (iurl)  iurl.value  = '';
   selectedTagIds = new Set();
@@ -1397,6 +1494,67 @@ function openModal(){
   document.getElementById('post-modal').classList.add('open');
 }
 function closeModal(){ document.getElementById('post-modal').classList.remove('open'); }
+
+// ── Draft modal ───────────────────────────────────────────────────────────────
+function openDraftModal(){
+  if(!isLoggedIn) return;
+  document.getElementById('draft-modal-err').style.display='none';
+  document.getElementById('draft-modal-ok').style.display='none';
+  document.getElementById('draft-modal-actions').style.display='';
+  // Pre-fill title from current draftId's title if known, otherwise blank.
+  const titleEl = document.getElementById('draft-modal-title');
+  if(titleEl) titleEl.value = '';
+  const nameEl   = document.getElementById('draft-modal-name');
+  const tumblrEl = document.getElementById('draft-modal-tumblr');
+  if(nameEl)   nameEl.value   = userPrefs.poem_name   || '';
+  if(tumblrEl) tumblrEl.value = userPrefs.poem_tumblr || '';
+  const itext = document.getElementById('draft-modal-inspired-text'); if(itext) itext.value = '';
+  const iurl  = document.getElementById('draft-modal-inspired-url');  if(iurl)  iurl.value  = '';
+  selectedDraftTagIds = new Set();
+  renderDraftTagSections();
+  document.getElementById('draft-modal').classList.add('open');
+}
+function closeDraftModal(){ document.getElementById('draft-modal').classList.remove('open'); }
+
+async function saveDraftFromModal(){
+  if(!isLoggedIn) return;
+  const flat = lines.flat();
+  if(!flat.length) return;
+
+  const title          = (document.getElementById('draft-modal-title')?.value          || '').trim();
+  const submitterName  = (document.getElementById('draft-modal-name')?.value           || '').trim();
+  const submitterTumblr= (document.getElementById('draft-modal-tumblr')?.value         || '').trim().replace(/^@/, '');
+  const inspiredText   = (document.getElementById('draft-modal-inspired-text')?.value  || '').trim();
+  const inspiredUrl    = (document.getElementById('draft-modal-inspired-url')?.value   || '').trim();
+
+  const submitBtn = document.getElementById('draft-modal-submit');
+  if(submitBtn) submitBtn.disabled = true;
+
+  const d = await apiPost('/me/draft/save', {
+    draft_id:         draftId,
+    title,
+    lines_json:       JSON.stringify(lines),
+    stable_json:      JSON.stringify(stable),
+    submitter_name:   submitterName,
+    submitter_tumblr: submitterTumblr,
+    inspired_by_text: inspiredText,
+    inspired_by_url:  inspiredUrl,
+    tag_ids_json:     JSON.stringify(Array.from(selectedDraftTagIds)),
+  });
+
+  if(submitBtn) submitBtn.disabled = false;
+
+  if(!d || !d.ok){
+    const el = document.getElementById('draft-modal-err');
+    el.textContent = (d && d.error) || 'Could not save draft — please try again.';
+    el.style.display = '';
+    return;
+  }
+
+  draftId = d.draft.id;
+  closeDraftModal();
+  showToast(`Draft "${d.draft.title}" saved.`);
+}
 
 async function submitPoemPublic(){
   const flat = lines.flat();
@@ -1450,10 +1608,12 @@ async function _doSubmitPoem(){
   const submitterTumblr = (document.getElementById('modal-submitter-tumblr')?.value || '').trim().replace(/^@/, '');
   const poemTitle       = (document.getElementById('modal-title')?.value            || '').trim();
   if(!isLoggedIn){
-    // Anonymous: persist attribution locally so the modal pre-fills next time.
+    // Persist attribution into horse-draft so the modal pre-fills next time.
     try{
-      localStorage.setItem('horse-poem-name',   submitterName);
-      localStorage.setItem('horse-poem-tumblr', submitterTumblr);
+      const saved = loadDraftLocal() || {lines:[], stable:[], tag_ids:[]};
+      saved.submitter_name   = submitterName;
+      saved.submitter_tumblr = submitterTumblr;
+      localStorage.setItem('horse-draft', JSON.stringify(saved));
     }catch(e){}
   }
   const inspiredText = (document.getElementById('modal-inspired-text')?.value || '').trim();

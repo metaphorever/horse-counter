@@ -251,6 +251,7 @@
   <div class="popover-actions">
     <button class="popover-pasture-btn" id="popover-pasture-btn" type="button"></button>
   </div>
+  <div class="popover-draft-section" id="popover-draft-section" hidden></div>
   <div class="popover-signin-prompt" id="popover-signin-prompt" hidden>
     <a href="/sign-in" class="popover-signin-link">Sign in</a>
     <span id="popover-signin-msg"></span>
@@ -297,6 +298,61 @@
     if (data) horseStates = data;
   }
 
+  const pDraftSection = document.getElementById('popover-draft-section');
+  let draftsCache     = null;   // null = not yet fetched; [] = fetched, empty; [...] = fetched
+
+  async function fetchDraftList(){
+    if(draftsCache !== null) return draftsCache;
+    try {
+      const r = await fetch('/me/draft/list');
+      const d = r.ok ? await r.json() : null;
+      draftsCache = (d && d.drafts) ? d.drafts : [];
+    } catch(e){ draftsCache = []; }
+    return draftsCache;
+  }
+
+  function renderDraftSection(horse){
+    if(!IS_LOGGED_IN){ pDraftSection.hidden = true; return; }
+    pDraftSection.hidden = false;
+    pDraftSection.innerHTML = '<span class="popover-draft-loading">Loading drafts…</span>';
+    fetchDraftList().then(drafts => {
+      if(!drafts.length){
+        pDraftSection.innerHTML =
+          '<span class="popover-draft-empty">No drafts — <a href="/poetry">start a poem</a> and save a draft first.</span>';
+        return;
+      }
+      if(drafts.length === 1){
+        const d = drafts[0];
+        pDraftSection.innerHTML =
+          `<button class="popover-draft-btn" data-draft-id="${d.id}">+ Add to "${esc(d.title)}"</button>`;
+      } else {
+        pDraftSection.innerHTML =
+          '<div class="popover-draft-head">Add to draft:</div>' +
+          drafts.map(d =>
+            `<button class="popover-draft-btn" data-draft-id="${d.id}">${esc(d.title)}</button>`
+          ).join('');
+      }
+      pDraftSection.querySelectorAll('.popover-draft-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const draftId = parseInt(btn.dataset.draftId);
+          btn.disabled = true;
+          const r = await apiPost('/me/draft/stable/add', {
+            draft_id: draftId,
+            name:    horse.name,
+            display: horse.display,
+            url:     horse.url,
+          });
+          if(r && r.ok){
+            btn.textContent = r.added ? '✓ Added' : '✓ Already in stable';
+          } else {
+            btn.textContent = 'Error — try again';
+            btn.disabled = false;
+          }
+        });
+      });
+    });
+  }
+
   // ── Open / close ─────────────────────────────────────────────────────────────
   function openPopover(el){
     const name    = el.dataset.name || '';
@@ -312,6 +368,7 @@
     updateRibbon(state.saved);
     updatePastureBtn(state.in_pasture);
     pSignin.hidden = true;
+    renderDraftSection(currentHorse);
 
     pPoems.innerHTML = '<span class="popover-poems-loading">Loading…</span>';
     fetchPoems(name);

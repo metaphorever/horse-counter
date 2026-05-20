@@ -250,7 +250,7 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: 1.26 — Horse search area rework**
+**PHASE: 1.27 — Save draft from poem builder**
 **Model: Sonnet · Effort: medium**
 
-1.25 shipped and merged. Next: short names link → button; random horse button moves to search panel and loads results into the search display area; pasture horses button loads all user's pasture horses alphabetically with pagination; replace inline wildcard explanation with a compact help/how-to button covering the full search → stable → poem → publish pipeline.
+1.26 shipped and merged. This phase: "Save draft" button next to "Post poem"; draft stores poem text + stable + metadata in SQLite; horse chip gains "Send to stable for [draft]" picker; anonymous users get a persistent `horse-draft` localStorage shape (migrated from `horse-stable`); Drafts nav item wires to a drafts list page. Removes the temporary `stable_horses` table + `/me/stable/*` routes from PR #37.

@@ -16,13 +16,20 @@ Public routes (no login required):
   POST /setup-account  submit slug choice
   GET  /u/<slug>       public poet profile (stub)
 
+User routes (Clerk login required):
+  GET  /me/drafts               draft list page
+  POST /me/draft/save           create or update a draft
+  GET  /me/draft/list           list drafts for chip picker (JSON)
+  POST /me/draft/stable/add     add horse to a draft's stable
+  POST /me/draft/delete         delete a draft
+
 Admin routes (login required — Clerk role='admin' OR PIN fallback):
   POST /queue          post/queue/draft a reviewed post
   GET  /auth           start Tumblr OAuth
   GET  /callback       OAuth callback
   GET  /submissions    review pending submissions
   POST /submissions/*  submission actions
-  POST /poetry/stable/*  server-persisted stable
+  POST /poetry/stable/*  server-persisted stable (admin only)
   GET  /admin/*        admin management pages
   GET  /login          PIN fallback (admin only)
 """
@@ -49,8 +56,11 @@ from db.users import (
     create_user, validate_slug, slug_available,
     get_preferences, update_preferences,
 )
-from db.stable import list_stable_horses, bulk_add_stable_horses, remove_stable_horse, clear_stable_horses
 from db.pasture import add_to_pasture, list_pasture_horses
+from db.drafts import (
+    list_user_drafts, get_user_draft, save_user_draft,
+    add_horse_to_draft_stable, delete_user_draft,
+)
 from auth import TumblrManager
 from matcher import (
     HorseDictionary, ChainCounter,
@@ -396,19 +406,12 @@ _SYNCABLE_PREF_KEYS = ('poem_name', 'poem_tumblr', 'page_size')
 @app.route('/me/sync', methods=['POST'])
 def me_sync():
     """
-    Merge anonymous localStorage state into the logged-in user's account.
+    Sync anonymous localStorage preferences into the logged-in user's account.
 
     Body (all fields optional):
-        {
-          "stable":     [{name, display, url, remaining}, ...],
-          "poem_name":  "...",
-          "poem_tumblr": "...",
-          "page_size":  "25"
-        }
+        { "poem_name": "...", "poem_tumblr": "...", "page_size": "25" }
 
-    Returns the merged server-side state so the client can replace its in-memory
-    copy and clear local storage:
-        { ok: true, stable: [...], preferences: {...}, added: <int> }
+    Returns: { ok: true, preferences: {...} }
     """
     user = g.get('current_user')
     if user is None:
@@ -416,81 +419,13 @@ def me_sync():
 
     body = request.get_json(silent=True) or {}
 
-    # ── stable horses ─────────────────────────────────────────────────────────
-    raw_stable = body.get('stable') or []
-    cleaned = []
-    if isinstance(raw_stable, list):
-        for h in raw_stable[:200]:  # hard cap, defensive
-            if not isinstance(h, dict):
-                continue
-            name = (h.get('name') or '').strip()
-            if not name:
-                continue
-            cleaned.append({
-                'name':      name[:200],
-                'display':   (h.get('display') or name)[:200],
-                'url':       (h.get('url') or '')[:500],
-                'remaining': max(1, min(99, int(h.get('remaining') or 1))),
-            })
-    added = bulk_add_stable_horses(user['id'], cleaned) if cleaned else 0
-
-    # ── preferences ───────────────────────────────────────────────────────────
     pref_updates = {}
     for key in _SYNCABLE_PREF_KEYS:
         if key in body and body[key] not in (None, ''):
             pref_updates[key] = str(body[key])[:80]
     prefs = update_preferences(user['id'], pref_updates) if pref_updates else get_preferences(user['id'])
 
-    return jsonify({
-        'ok':          True,
-        'added':       added,
-        'stable':      list_stable_horses(user['id']),
-        'preferences': prefs,
-    })
-
-
-@app.route('/me/stable/add', methods=['POST'])
-def me_stable_add():
-    from flask import jsonify
-    user = g.get('current_user')
-    if user is None:
-        return jsonify({'error': 'Not signed in'}), 401
-    data = request.get_json(silent=True) or {}
-    name = (data.get('name') or '').strip()[:200]
-    if not name:
-        return jsonify({'error': 'name required'}), 400
-    horse = {
-        'name':      name,
-        'display':   (data.get('display') or name).strip()[:200],
-        'url':       (data.get('url') or '').strip()[:500],
-        'remaining': max(1, min(99, int(data.get('remaining') or 1))),
-    }
-    bulk_add_stable_horses(user['id'], [horse])
-    return jsonify({'horses': list_stable_horses(user['id'])})
-
-
-@app.route('/me/stable/remove', methods=['POST'])
-def me_stable_remove():
-    from flask import jsonify
-    user = g.get('current_user')
-    if user is None:
-        return jsonify({'error': 'Not signed in'}), 401
-    data = request.get_json(silent=True) or {}
-    name = (data.get('name') or '').strip()
-    if not name:
-        return jsonify({'error': 'name required'}), 400
-    remove_stable_horse(user['id'], name)
-    return jsonify({'horses': list_stable_horses(user['id'])})
-
-
-@app.route('/me/stable/clear', methods=['POST'])
-def me_stable_clear():
-    from flask import jsonify
-    user = g.get('current_user')
-    if user is None:
-        return jsonify({'error': 'Not signed in'}), 401
-    clear_stable_horses(user['id'])
-    return jsonify({'ok': True})
+    return jsonify({'ok': True, 'preferences': prefs})
 
 
 # Preference keys clients can write through /me/preferences. Allow-listed and
@@ -758,11 +693,132 @@ def me_published():
 @app.route('/me/drafts')
 @user_required
 def me_drafts():
-    return render_template('coming_soon.html',
-        title='Unpublished / WIP',
-        description='Drafts and poems awaiting review. Coming in Phase 1.13.',
-        roadmap_task='1.13',
+    import json
+    user = g.get('current_user')
+    drafts = list_user_drafts(user['id'])
+    # Parse line counts for display without exposing full JSON to template
+    for d in drafts:
+        try:
+            lines = json.loads(d.get('lines_json') or '[]')
+            d['horse_count'] = sum(len(l) for l in lines if isinstance(l, list))
+        except Exception:
+            d['horse_count'] = 0
+    return render_template('me_drafts.html', drafts=drafts)
+
+
+@app.route('/me/draft/save', methods=['POST'])
+def me_draft_save():
+    """Create or update a user draft.
+
+    Body: { draft_id?, title, lines_json, stable_json,
+            submitter_name, submitter_tumblr,
+            inspired_by_text, inspired_by_url, tag_ids_json }
+    Returns: { ok: true, draft: {id, title, updated_at} }
+    """
+    user = g.get('current_user')
+    if user is None:
+        return jsonify({'error': 'Sign in to save drafts'}), 401
+
+    body      = request.get_json(silent=True) or {}
+    draft_id  = body.get('draft_id') or None
+    if draft_id:
+        try:
+            draft_id = int(draft_id)
+        except (TypeError, ValueError):
+            draft_id = None
+
+    title     = (body.get('title') or '').strip()[:120]
+    lines_raw = body.get('lines_json') or '[]'
+    stable_raw = body.get('stable_json') or '[]'
+
+    # Validate JSON blobs client sent
+    import json as _json
+    try:
+        _json.loads(lines_raw)
+    except Exception:
+        lines_raw = '[]'
+    try:
+        _json.loads(stable_raw)
+    except Exception:
+        stable_raw = '[]'
+    tag_raw = body.get('tag_ids_json') or '[]'
+    try:
+        _json.loads(tag_raw)
+    except Exception:
+        tag_raw = '[]'
+
+    draft = save_user_draft(
+        user_id         = user['id'],
+        draft_id        = draft_id,
+        title           = title,
+        lines_json      = lines_raw,
+        stable_json     = stable_raw,
+        submitter_name  = (body.get('submitter_name')  or '').strip()[:60],
+        submitter_tumblr= (body.get('submitter_tumblr') or '').strip()[:32],
+        inspired_by_text= (body.get('inspired_by_text') or '').strip()[:200],
+        inspired_by_url = (body.get('inspired_by_url')  or '').strip()[:300],
+        tag_ids_json    = tag_raw,
     )
+    return jsonify({'ok': True, 'draft': {
+        'id':         draft['id'],
+        'title':      draft['title'],
+        'updated_at': draft['updated_at'],
+    }})
+
+
+@app.route('/me/draft/list', methods=['GET', 'POST'])
+def me_draft_list():
+    """Return the current user's drafts as [{id, title}, ...] for the chip picker."""
+    user = g.get('current_user')
+    if user is None:
+        return jsonify({'error': 'Not signed in'}), 401
+    drafts = list_user_drafts(user['id'])
+    return jsonify({'ok': True, 'drafts': [
+        {'id': d['id'], 'title': d['title']} for d in drafts
+    ]})
+
+
+@app.route('/me/draft/stable/add', methods=['POST'])
+def me_draft_stable_add():
+    """Add one horse to a specific draft's stable.
+
+    Body: { draft_id: int, name, display, url }
+    Returns: { ok: true, added: bool }
+    """
+    user = g.get('current_user')
+    if user is None:
+        return jsonify({'error': 'Not signed in'}), 401
+    body = request.get_json(silent=True) or {}
+    try:
+        draft_id = int(body.get('draft_id'))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'draft_id required'}), 400
+    name    = (body.get('name')    or '').strip()[:200]
+    display = (body.get('display') or name).strip()[:200]
+    url     = (body.get('url')     or '').strip()[:500]
+    if not name:
+        return jsonify({'error': 'name required'}), 400
+    added = add_horse_to_draft_stable(draft_id, user['id'], name, display, url)
+    return jsonify({'ok': True, 'added': added})
+
+
+@app.route('/me/draft/delete', methods=['POST'])
+def me_draft_delete():
+    """Delete a user draft.
+
+    Body: { draft_id: int }
+    Returns: { ok: true }
+    """
+    user = g.get('current_user')
+    if user is None:
+        return jsonify({'error': 'Not signed in'}), 401
+    body = request.get_json(silent=True) or {}
+    try:
+        draft_id = int(body.get('draft_id'))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'draft_id required'}), 400
+    delete_user_draft(draft_id, user['id'])
+    return jsonify({'ok': True})
 
 
 @app.route('/me/pasture')
@@ -1384,14 +1440,14 @@ def callback():
 def poetry_editor():
     import json
     is_admin = bool(session.get('logged_in'))
-    # Admin uses the shared file-based stable. Logged-in users get their
-    # per-account stable from the DB. Anonymous users start from empty and
-    # the client hydrates from localStorage.
     if is_admin:
         stable = load_stable()
         prefs  = {}
     elif g.get('current_user'):
-        stable = list_stable_horses(g.current_user['id'])
+        # 1.27: stable is no longer server-persisted continuously; it lives in
+        # the draft. Start from empty; the client restores from a saved draft
+        # or stays empty. Anonymous users hydrate from horse-draft localStorage.
+        stable = []
         prefs  = get_preferences(g.current_user['id'])
     else:
         stable = []
