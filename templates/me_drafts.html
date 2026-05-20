@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}My Drafts — poet.horse{% endblock %}
+
+{% block content %}
+<div class="text-page drafts-page">
+  <h1>My Drafts</h1>
+
+  {% if not drafts %}
+  <p class="drafts-empty">No drafts yet. <a href="{{ url_for('poetry_editor') }}">Start writing a poem</a> and click <em>Save draft</em> to keep your work.</p>
+  {% else %}
+  <ul class="draft-list" id="draft-list">
+    {% for d in drafts %}
+    <li class="draft-item" data-id="{{ d.id }}">
+      <div class="draft-item-main">
+        <a class="draft-title" href="{{ url_for('poetry_editor') }}?draft={{ d.id }}">{{ d.title or '(untitled)' }}</a>
+        <span class="draft-meta">{{ d.horse_count }} horse{{ 's' if d.horse_count != 1 else '' }}</span>
+      </div>
+      <div class="draft-item-actions">
+        <a class="btn-sec draft-edit-btn" href="{{ url_for('poetry_editor') }}?draft={{ d.id }}">Resume editing</a>
+        <button class="btn-sec draft-delete-btn" data-id="{{ d.id }}" data-title="{{ d.title | e }}">Delete</button>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <p class="drafts-back"><a href="{{ url_for('poetry_editor') }}">&larr; back to the editor</a></p>
+</div>
+
+<script>
+document.querySelectorAll('.draft-delete-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const title = btn.dataset.title || 'this draft';
+    if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+    const id = parseInt(btn.dataset.id);
+    try {
+      const r = await fetch('/me/draft/delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({draft_id: id}),
+      });
+      if (r.ok) {
+        const li = btn.closest('.draft-item');
+        if (li) li.remove();
+        const list = document.getElementById('draft-list');
+        if (list && !list.querySelector('.draft-item')) {
+          list.insertAdjacentHTML('afterend',
+            '<p class="drafts-empty">No drafts yet. <a href="{{ url_for(\'poetry_editor\') }}">Start writing a poem</a> and click <em>Save draft</em> to keep your work.</p>'
+          );
+          list.remove();
+        }
+      }
+    } catch(e) {}
+  });
+});
+</script>
+{% endblock %}

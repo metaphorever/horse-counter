@@ -27,6 +27,14 @@ _COLUMN_MIGRATIONS = [
     ('poems',          'inspired_by_text', "TEXT NOT NULL DEFAULT ''"),
     ('poems',          'inspired_by_url',  "TEXT NOT NULL DEFAULT ''"),
     ('tag_categories', 'admin_only',   "INTEGER NOT NULL DEFAULT 0"),
+    # Phase 1.27 — draft metadata (draft-centric stable model)
+    ('drafts', 'stable_json',       "TEXT NOT NULL DEFAULT '[]'"),
+    ('drafts', 'submitter_name',    "TEXT NOT NULL DEFAULT ''"),
+    ('drafts', 'submitter_tumblr',  "TEXT NOT NULL DEFAULT ''"),
+    ('drafts', 'inspired_by_text',  "TEXT NOT NULL DEFAULT ''"),
+    ('drafts', 'inspired_by_url',   "TEXT NOT NULL DEFAULT ''"),
+    ('drafts', 'tag_ids_json',      "TEXT NOT NULL DEFAULT '[]'"),
+    ('drafts', 'created_at',        "REAL NOT NULL DEFAULT 0"),
 ]
 
 
