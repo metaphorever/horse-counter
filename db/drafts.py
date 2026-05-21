@@ -78,10 +78,7 @@ def save_user_draft(
 
         # New draft — auto-name if no title given
         if not title:
-            count = conn.execute(
-                "SELECT COUNT(*) FROM drafts WHERE user_id = ?", (user_id,)
-            ).fetchone()[0]
-            title = f"Poem #{count + 1}"
+            title = "untitled"
 
         cur = conn.execute(
             """INSERT INTO drafts

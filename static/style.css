@@ -1488,6 +1488,87 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
   color: #a08060;
 }
 
+/* ── Phase 1.28: Popover draft section ───────────────────────────────────── */
+.popover-draft-head {
+  font: 700 11px 'Courier Prime','Courier New',monospace;
+  text-transform: uppercase; letter-spacing: .05em;
+  color: #6b5430; margin-bottom: 6px;
+}
+.popover-draft-btn {
+  display: block; width: 100%; text-align: left;
+  font: 13px 'Courier Prime','Courier New',monospace;
+  color: #3a6b1a; background: #f5f0e4;
+  border: 1px solid #c4a96b; border-radius: 2px;
+  padding: 5px 8px; margin-bottom: 4px; cursor: pointer;
+}
+.popover-draft-btn:hover { background: #ede0b0; }
+.popover-draft-btn[disabled] { color: #6b5430; cursor: default; }
+.popover-draft-expander {
+  display: block; width: 100%; text-align: left;
+  font: 12px 'Courier Prime','Courier New',monospace;
+  color: #6b5430; background: none; border: none;
+  padding: 4px 0; margin-top: 2px; cursor: pointer;
+}
+.popover-draft-expander:hover { color: #3a6b1a; }
+.popover-draft-create {
+  display: flex; gap: 4px; margin-top: 6px;
+}
+.popover-draft-title-input {
+  flex: 1; font: 12px 'Courier Prime','Courier New',monospace;
+  border: 1px solid #c4a96b; background: #fdf8ed;
+  padding: 4px 6px; border-radius: 2px; color: #2d2316; min-width: 0;
+}
+.popover-draft-title-input:focus { outline: 2px solid #5a7a2a; outline-offset: 1px; }
+.popover-draft-new-btn {
+  font: 12px 'Courier Prime','Courier New',monospace;
+  background: #5a7a2a; color: #fff;
+  border: 1px solid #3d5a1a; border-radius: 2px;
+  padding: 4px 8px; cursor: pointer; white-space: nowrap;
+}
+.popover-draft-new-btn:hover { background: #4a6a1a; }
+.popover-draft-new-btn[disabled] { opacity: .6; cursor: default; }
+
+/* ── Phase 1.28: Draft strip ─────────────────────────────────────────────── */
+.draft-strip {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 10px; padding: 6px 10px;
+  background: #f5eedc; border: 1px solid #c4a96b; border-radius: 2px;
+  font: 12px 'Courier Prime','Courier New',monospace; color: #6b5430;
+}
+.draft-strip-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.draft-strip-change {
+  margin-left: 8px; padding: 2px 8px; flex-shrink: 0;
+  font: 11px 'Courier Prime','Courier New',monospace;
+  background: #fdf8ed; color: #3a6b1a;
+  border: 1px solid #c4a96b; border-radius: 2px; cursor: pointer;
+}
+.draft-strip-change:hover { background: #ede0b0; }
+
+/* ── Phase 1.28: Draft picker ────────────────────────────────────────────── */
+.draft-picker-modal-body { max-width: 460px; width: 100%; }
+.draft-picker-list { margin-bottom: 12px; }
+.draft-picker-item {
+  display: flex; justify-content: space-between; align-items: baseline;
+  width: 100%; text-align: left; padding: 8px 10px;
+  font: 13px 'Courier Prime','Courier New',monospace;
+  background: #fdf8ed; border: 1px solid #c4a96b; border-radius: 2px;
+  margin-bottom: 4px; cursor: pointer; gap: 8px;
+}
+.draft-picker-item:hover { background: #ede0b0; }
+.draft-picker-item-active { border-color: #5a7a2a; background: #eef5e4; }
+.draft-picker-title { color: #2d2316; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.draft-picker-meta { color: #a08060; font-size: 11px; flex-shrink: 0; white-space: nowrap; }
+.draft-picker-divider { border-top: 1px solid #e0d4b0; margin: 6px 0; }
+.draft-picker-new { color: #5a7a2a; font-style: italic; }
+
+/* ── Phase 1.28: Clear dialogs ───────────────────────────────────────────── */
+.dialog-body { font: 13px 'Courier Prime','Courier New',monospace; color: #2d2316; margin: 0 0 14px; }
+.danger-sec {
+  background: #fff0ef; color: #7a2020;
+  border-color: #e8b0a8; box-shadow: 2px 2px 0 #e8b0a8;
+}
+.danger-sec:hover { background: #fde0de; }
+
 /* Poetry-page wider layout */
 @media (min-width: 900px) {
   .container.wide        { max-width: 1200px; }

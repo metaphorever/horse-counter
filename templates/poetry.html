@@ -82,7 +82,7 @@
       <div class="stable-head">
         <h3>Stable <span id="stable-count" class="stable-count"></span></h3>
         <div class="stable-controls">
-          <button class="clear-btn" onclick="clearStable()">Clear all</button>
+          <button class="clear-btn" onclick="clearStable()">Clear Stable</button>
         </div>
       </div>
       <div class="stable-tiles" id="stable-tiles">
@@ -94,18 +94,23 @@
       <div class="poem-head">
         <h2>Poem</h2>
         <div class="poem-actions">
-          <button class="btn-sec" onclick="clearPoem()">Clear</button>
+          <button class="btn-sec" onclick="clearPoem()">Clear Poem</button>
           {% if current_user %}
-          <button class="btn-sec" id="save-draft-btn" onclick="openDraftModal()" disabled>Save draft</button>
-          {% else %}
-          <button class="btn-sec" id="save-draft-btn" disabled title="Sign in to save drafts">Save draft</button>
+          <button class="btn-sec" id="edit-details-btn" onclick="openEditDetails()">Edit Details</button>
           {% endif %}
-          <button class="btn-primary" id="post-btn" onclick="openModal()" disabled>Post poem</button>
+          <button class="btn-primary" id="post-btn" onclick="openModal()" disabled>Post Poem</button>
         </div>
       </div>
 
       <div class="poem-canvas" id="poem-canvas"></div>
       <button class="add-line" onclick="addLine()">+ add line</button>
+
+      {% if current_user %}
+      <div class="draft-strip" id="draft-strip">
+        <span class="draft-strip-label">Currently editing: <span id="draft-strip-name">—</span></span>
+        <button class="draft-strip-change" id="draft-strip-change" onclick="openDraftPicker()">Change Draft ▾</button>
+      </div>
+      {% endif %}
 
       <div class="poem-footer">
         <span class="poem-stat"><strong id="stat-count">0</strong> horses</span>
@@ -159,10 +164,48 @@
   </div>
 </div>
 
-<!-- DRAFT MODAL -->
+<!-- CLEAR STABLE DIALOG -->
+<div class="modal-overlay" id="clear-stable-modal">
+  <div class="modal">
+    <h3>Clear Stable</h3>
+    <p class="dialog-body">This will remove all horses from the stable. Where should they go?</p>
+    <div class="modal-actions">
+      <button class="btn-sec"     onclick="clearStableDestination('pasture')">Send to my pasture</button>
+      <button class="btn-sec danger-sec" onclick="clearStableDestination('loose')">Set these horses loose</button>
+      <button class="btn-sec"     onclick="closeClearStableModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLEAR POEM DIALOG -->
+<div class="modal-overlay" id="clear-poem-modal">
+  <div class="modal">
+    <h3>Clear Poem</h3>
+    <p class="dialog-body">This will remove all horses from the poem. Where should they go?</p>
+    <div class="modal-actions">
+      <button class="btn-sec"     onclick="clearPoemDestination('stable')">Send to the stable</button>
+      <button class="btn-sec"     onclick="clearPoemDestination('pasture')">Send to my pasture</button>
+      <button class="btn-sec danger-sec" onclick="clearPoemDestination('loose')">Set these horses loose</button>
+      <button class="btn-sec"     onclick="closeClearPoemModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- DRAFT PICKER OVERLAY -->
+<div class="modal-overlay" id="draft-picker-modal">
+  <div class="modal draft-picker-modal-body">
+    <h3>What draft would you like to edit?</h3>
+    <div id="draft-picker-list" class="draft-picker-list"></div>
+    <div class="modal-actions">
+      <button class="btn-sec" onclick="closeDraftPicker()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT DETAILS MODAL (was "Save Draft") -->
 <div class="modal-overlay" id="draft-modal">
   <div class="modal">
-    <h3>Save Draft</h3>
+    <h3>Edit Details</h3>
 
     <label>Title <span class="opt">(optional — leave blank to auto-name)</span>:</label>
     <input type="text" id="draft-modal-title" placeholder="e.g. Morning field poem" maxlength="120">
@@ -182,7 +225,7 @@
     <div id="draft-modal-tag-sections" class="modal-tag-sections"></div>
 
     <div id="draft-modal-actions" class="modal-actions">
-      <button class="btn-primary" id="draft-modal-submit" onclick="saveDraftFromModal()">Save draft</button>
+      <button class="btn-primary" id="draft-modal-submit" onclick="saveDraftFromModal()">Save</button>
       <button class="btn-sec" onclick="closeDraftModal()">Cancel</button>
     </div>
     <div id="draft-modal-err" class="msg err modal-err" style="display:none"></div>
@@ -209,18 +252,20 @@
 
 <script>
 // ── State ─────────────────────────────────────────────────────────────────────
-const isAdmin       = {{ is_admin|tojson }};
-const isLoggedIn    = {{ (current_user is not none)|tojson }};
-let stable          = {{ stable_json|safe }};
-let lines           = [[], [], []];
-let history         = [];
-let userPrefs       = {{ user_prefs_json|safe }};
-const OPTIONAL_TAGS = {{ optional_tags_json|safe }};
-let TAG_CATEGORIES = {{ tag_categories_json|safe }};  // [{id,slug,label,behavior,tags:[…]}, …]
-const INITIAL_DRAFT  = {{ initial_draft_json|safe }};  // full draft row or null (set when ?draft=<id>)
-let selectedTagIds = new Set();  // tag IDs the user has picked for the current poem
-let draftId        = null;       // ID of the currently active saved draft (null = unsaved)
-let currentDraftMeta = null;     // last-saved draft field values; used to pre-populate re-opens
+const isAdmin        = {{ is_admin|tojson }};
+const isLoggedIn     = {{ (current_user is not none)|tojson }};
+let stable           = {{ stable_json|safe }};
+let lines            = [[], [], []];
+let history          = [];
+let userPrefs        = {{ user_prefs_json|safe }};
+const OPTIONAL_TAGS  = {{ optional_tags_json|safe }};
+let TAG_CATEGORIES   = {{ tag_categories_json|safe }};  // [{id,slug,label,behavior,tags:[…]}, …]
+const INITIAL_DRAFT  = {{ initial_draft_json|safe }};   // full draft row or null (set when ?draft=<id>)
+const INITIAL_DRAFTS = {{ initial_drafts_json|safe }};  // [{id,title,horse_count,updated_at},…] for picker
+let selectedTagIds   = new Set();  // tag IDs the user has picked for the current poem
+let draftId          = null;       // ID of the currently active saved draft (null = unsaved)
+let currentDraftMeta = null;       // last-saved draft field values; used to pre-populate re-opens
+let autoSaveTimer    = null;       // debounce handle for drag-reposition saves
 
 // ── Horse tile appearance ─────────────────────────────────────────────────────
 const COATS = [
@@ -368,6 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
       inspiredUrl:     INITIAL_DRAFT.inspired_by_url  || '',
       tagIds:          JSON.parse(INITIAL_DRAFT.tag_ids_json || '[]'),
     };
+    updateDraftStrip();
   } else if(!isAdmin && !isLoggedIn){
     // Anonymous users hydrate from horse-draft localStorage (with migration from
     // legacy horse-stable). Logged-in users start empty; if there's a pending
@@ -378,7 +424,21 @@ document.addEventListener('DOMContentLoaded', () => {
       if(saved.lines && saved.lines.length) lines = saved.lines;
     }
   } else if(isLoggedIn && !isAdmin){
-    syncLocalToAccount();
+    // Check for an anonymous draft in localStorage to sync on first login.
+    const anon = loadDraftLocal();
+    const hasAnonContent = anon && (
+      (anon.lines  && anon.lines.some(l=>l&&l.length>0)) ||
+      (anon.stable && anon.stable.length>0)
+    );
+    if(hasAnonContent){
+      // Sync anon content to account — skips picker so the synced draft loads directly.
+      syncLocalToAccount();
+    } else {
+      // No anon draft — show picker if server drafts exist, otherwise blank slate.
+      if(INITIAL_DRAFTS.length > 0){
+        openDraftPicker(true);
+      }
+    }
   }
   renderStable();
   renderPoem();
@@ -885,6 +945,8 @@ async function addToStable(name, display, url, count=1){
   if(isAdmin){
     const d = await apiPost('/poetry/stable/add', {name, display, url, remaining: count});
     if(d){ stable = d.horses; renderStable(); }
+  } else if(isLoggedIn){
+    autoSave();
   } else {
     saveDraftLocal();
   }
@@ -895,17 +957,41 @@ async function removeFromStable(name){
   renderStable();
   if(isAdmin){
     await apiPost('/poetry/stable/remove', {name});
+  } else if(isLoggedIn){
+    autoSave();
   } else {
     saveDraftLocal();
   }
 }
 
-async function clearStable(){
-  if(!confirm('Clear all horses from the stable?')) return;
+function clearStable(){
+  if(!stable.length) return;
+  document.getElementById('clear-stable-modal').classList.add('open');
+}
+
+function closeClearStableModal(){
+  document.getElementById('clear-stable-modal').classList.remove('open');
+}
+
+async function clearStableDestination(dest){
+  closeClearStableModal();
+  const horses = stable.slice();
   stable = [];
   renderStable();
+  if(dest === 'pasture' && isLoggedIn){
+    for(const h of horses){
+      await apiPost('/me/pasture/add', {name: h.name, display: h.display, url: h.url});
+    }
+    showToast(horses.length === 1 ? `${horses[0].display} sent to My Pasture` : `${horses.length} horses sent to My Pasture`);
+  } else if(dest === 'pasture' && !isLoggedIn){
+    showToast('Sign in to save horses to your pasture.');
+    stable = horses; renderStable(); return;
+  }
+  // 'loose': horses are simply removed (already cleared above)
   if(isAdmin){
     await apiPost('/poetry/stable/clear');
+  } else if(isLoggedIn){
+    autoSave();
   } else {
     saveDraftLocal();
   }
@@ -961,7 +1047,48 @@ function renderPoem(){
 }
 
 function addLine(){ lines.push([]); renderPoem(); }
-function clearPoem(){ if(!confirm('Clear the poem?')) return; lines=[[]]; renderPoem(); saveDraftLocal(); }
+
+function clearPoem(){
+  if(!lines.flat().length) return;
+  document.getElementById('clear-poem-modal').classList.add('open');
+}
+
+function closeClearPoemModal(){
+  document.getElementById('clear-poem-modal').classList.remove('open');
+}
+
+async function clearPoemDestination(dest){
+  closeClearPoemModal();
+  const horses = lines.flat();
+  if(dest === 'stable'){
+    for(const h of horses){
+      const existing = stable.find(s=>s.name===h.name);
+      if(existing){ existing.remaining = (existing.remaining||1) + 1; }
+      else         { stable.push({name:h.name, display:h.display, url:h.url, remaining:1}); }
+    }
+  } else if(dest === 'pasture' && isLoggedIn){
+    const unique = [...new Map(horses.map(h=>[h.name,h])).values()];
+    for(const h of unique){
+      await apiPost('/me/pasture/add', {name:h.name, display:h.display, url:h.url});
+    }
+    showToast(unique.length === 1 ? `${unique[0].display} sent to My Pasture` : `${unique.length} horses sent to My Pasture`);
+  } else if(dest === 'pasture' && !isLoggedIn){
+    showToast('Sign in to save horses to your pasture.');
+    return;
+  }
+  // 'loose': horses removed, no destination
+  lines = [[]];
+  renderPoem();
+  renderStable();
+  if(isAdmin){
+    /* admin stable is server-synced; no poem clear endpoint needed */
+  } else if(isLoggedIn){
+    autoSave();
+  } else {
+    saveDraftLocal();
+  }
+}
+
 function removeTile(li,hi){
   const horse = lines[li][hi];
   lines[li].splice(hi,1);
@@ -970,12 +1097,14 @@ function removeTile(li,hi){
   const existing = stable.find(h=>h.name===horse.name);
   if(existing){
     existing.remaining = (existing.remaining||1) + 1;
-    if(isAdmin) apiPost('/poetry/stable/add', {name:existing.name, display:existing.display, url:existing.url, remaining:existing.remaining});
-    else        saveDraftLocal();
+    if(isAdmin)        apiPost('/poetry/stable/add', {name:existing.name, display:existing.display, url:existing.url, remaining:existing.remaining});
+    else if(isLoggedIn) autoSave();
+    else               saveDraftLocal();
   } else {
     stable.push({name:horse.name, display:horse.display, url:horse.url, remaining:1});
-    if(isAdmin) apiPost('/poetry/stable/add', {name:horse.name, display:horse.display, url:horse.url, remaining:1});
-    else        saveDraftLocal();
+    if(isAdmin)        apiPost('/poetry/stable/add', {name:horse.name, display:horse.display, url:horse.url, remaining:1});
+    else if(isLoggedIn) autoSave();
+    else               saveDraftLocal();
   }
   renderPoem();
   renderStable();
@@ -993,11 +1122,10 @@ function updateStats(){
   document.getElementById('stat-count').textContent = count;
   document.getElementById('stat-words').textContent = count ? `${words} words` : '';
   document.getElementById('post-btn').disabled      = count===0;
-  const draftBtn = document.getElementById('save-draft-btn');
-  if(draftBtn && isLoggedIn) draftBtn.disabled = count===0;
 }
 
 function dropHorseOnLine(horse, li, refHi, insertAfter){
+  const isReposition = drag && drag.srcType==='poem';
   if(drag && drag.srcType==='poem'){
     // Remove from source position in poem
     const sl=drag.srcLine, si=drag.srcIdx;
@@ -1010,10 +1138,8 @@ function dropHorseOnLine(horse, li, refHi, insertAfter){
       if(entry.remaining <= 0){
         stable = stable.filter(h=>h.name!==horse.name);
         if(isAdmin) apiPost('/poetry/stable/remove', {name:horse.name});
-        else        saveDraftLocal();
       } else {
         if(isAdmin) apiPost('/poetry/stable/add', {name:entry.name, display:entry.display, url:entry.url, remaining:entry.remaining});
-        else        saveDraftLocal();
       }
     }
   }
@@ -1026,6 +1152,12 @@ function dropHorseOnLine(horse, li, refHi, insertAfter){
   if(lines[lines.length-1].length>0) lines.push([]);
   renderPoem();
   renderStable();
+
+  if(!isAdmin){
+    if(isReposition){ autoSaveDrag(); }
+    else if(isLoggedIn){ autoSave(); }
+    else { saveDraftLocal(); }
+  }
 }
 
 // ── Interactions: drag-or-tap ─────────────────────────────────────────────────
@@ -1382,6 +1514,7 @@ function moveWithinPoem(li, hi, delta){
   const [h] = line.splice(hi, 1);
   line.splice(newHi, 0, h);
   renderPoem();
+  if(!isAdmin){ if(isLoggedIn){ autoSaveDrag(); } else { saveDraftLocal(); } }
 }
 
 async function sendHorseToPasture(horse, srcType, srcLine, srcIdx){
@@ -1406,13 +1539,15 @@ async function sendHorseToPasture(horse, srcType, srcLine, srcIdx){
 function removeHorseFromSource(srcType, srcLine, srcIdx, horse){
   if(srcType==='stable'){
     stable = stable.filter(h=>h.name!==horse.name);
-    if(isAdmin) apiPost('/poetry/stable/remove', {name:horse.name});
-    else        saveDraftLocal();
+    if(isAdmin)        apiPost('/poetry/stable/remove', {name:horse.name});
+    else if(isLoggedIn) autoSave();
+    else               saveDraftLocal();
     renderStable();
   } else if(srcType==='poem' && srcLine>=0 && srcIdx>=0){
     lines[srcLine].splice(srcIdx, 1);
     pruneEmptyLines();
     renderPoem();
+    if(!isAdmin){ if(isLoggedIn){ autoSave(); } else { saveDraftLocal(); } }
   }
 }
 
@@ -1555,8 +1690,8 @@ function openModal(){
 }
 function closeModal(){ document.getElementById('post-modal').classList.remove('open'); }
 
-// ── Draft modal ───────────────────────────────────────────────────────────────
-function openDraftModal(){
+// ── Edit Details modal (was "Draft modal") ────────────────────────────────────
+function openEditDetails(){
   if(!isLoggedIn) return;
   document.getElementById('draft-modal-err').style.display='none';
   document.getElementById('draft-modal-ok').style.display='none';
@@ -1566,8 +1701,7 @@ function openDraftModal(){
   const tumblrEl = document.getElementById('draft-modal-tumblr');
   const itext    = document.getElementById('draft-modal-inspired-text');
   const iurl     = document.getElementById('draft-modal-inspired-url');
-  if(draftId && currentDraftMeta){
-    // Re-opening an existing draft — restore last-saved values
+  if(currentDraftMeta){
     if(titleEl)  titleEl.value  = currentDraftMeta.title           || '';
     if(nameEl)   nameEl.value   = currentDraftMeta.submitterName   || '';
     if(tumblrEl) tumblrEl.value = currentDraftMeta.submitterTumblr || '';
@@ -1575,7 +1709,6 @@ function openDraftModal(){
     if(iurl)     iurl.value     = currentDraftMeta.inspiredUrl     || '';
     selectedDraftTagIds = new Set(currentDraftMeta.tagIds || []);
   } else {
-    // New draft — blank with prefs pre-fill for name/tumblr
     if(titleEl)  titleEl.value  = '';
     if(nameEl)   nameEl.value   = userPrefs.poem_name   || '';
     if(tumblrEl) tumblrEl.value = userPrefs.poem_tumblr || '';
@@ -1590,14 +1723,12 @@ function closeDraftModal(){ document.getElementById('draft-modal').classList.rem
 
 async function saveDraftFromModal(){
   if(!isLoggedIn) return;
-  const flat = lines.flat();
-  if(!flat.length) return;
 
-  const title          = (document.getElementById('draft-modal-title')?.value          || '').trim();
-  const submitterName  = (document.getElementById('draft-modal-name')?.value           || '').trim();
-  const submitterTumblr= (document.getElementById('draft-modal-tumblr')?.value         || '').trim().replace(/^@/, '');
-  const inspiredText   = (document.getElementById('draft-modal-inspired-text')?.value  || '').trim();
-  const inspiredUrl    = (document.getElementById('draft-modal-inspired-url')?.value   || '').trim();
+  const title           = (document.getElementById('draft-modal-title')?.value          || '').trim();
+  const submitterName   = (document.getElementById('draft-modal-name')?.value           || '').trim();
+  const submitterTumblr = (document.getElementById('draft-modal-tumblr')?.value         || '').trim().replace(/^@/, '');
+  const inspiredText    = (document.getElementById('draft-modal-inspired-text')?.value  || '').trim();
+  const inspiredUrl     = (document.getElementById('draft-modal-inspired-url')?.value   || '').trim();
 
   const submitBtn = document.getElementById('draft-modal-submit');
   if(submitBtn) submitBtn.disabled = true;
@@ -1618,15 +1749,154 @@ async function saveDraftFromModal(){
 
   if(!d || !d.ok){
     const el = document.getElementById('draft-modal-err');
-    el.textContent = (d && d.error) || 'Could not save draft — please try again.';
+    el.textContent = (d && d.error) || 'Could not save — please try again.';
     el.style.display = '';
     return;
   }
 
   draftId = d.draft.id;
-  currentDraftMeta = { title, submitterName, submitterTumblr, inspiredText, inspiredUrl, tagIds: Array.from(selectedDraftTagIds) };
+  if(!window.location.search.includes('draft=')){
+    window.history.replaceState(null, '', '?draft=' + draftId);
+  }
+  currentDraftMeta = { title: d.draft.title, submitterName, submitterTumblr, inspiredText, inspiredUrl, tagIds: Array.from(selectedDraftTagIds) };
   closeDraftModal();
+  updateDraftStrip();
   showToast(`Draft "${d.draft.title}" saved.`);
+}
+
+// ── Auto-save ─────────────────────────────────────────────────────────────────
+async function autoSave(){
+  if(!isLoggedIn) return;
+  const d = await apiPost('/me/draft/save', {
+    draft_id:         draftId,
+    title:            currentDraftMeta?.title            || '',
+    lines_json:       JSON.stringify(lines),
+    stable_json:      JSON.stringify(stable),
+    submitter_name:   currentDraftMeta?.submitterName   || '',
+    submitter_tumblr: currentDraftMeta?.submitterTumblr || '',
+    inspired_by_text: currentDraftMeta?.inspiredText    || '',
+    inspired_by_url:  currentDraftMeta?.inspiredUrl     || '',
+    tag_ids_json:     JSON.stringify(currentDraftMeta?.tagIds || []),
+  });
+  if(d && d.ok){
+    if(!draftId){
+      draftId = d.draft.id;
+      window.history.replaceState(null, '', '?draft=' + draftId);
+      if(!currentDraftMeta) currentDraftMeta = { title: d.draft.title, submitterName:'', submitterTumblr:'', inspiredText:'', inspiredUrl:'', tagIds:[] };
+      else currentDraftMeta.title = d.draft.title;
+      updateDraftStrip();
+    }
+  }
+}
+
+function autoSaveDrag(){
+  if(!isLoggedIn) return;
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(autoSave, 7000);
+}
+
+// ── Draft strip ───────────────────────────────────────────────────────────────
+function updateDraftStrip(){
+  const nameEl = document.getElementById('draft-strip-name');
+  if(!nameEl) return;
+  const title = currentDraftMeta?.title;
+  nameEl.textContent = title || (draftId ? 'untitled' : '—');
+}
+
+// ── Draft picker ──────────────────────────────────────────────────────────────
+let _pickerIsPageLoad = false;
+
+function openDraftPicker(isPageLoad = false){
+  _pickerIsPageLoad = isPageLoad;
+  const drafts = isPageLoad ? INITIAL_DRAFTS : null;
+  if(drafts){
+    renderDraftPickerItems(drafts);
+    document.getElementById('draft-picker-modal').classList.add('open');
+  } else {
+    // Fetch fresh list for "Change Draft" case
+    fetch('/me/draft/list')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        const list = (data && data.drafts) ? data.drafts : [];
+        renderDraftPickerItems(list);
+        document.getElementById('draft-picker-modal').classList.add('open');
+      })
+      .catch(() => showToast('Could not load drafts — please try again.'));
+  }
+}
+
+function closeDraftPicker(){
+  document.getElementById('draft-picker-modal').classList.remove('open');
+}
+
+function renderDraftPickerItems(drafts){
+  const list = document.getElementById('draft-picker-list');
+  if(!list) return;
+
+  function fmtAge(ts){
+    if(!ts) return '';
+    const diff = Date.now()/1000 - ts;
+    if(diff < 3600)    return Math.round(diff/60) + 'm ago';
+    if(diff < 86400)   return Math.round(diff/3600) + 'h ago';
+    if(diff < 86400*2) return 'yesterday';
+    return Math.round(diff/86400) + 'd ago';
+  }
+
+  let html = drafts.map(d => {
+    const horses = d.horse_count === 1 ? '1 horse' : `${d.horse_count} horses`;
+    const age    = fmtAge(d.updated_at);
+    const active = draftId === d.id ? ' draft-picker-item-active' : '';
+    return `<button class="draft-picker-item${active}" data-draft-id="${d.id}">
+      <span class="draft-picker-title">${esc(d.title)}</span>
+      <span class="draft-picker-meta">${horses}${age ? ' · ' + age : ''}</span>
+    </button>`;
+  }).join('');
+  html += `<div class="draft-picker-divider"></div>
+    <button class="draft-picker-item draft-picker-new" id="draft-picker-new-btn">+ New Empty Draft</button>`;
+  list.innerHTML = html;
+
+  list.querySelectorAll('.draft-picker-item[data-draft-id]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = parseInt(btn.dataset.draftId);
+      closeDraftPicker();
+      if(id === draftId) return;
+      if(!_pickerIsPageLoad && draftId) await autoSave();
+      await loadDraftById(id);
+    });
+  });
+
+  document.getElementById('draft-picker-new-btn').addEventListener('click', async () => {
+    closeDraftPicker();
+    if(!_pickerIsPageLoad && draftId) await autoSave();
+    // Blank slate — new draft created on first auto-save
+    stable = []; lines = [[]]; draftId = null; currentDraftMeta = null;
+    window.history.replaceState(null, '', window.location.pathname);
+    renderStable(); renderPoem(); updateDraftStrip();
+  });
+}
+
+async function loadDraftById(id){
+  const r = await fetch('/me/draft/get?id=' + id);
+  if(!r.ok){ showToast('Could not load draft — please try again.'); return; }
+  const data = await r.json();
+  if(!data.ok){ showToast('Draft not found.'); return; }
+  const d = data.draft;
+  try { stable = JSON.parse(d.stable_json || '[]'); } catch(e){ stable = []; }
+  try {
+    lines = JSON.parse(d.lines_json || '[[]]');
+    if(!Array.isArray(lines) || !lines.length) lines = [[]];
+  } catch(e){ lines = [[]]; }
+  draftId = d.id;
+  currentDraftMeta = {
+    title:           d.title            || '',
+    submitterName:   d.submitter_name   || '',
+    submitterTumblr: d.submitter_tumblr || '',
+    inspiredText:    d.inspired_by_text || '',
+    inspiredUrl:     d.inspired_by_url  || '',
+    tagIds:          JSON.parse(d.tag_ids_json || '[]'),
+  };
+  window.history.replaceState(null, '', '?draft=' + draftId);
+  renderStable(); renderPoem(); updateDraftStrip();
 }
 
 async function submitPoemPublic(){
