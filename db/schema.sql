@@ -27,6 +27,9 @@ CREATE TABLE IF NOT EXISTS users (
     -- Surfaced on the user's profile page and as the attribution links on
     -- their poems. Order in the array is the display order.
     links_json          TEXT    NOT NULL DEFAULT '[]',
+    -- Phase 1.15: poem chosen as profile bio. NULL = no bio set.
+    -- Applied via ALTER TABLE migration on existing DBs (seed.py).
+    bio_poem_id         INTEGER REFERENCES poems(id) ON DELETE SET NULL,
     joined_at           REAL    NOT NULL
 );
 
@@ -237,3 +240,14 @@ CREATE TABLE IF NOT EXISTS saved_horses (
 );
 
 CREATE INDEX IF NOT EXISTS idx_saved_horses_user_saved ON saved_horses(user_id, saved_at DESC);
+
+-- ── Saved poems (blue-ribbon per-poem collection) ─────────────────────────────
+-- Phase 1.19. Private per-user. Feeds admin stats; never surfaced as a public count.
+CREATE TABLE IF NOT EXISTS saved_poems (
+    user_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    poem_id   INTEGER NOT NULL REFERENCES poems(id) ON DELETE CASCADE,
+    saved_at  REAL    NOT NULL,
+    PRIMARY KEY (user_id, poem_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_saved_poems_user ON saved_poems(user_id, saved_at DESC);

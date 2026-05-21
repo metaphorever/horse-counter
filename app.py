@@ -57,6 +57,8 @@ from db.users import (
     get_user_by_id, get_user_by_clerk_id, get_user_by_slug,
     create_user, validate_slug, slug_available,
     get_preferences, update_preferences,
+    update_profile, set_bio_poem,
+    get_user_published_poems, get_user_poems_for_bio_picker,
 )
 from db.pasture import add_to_pasture, list_pasture_horses
 from db.drafts import (
@@ -81,6 +83,7 @@ from poem_db import (
     count_browse_poems,
     get_random_published,
     get_poems_for_tag_slug,
+    get_published_poems_by_user,
 )
 from db.tags import (
     list_categories_with_tags,
@@ -102,7 +105,13 @@ from horse_collections import (
     get_horse_states,
     toggle_pasture,
     toggle_saved_horse,
+    list_saved_horses,
+    remove_from_pasture,
+    toggle_saved_poem,
+    is_poem_saved,
+    list_saved_poems,
 )
+from db.reports import create_report, list_reports, resolve_report
 from poem_submissions import (
     create_for_poem      as create_poem_submission,
     load_pending         as load_pending_poem_submissions,
@@ -506,7 +515,8 @@ def data_deletion():
 
 @app.route('/u/<slug>')
 def user_profile(slug):
-    """Public poet profile. Phase 0.4 stub — full version in Phase 1.13."""
+    """Public poet profile — Phase 1.15."""
+    import json as _json
     user = get_user_by_slug(slug)
     if not user:
         return render_template('index.html',
@@ -515,7 +525,29 @@ def user_profile(slug):
             form={},
             error=f'No poet found with the slug "{slug}"',
         ), 404
-    return render_template('user_profile.html', poet=user)
+    user = dict(user)
+    try:
+        user['links'] = _json.loads(user.get('links_json') or '[]')
+    except (TypeError, ValueError):
+        user['links'] = []
+    poems = get_published_poems_by_user(user['id'])
+    bio_poem = None
+    if user.get('bio_poem_id'):
+        from poem_db import get_poem_by_id as _get_poem_by_id
+        bio_poem = _get_poem_by_id(user['bio_poem_id'])
+        if bio_poem and bio_poem.get('status') != 'published':
+            bio_poem = None
+    bio_picker_poems = []
+    is_own_profile = (g.get('current_user') or {}).get('id') == user['id']
+    if is_own_profile:
+        bio_picker_poems = get_user_poems_for_bio_picker(user['id'])
+    return render_template('user_profile.html',
+        poet=user,
+        poems=poems,
+        bio_poem=bio_poem,
+        bio_picker_poems=bio_picker_poems,
+        is_own_profile=is_own_profile,
+    )
 
 
 # ── Public browse / discover stubs (Phase 1.1) ───────────────────────────────
@@ -714,11 +746,8 @@ def pasture():
 @app.route('/me/published')
 @user_required
 def me_published():
-    return render_template('coming_soon.html',
-        title='Published Poems',
-        description='Your published poems, newest first. Coming in Phase 1.15.',
-        roadmap_task='1.15',
-    )
+    user = g.get('current_user')
+    return redirect(url_for('user_profile', slug=user['slug']))
 
 
 @app.route('/me/drafts')
@@ -922,11 +951,10 @@ def me_draft_delete():
 @app.route('/me/pasture')
 @user_required
 def me_pasture():
-    return render_template('coming_soon.html',
-        title='My Pasture',
-        description='Your personal working collection of horses. Coming in Phase 1.19.',
-        roadmap_task='1.19',
-    )
+    """Phase 1.19 — pasture horse list."""
+    user = g.get('current_user')
+    horses = list_pasture_horses(user['id'])
+    return render_template('my_pasture.html', horses=horses)
 
 
 @app.route('/me/pasture/add', methods=['POST'])
@@ -949,34 +977,89 @@ def me_pasture_add():
     return jsonify({'ok': True, 'added': added})
 
 
+@app.route('/me/pasture/remove', methods=['POST'])
+@user_required
+def me_pasture_remove():
+    """Remove one horse from the user's pasture by name."""
+    user = g.get('current_user')
+    body = request.get_json(silent=True) or {}
+    name = (body.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'name required'}), 400
+    remove_from_pasture(user['id'], name)
+    return jsonify({'ok': True})
+
+
 @app.route('/me/saved-poems')
 @user_required
 def me_saved_poems():
-    return render_template('coming_soon.html',
-        title='Saved Poems',
-        description='Poems you have saved with the blue-ribbon. Coming in Phase 1.19.',
-        roadmap_task='1.19',
-    )
+    """Phase 1.19 — saved poem list."""
+    user = g.get('current_user')
+    poems = list_saved_poems(user['id'])
+    return render_template('saved_poems.html', poems=poems)
 
 
 @app.route('/me/saved-horses')
 @user_required
 def me_saved_horses():
-    return render_template('coming_soon.html',
-        title='Saved Horses',
-        description='Horses you have saved with the blue-ribbon. Coming in Phase 1.19.',
-        roadmap_task='1.19',
-    )
+    """Phase 1.19 — saved (ribbon) horse list."""
+    user = g.get('current_user')
+    horses = list_saved_horses(user['id'])
+    return render_template('saved_horses.html', horses=horses)
 
 
-@app.route('/me/profile')
+@app.route('/me/profile', methods=['GET'])
 @user_required
 def me_profile():
-    return render_template('coming_soon.html',
-        title='Edit Profile',
-        description='Edit your display name and profile links. Coming in Phase 1.15.',
-        roadmap_task='1.15',
-    )
+    """Phase 1.15 — edit profile form."""
+    import json as _json
+    user = g.get('current_user')
+    try:
+        links = _json.loads(user.get('links_json') or '[]')
+    except (TypeError, ValueError):
+        links = []
+    return render_template('profile_edit.html', profile_links=links)
+
+
+@app.route('/me/profile/save', methods=['POST'])
+@user_required
+def me_profile_save():
+    """Phase 1.15 — save display_name + links."""
+    import json as _json
+    user = g.get('current_user')
+    display_name = request.form.get('display_name', '').strip()[:80]
+    labels = request.form.getlist('link_label[]')
+    urls   = request.form.getlist('link_url[]')
+    links  = [
+        {'label': lbl.strip()[:80], 'url': u.strip()[:500]}
+        for lbl, u in zip(labels, urls)
+        if u.strip()
+    ]
+    update_profile(user['id'], display_name or user['display_name'], links)
+    flash('Profile saved.', 'ok')
+    return redirect(url_for('me_profile'))
+
+
+@app.route('/me/profile/bio', methods=['POST'])
+@user_required
+def me_profile_bio():
+    """Phase 1.15 — set or clear the bio poem."""
+    user = g.get('current_user')
+    data = request.get_json(silent=True) or {}
+    raw = data.get('poem_id')
+    if raw is None or raw == '':
+        set_bio_poem(user['id'], None)
+        return jsonify({'ok': True, 'cleared': True})
+    try:
+        poem_id = int(raw)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid poem_id'}), 400
+    from poem_db import get_poem_by_id as _get_poem_by_id
+    poem = _get_poem_by_id(poem_id)
+    if not poem or poem.get('author_user_id') != user['id']:
+        return jsonify({'error': 'not found'}), 404
+    set_bio_poem(user['id'], poem_id)
+    return jsonify({'ok': True, 'poem_id': poem_id})
 
 
 # ── Homepage ──────────────────────────────────────────────────────────────────
@@ -1968,6 +2051,11 @@ def poem_permalink(short_code):
         if candidate in ('plain', 'pasture'):
             server_mode = candidate
 
+    cur_user = g.get('current_user')
+    poem_saved = False
+    if cur_user:
+        poem_saved = is_poem_saved(cur_user['id'], poem['id'])
+
     return render_template(
         'poem.html',
         poem              = poem,
@@ -1982,7 +2070,74 @@ def poem_permalink(short_code):
         published_iso     = published_iso,
         published_human   = published_human,
         server_view_mode  = server_mode,
+        poem_saved        = poem_saved,
     )
+
+
+# ── Poem report (Phase 1.14) ──────────────────────────────────────────────────
+
+@app.route('/p/<short_code>/report', methods=['POST'])
+@limiter.limit("3 per hour")
+def poem_report(short_code):
+    poem = get_poem_by_short_code(short_code)
+    if not poem or poem.get('status') != 'published':
+        return jsonify({'error': 'not found'}), 404
+    data = request.get_json(silent=True) or {}
+    reason = (request.form.get('reason') or data.get('reason') or '').strip()[:500]
+    if not reason:
+        return jsonify({'error': 'reason required'}), 400
+    user = g.get('current_user')
+    create_report(
+        target_type='poem',
+        target_id=poem['id'],
+        reason=reason,
+        reporter_user_id=user['id'] if user else None,
+        reporter_ip=request.remote_addr or '',
+    )
+    if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+        return jsonify({'ok': True})
+    flash('Thank you — this poem has been reported.', 'ok')
+    return redirect(url_for('poem_permalink', short_code=short_code))
+
+
+# ── Poem save / ribbon (Phase 1.19) ───────────────────────────────────────────
+
+@app.route('/p/<short_code>/save', methods=['POST'])
+def poem_save_toggle(short_code):
+    """Toggle the blue-ribbon save for the current user on a poem."""
+    user = g.get('current_user')
+    if not user:
+        return jsonify({'error': 'login_required'}), 401
+    poem = get_poem_by_short_code(short_code)
+    if not poem or poem.get('status') != 'published':
+        return jsonify({'error': 'not found'}), 404
+    result = toggle_saved_poem(user['id'], poem['id'])
+    return jsonify(result)
+
+
+# ── Admin: report queue (Phase 1.14) ─────────────────────────────────────────
+
+@app.route('/admin/reports')
+@login_required
+def admin_reports():
+    status = request.args.get('status', 'pending')
+    if status not in ('pending', 'actioned', 'dismissed', 'all'):
+        status = 'pending'
+    reports = list_reports(status)
+    return render_template('admin_reports.html', reports=reports, status_filter=status)
+
+
+@app.route('/admin/report/<int:report_id>/action', methods=['POST'])
+@login_required
+def admin_report_action(report_id):
+    action = request.form.get('action') or (request.get_json(silent=True) or {}).get('action')
+    if action not in ('actioned', 'dismissed'):
+        flash('Invalid action.', 'err')
+        return redirect(url_for('admin_reports'))
+    user = g.get('current_user')
+    resolve_report(report_id, action, user['id'] if user else 0)
+    flash(f'Report {action}.', 'ok')
+    return redirect(url_for('admin_reports'))
 
 
 # ── poet.horse: admin poem-submissions queue ──────────────────────────────────

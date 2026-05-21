@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Saved Poems — poet.horse{% endblock %}
+
+{% block content %}
+<div class="text-page collection-page">
+  <h1 class="page-title">Saved Poems</h1>
+  <p class="page-desc">Poems you've given the blue ribbon. Private — only you can see this.</p>
+
+  {% if poems %}
+  <ul class="collection-list">
+    {% for p in poems %}
+    <li class="collection-item" data-short-code="{{ p.short_code }}">
+      <a class="collection-poem-title" href="{{ url_for('poem_permalink', short_code=p.short_code) }}">
+        {{ p.title or '(untitled)' }}
+      </a>
+      <span class="collection-meta">
+        {% if p.author_slug %}
+          by <a href="{{ url_for('user_profile', slug=p.author_slug) }}">{{ p.author_name }}</a>
+        {% elif p.author_display_name %}
+          by {{ p.author_display_name }}
+        {% endif %}
+        · {{ p.horse_count }} horse{{ 's' if p.horse_count != 1 }}
+        · Saved {{ p.saved_at | datefmt }}
+      </span>
+      <button class="btn-link collection-remove-btn" data-short-code="{{ p.short_code }}"
+              aria-label="Unsave this poem">Unsave</button>
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="collection-count">{{ poems | length }} poem{{ 's' if poems | length != 1 }}</p>
+  {% else %}
+  <p class="collection-empty">
+    No saved poems yet. Give the blue ribbon 🎀 to a poem from its permalink page.
+  </p>
+  {% endif %}
+</div>
+
+{% if poems %}
+<script>
+(function() {
+  document.querySelectorAll('.collection-remove-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const sc   = this.dataset.shortCode;
+      const item = this.closest('.collection-item');
+      fetch('/p/' + sc + '/save', {method: 'POST'})
+      .then(r => r.json())
+      .then(d => {
+        if (!d.saved) {
+          item.remove();
+          const remaining = document.querySelectorAll('.collection-item').length;
+          const count = document.querySelector('.collection-count');
+          if (count) count.textContent = remaining + ' poem' + (remaining !== 1 ? 's' : '');
+          if (remaining === 0) {
+            document.querySelector('.collection-list').remove();
+            if (count) count.remove();
+            document.querySelector('.collection-page').insertAdjacentHTML('beforeend',
+              '<p class="collection-empty">No saved poems yet.</p>');
+          }
+        }
+      });
+    });
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

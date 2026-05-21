@@ -2,23 +2,158 @@
 {% block title %}{{ poet.display_name }} — poet.horse{% endblock %}
 
 {% block content %}
-<div class="poet-profile">
-  <h1 class="page-title">{{ poet.display_name }}</h1>
-  <p class="poet-slug">poet.horse/u/{{ poet.slug }}</p>
+<div class="text-page profile-page">
 
-  <p class="poet-joined">
-    joined {{ poet.joined_at | datefmt }}
-  </p>
+  <div class="profile-header">
+    <h1 class="profile-name">{{ poet.display_name }}</h1>
+    <p class="profile-slug">poet.horse/u/{{ poet.slug }}</p>
+    <p class="profile-joined">Joined {{ poet.joined_at | datefmt }}</p>
 
-  {# Phase 1.13 will add the published-poem list here. #}
-  <p class="poet-stub-note">
-    Poem archive coming soon.
-  </p>
+    {% if poet.links %}
+    <ul class="profile-links">
+      {% for link in poet.links %}
+        {% if link.url %}
+        <li><a href="{{ link.url }}" target="_blank" rel="noopener noreferrer nofollow">
+          {{ link.label or link.url }}
+        </a></li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+    {% endif %}
 
-  {% if current_user and current_user.id == poet.id %}
-    <p class="poet-own-actions">
-      <a href="#">edit display name</a>
-    </p>
-  {% endif %}
+    {% if is_own_profile %}
+    <a class="btn-sec profile-edit-link" href="{{ url_for('me_profile') }}">Edit Profile</a>
+    {% endif %}
+  </div>
+
+  {# ── Bio poem ────────────────────────────────────────────────────────── #}
+  <section class="profile-bio-section">
+    {% if bio_poem %}
+      <h2 class="profile-section-head">Bio</h2>
+      <div class="profile-bio-poem">
+        {% for line in bio_poem.lines %}
+        <p class="bio-line">{% for h in line %}
+          <a class="horse-chip" href="{{ h.url }}" target="_blank" rel="noopener nofollow">{{ h.display }}</a>{% if not loop.last %} {% endif %}
+        {% endfor %}</p>
+        {% endfor %}
+        <p class="bio-poem-link"><a href="{{ url_for('poem_permalink', short_code=bio_poem.short_code) }}">View poem →</a></p>
+      </div>
+    {% elif is_own_profile %}
+      <p class="profile-no-bio">No bio set. <button class="btn-link" id="bio-picker-open">Choose a poem as your bio</button></p>
+    {% endif %}
+
+    {% if is_own_profile and bio_picker_poems %}
+    <div class="profile-bio-actions" {% if not bio_poem %}style="display:none"{% endif %} id="bio-change-row">
+      <button class="btn-link" id="bio-picker-open">{{ 'Change bio poem' if bio_poem else 'Choose a poem as your bio' }}</button>
+      {% if bio_poem %}
+      <button class="btn-link profile-bio-clear" id="bio-clear-btn">Remove bio</button>
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
+
+  {# ── Poems list ──────────────────────────────────────────────────────── #}
+  <section class="profile-poems-section">
+    <h2 class="profile-section-head">Poems</h2>
+    {% if poems %}
+    <ul class="profile-poem-list">
+      {% for p in poems %}
+      <li class="profile-poem-item">
+        <a class="profile-poem-title" href="{{ url_for('poem_permalink', short_code=p.short_code) }}">
+          {{ p.title or '(untitled)' }}
+        </a>
+        <span class="profile-poem-meta">
+          {{ p.horse_count }} horse{{ 's' if p.horse_count != 1 }}
+          {% if p.published_at %}· {{ p.published_at | datefmt }}{% endif %}
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="profile-no-poems">No published poems yet.</p>
+    {% endif %}
+  </section>
+
 </div>
+
+{# ── Bio picker modal ────────────────────────────────────────────────── #}
+{% if is_own_profile and bio_picker_poems %}
+<div class="modal-overlay" id="bio-picker-modal" role="dialog"
+     aria-modal="true" aria-label="Choose bio poem">
+  <div class="modal-box">
+    <button class="modal-close" id="bio-picker-close" aria-label="Close">×</button>
+    <h2 class="modal-title">Choose a bio poem</h2>
+    <p class="modal-hint">Your bio is a poem you've published. It appears at the top of your profile.</p>
+    <ul class="bio-picker-list" id="bio-picker-list">
+      {% for p in bio_picker_poems %}
+      <li class="bio-picker-item {% if bio_poem and bio_poem.id == p.id %}bio-picker-current{% endif %}"
+          data-poem-id="{{ p.id }}" data-poem-title="{{ p.title or '(untitled)' }}">
+        <button class="bio-picker-btn" type="button">
+          {{ p.title or '(untitled)' }}
+          <span class="bio-picker-meta">{{ p.horse_count }} horse{{ 's' if p.horse_count != 1 }}</span>
+          {% if p.status == 'submitted' %}
+          <span class="bio-picker-pending" title="Pending admin approval">⏳ pending review</span>
+          {% endif %}
+          {% if bio_poem and bio_poem.id == p.id %}
+          <span class="bio-picker-active-label">Currently set</span>
+          {% endif %}
+        </button>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<script>
+(function() {
+  const modal    = document.getElementById('bio-picker-modal');
+  const openBtns = document.querySelectorAll('#bio-picker-open');
+  const closeBtn = document.getElementById('bio-picker-close');
+  const clearBtn = document.getElementById('bio-clear-btn');
+
+  function openModal() {
+    modal.classList.add('open');
+    closeBtn.focus();
+  }
+  function closeModal() {
+    modal.classList.remove('open');
+  }
+
+  openBtns.forEach(b => b && b.addEventListener('click', openModal));
+  closeBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', e => {
+    if (!modal.hidden && e.key === 'Escape') closeModal();
+  });
+
+  document.querySelectorAll('.bio-picker-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const li     = this.closest('.bio-picker-item');
+      const poemId = li.dataset.poemId;
+      fetch('{{ url_for("me_profile_bio") }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({poem_id: parseInt(poemId)}),
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok) { location.reload(); }
+      });
+    });
+  });
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function() {
+      fetch('{{ url_for("me_profile_bio") }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({poem_id: null}),
+      })
+      .then(r => r.json())
+      .then(d => { if (d.ok) { location.reload(); } });
+    });
+  }
+})();
+</script>
+{% endif %}
 {% endblock %}

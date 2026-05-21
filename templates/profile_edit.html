@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile — poet.horse{% endblock %}
+
+{% block content %}
+<div class="text-page profile-edit-page">
+  <h1 class="page-title">Edit Profile</h1>
+
+  <form class="profile-edit-form" method="post" action="{{ url_for('me_profile_save') }}">
+    <div class="form-field">
+      <label for="display_name" class="form-label">Display name</label>
+      <input class="form-input" type="text" id="display_name" name="display_name"
+             value="{{ current_user.display_name }}" maxlength="80" required>
+    </div>
+
+    <fieldset class="form-field profile-links-field">
+      <legend class="form-label">Links</legend>
+      <p class="form-hint">Add links to your personal site, social profiles, or contact methods. Leave URL blank to omit.</p>
+      <div id="links-rows">
+        {% for link in profile_links %}
+        <div class="link-row">
+          <input class="form-input link-label-input" type="text" name="link_label[]"
+                 placeholder="Label (e.g. Bluesky)" value="{{ link.label }}" maxlength="80">
+          <input class="form-input link-url-input" type="url" name="link_url[]"
+                 placeholder="https://…" value="{{ link.url }}" maxlength="500">
+          <button type="button" class="btn-link link-remove-btn" aria-label="Remove link">Remove</button>
+        </div>
+        {% endfor %}
+        {# Extra blank row #}
+        <div class="link-row">
+          <input class="form-input link-label-input" type="text" name="link_label[]"
+                 placeholder="Label (e.g. Bluesky)" maxlength="80">
+          <input class="form-input link-url-input" type="url" name="link_url[]"
+                 placeholder="https://…" maxlength="500">
+          <button type="button" class="btn-link link-remove-btn" aria-label="Remove link">Remove</button>
+        </div>
+      </div>
+      <button type="button" class="btn-link" id="add-link-row">+ Add another link</button>
+    </fieldset>
+
+    <div class="form-actions">
+      <button class="btn-pri" type="submit">Save</button>
+      <a class="btn-sec" href="{{ url_for('user_profile', slug=current_user.slug) }}">View profile</a>
+    </div>
+  </form>
+</div>
+
+<script>
+(function() {
+  document.querySelectorAll('.link-remove-btn').forEach(attachRemove);
+
+  document.getElementById('add-link-row').addEventListener('click', function() {
+    const row = document.createElement('div');
+    row.className = 'link-row';
+    row.innerHTML = `
+      <input class="form-input link-label-input" type="text" name="link_label[]" placeholder="Label (e.g. Bluesky)" maxlength="80">
+      <input class="form-input link-url-input" type="url" name="link_url[]" placeholder="https://…" maxlength="500">
+      <button type="button" class="btn-link link-remove-btn" aria-label="Remove link">Remove</button>`;
+    document.getElementById('links-rows').appendChild(row);
+    attachRemove(row.querySelector('.link-remove-btn'));
+    row.querySelector('input').focus();
+  });
+
+  function attachRemove(btn) {
+    btn.addEventListener('click', function() {
+      this.closest('.link-row').remove();
+    });
+  }
+})();
+</script>
+{% endblock %}
