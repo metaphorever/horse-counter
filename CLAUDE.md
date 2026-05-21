@@ -250,11 +250,11 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: 1.28 — Draft polish: popover quick-create + editor auto-save redesign**
+**PHASE: 1.14 + 1.15 + 1.19 — Report button, Poet profiles, Save/Pasture collections**
 **Model: Sonnet · Effort: medium**
 
-1.27 shipped and merged. This phase: replace hidden 0-draft popover state with inline quick-create form; add "Add to new draft" expander on 1+-draft state; replace explicit "Save Draft" model with auto-save (immediate on stable/poem add/remove, debounced ~5-10s on drag); editor page load shows draft picker when 1+ drafts exist; editor UI: "Currently editing DRAFT NAME [Change Draft ▾]" + renamed buttons (Clear Stable / Clear Poem / Edit Details / Post Poem) + clear dialog with destination options. Full spec in `spec/phase-1.28.md`.
+Three features shipped together. Full spec in `spec/phase-1.14-1.15-1.19.md`.
 
-**Overrides in effect:**
-- "Save Draft" explicit button (1.27) → superseded by auto-save + "Edit Details"
-- 0-draft popover hiding (PR #39 bug fix) → superseded by quick-create form
+- **1.14** — Report button on poem permalink + admin report queue
+- **1.15** — Full poet profile `/u/<slug>`: published poems list, bio poem picker, links, `/me/profile` edit page
+- **1.19** — Save/Pasture collection pages: `/me/saved-poems`, `/me/saved-horses`, `/me/pasture`; poem ribbon save button; `saved_poems` table migration
