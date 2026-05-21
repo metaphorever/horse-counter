@@ -1440,6 +1440,7 @@ def callback():
 def poetry_editor():
     import json
     is_admin = bool(session.get('logged_in'))
+    initial_draft = None
     if is_admin:
         stable = load_stable()
         prefs  = {}
@@ -1449,6 +1450,15 @@ def poetry_editor():
         # or stays empty. Anonymous users hydrate from horse-draft localStorage.
         stable = []
         prefs  = get_preferences(g.current_user['id'])
+        # If ?draft=<id> is in the URL (e.g. "Resume editing" from /me/drafts),
+        # load that draft and pass it to the template so the editor boots with
+        # the right stable/lines already populated.
+        draft_param = request.args.get('draft')
+        if draft_param:
+            try:
+                initial_draft = get_user_draft(int(draft_param), g.current_user['id'])
+            except (ValueError, TypeError):
+                pass
     else:
         stable = []
         prefs  = {}
@@ -1458,6 +1468,7 @@ def poetry_editor():
         user_prefs_json=json.dumps(prefs),
         optional_tags_json=json.dumps(OPTIONAL_TAGS),
         tag_categories_json=json.dumps(tag_categories),
+        initial_draft_json=json.dumps(initial_draft),
     )
 
 
