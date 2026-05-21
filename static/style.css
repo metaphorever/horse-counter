@@ -368,6 +368,7 @@ button[type="submit"]:active { transform: translate(2px, 2px); box-shadow: none;
 }
 .btn-sec:hover { background: #ede0b0; }
 .btn-sec:active { transform: translate(2px, 2px); box-shadow: none; }
+.btn-sec:disabled, .btn-sec.btn-signin { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
 
 .actions { margin-top: 16px; }
 
@@ -1543,6 +1544,9 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
   border: 1px solid #c4a96b; border-radius: 2px; cursor: pointer;
 }
 .draft-strip-change:hover { background: #ede0b0; }
+.draft-strip-guest { background: #faf8f2; border-color: #d8cba8; color: #9a8a6a; }
+.draft-strip-signin-link { color: #6b5430; }
+.draft-strip-signin-link:hover { color: #3a2a10; }
 
 /* ── Phase 1.28: Draft picker ────────────────────────────────────────────── */
 .draft-picker-modal-body { max-width: 460px; width: 100%; }
