@@ -317,27 +317,88 @@
     pDraftSection.innerHTML = '<span class="popover-draft-loading">Loading drafts…</span>';
     fetchDraftList().then(drafts => {
       if(!drafts.length){
-        pDraftSection.hidden = true;
-        pDraftSection.innerHTML = '';
+        // 0-draft state: quick-create form
+        pDraftSection.innerHTML =
+          '<div class="popover-draft-head">Add to Draft</div>' +
+          '<div class="popover-draft-create">' +
+            '<input class="popover-draft-title-input" id="popover-draft-title" ' +
+                   'placeholder="Draft title (optional)" maxlength="120">' +
+            '<button class="popover-draft-new-btn" id="popover-draft-new">+ New</button>' +
+          '</div>';
+        document.getElementById('popover-draft-new').addEventListener('click', async () => {
+          const titleInput = document.getElementById('popover-draft-title');
+          const title = (titleInput ? titleInput.value : '').trim();
+          const btn = document.getElementById('popover-draft-new');
+          btn.disabled = true;
+          const r = await apiPost('/me/draft/create', {
+            title,
+            horse_name:    horse.name,
+            horse_display: horse.display,
+            horse_url:     horse.url,
+          });
+          if(r && r.ok){
+            const label = r.draft.title || 'untitled';
+            btn.textContent = `✓ Added to "${esc(label)}"`;
+            // Bust the draft list cache so the next popover open reflects the new draft
+            draftsCache = null;
+          } else {
+            btn.textContent = 'Error — try again';
+            btn.disabled = false;
+          }
+        });
         return;
       }
+
+      // 1+-draft state: existing list + collapsed expander
+      let html = '<div class="popover-draft-head">Add to Draft</div>';
       if(drafts.length === 1){
         const d = drafts[0];
-        pDraftSection.innerHTML =
-          `<button class="popover-draft-btn" data-draft-id="${d.id}">+ Add to "${esc(d.title)}"</button>`;
+        html += `<button class="popover-draft-btn" data-draft-id="${d.id}">+ Add to "${esc(d.title)}"</button>`;
       } else {
-        pDraftSection.innerHTML =
-          '<div class="popover-draft-head">Add to draft:</div>' +
-          drafts.map(d =>
-            `<button class="popover-draft-btn" data-draft-id="${d.id}">${esc(d.title)}</button>`
-          ).join('');
+        html += drafts.map(d =>
+          `<button class="popover-draft-btn" data-draft-id="${d.id}">${esc(d.title)}</button>`
+        ).join('');
       }
+      html += '<button class="popover-draft-expander" id="popover-draft-expander">+ Add to new draft ▸</button>' +
+              '<div class="popover-draft-create" id="popover-draft-create-area" hidden>' +
+                '<input class="popover-draft-title-input" id="popover-draft-title" ' +
+                       'placeholder="Draft title (optional)" maxlength="120">' +
+                '<button class="popover-draft-new-btn" id="popover-draft-new">+ New</button>' +
+              '</div>';
+      pDraftSection.innerHTML = html;
+
+      document.getElementById('popover-draft-expander').addEventListener('click', () => {
+        const area = document.getElementById('popover-draft-create-area');
+        if(area){ area.hidden = !area.hidden; }
+      });
+
+      document.getElementById('popover-draft-new').addEventListener('click', async () => {
+        const titleInput = document.getElementById('popover-draft-title');
+        const title = (titleInput ? titleInput.value : '').trim();
+        const btn = document.getElementById('popover-draft-new');
+        btn.disabled = true;
+        const r = await apiPost('/me/draft/create', {
+          title,
+          horse_name:    horse.name,
+          horse_display: horse.display,
+          horse_url:     horse.url,
+        });
+        if(r && r.ok){
+          const label = r.draft.title || 'untitled';
+          btn.textContent = `✓ Added to "${esc(label)}"`;
+          draftsCache = null;
+        } else {
+          btn.textContent = 'Error — try again';
+          btn.disabled = false;
+        }
+      });
+
       pDraftSection.querySelectorAll('.popover-draft-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
-          const draftId = parseInt(btn.dataset.draftId);
+          const dId = parseInt(btn.dataset.draftId);
           btn.disabled = true;
           const r = await apiPost('/me/draft/stable/add', {
-            draft_id: draftId,
+            draft_id: dId,
             name:    horse.name,
             display: horse.display,
             url:     horse.url,

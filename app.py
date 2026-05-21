@@ -768,14 +768,81 @@ def me_draft_save():
 
 @app.route('/me/draft/list', methods=['GET', 'POST'])
 def me_draft_list():
-    """Return the current user's drafts as [{id, title}, ...] for the chip picker."""
+    """Return the current user's drafts for the chip picker and editor picker.
+
+    Returns [{id, title, horse_count, updated_at}, ...] newest first.
+    horse_count is the number of horses in the draft's stable.
+    """
+    import json as _json
     user = g.get('current_user')
     if user is None:
         return jsonify({'error': 'Not signed in'}), 401
     drafts = list_user_drafts(user['id'])
-    return jsonify({'ok': True, 'drafts': [
-        {'id': d['id'], 'title': d['title']} for d in drafts
-    ]})
+    result = []
+    for d in drafts:
+        try:
+            stable = _json.loads(d.get('stable_json') or '[]')
+            horse_count = len(stable) if isinstance(stable, list) else 0
+        except Exception:
+            horse_count = 0
+        result.append({
+            'id':          d['id'],
+            'title':       d['title'],
+            'horse_count': horse_count,
+            'updated_at':  d['updated_at'],
+        })
+    return jsonify({'ok': True, 'drafts': result})
+
+
+@app.route('/me/draft/get', methods=['GET'])
+def me_draft_get():
+    """Return a single draft's full JSON.
+
+    Query param: ?id=<draft_id>
+    Returns the full draft row including lines_json, stable_json, and all metadata.
+    """
+    user = g.get('current_user')
+    if user is None:
+        return jsonify({'error': 'Not signed in'}), 401
+    try:
+        draft_id = int(request.args.get('id', ''))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'id required'}), 400
+    draft = get_user_draft(draft_id, user['id'])
+    if draft is None:
+        return jsonify({'error': 'Draft not found'}), 404
+    return jsonify({'ok': True, 'draft': draft})
+
+
+@app.route('/me/draft/create', methods=['POST'])
+def me_draft_create():
+    """Create a new draft and optionally add one horse to its stable.
+
+    Body: { title?, horse_name?, horse_display?, horse_url? }
+    Returns: { ok: true, draft: {id, title} }
+    """
+    import json as _json
+    user = g.get('current_user')
+    if user is None:
+        return jsonify({'error': 'Not signed in'}), 401
+    body    = request.get_json(silent=True) or {}
+    title   = (body.get('title') or '').strip()[:120]
+    name    = (body.get('horse_name')    or '').strip()[:200]
+    display = (body.get('horse_display') or name).strip()[:200]
+    url     = (body.get('horse_url')     or '').strip()[:500]
+
+    stable_data = []
+    if name:
+        stable_data = [{'name': name, 'display': display, 'url': url, 'remaining': 1}]
+
+    draft = save_user_draft(
+        user_id      = user['id'],
+        draft_id     = None,
+        title        = title,
+        lines_json   = '[[]]',
+        stable_json  = _json.dumps(stable_data),
+    )
+    return jsonify({'ok': True, 'draft': {'id': draft['id'], 'title': draft['title']}})
 
 
 @app.route('/me/draft/stable/add', methods=['POST'])
@@ -1440,7 +1507,8 @@ def callback():
 def poetry_editor():
     import json
     is_admin = bool(session.get('logged_in'))
-    initial_draft = None
+    initial_draft  = None
+    initial_drafts = []
     if is_admin:
         stable = load_stable()
         prefs  = {}
@@ -1459,9 +1527,27 @@ def poetry_editor():
                 initial_draft = get_user_draft(int(draft_param), g.current_user['id'])
             except (ValueError, TypeError):
                 pass
+        # 1.28: pass the draft list so the page-load picker can render without
+        # a client-side round trip. Only needed when no specific draft was requested.
+        if initial_draft is None:
+            all_drafts = list_user_drafts(g.current_user['id'])
+            initial_drafts = []
+            for d in all_drafts:
+                try:
+                    stable_data = json.loads(d.get('stable_json') or '[]')
+                    hc = len(stable_data) if isinstance(stable_data, list) else 0
+                except Exception:
+                    hc = 0
+                initial_drafts.append({
+                    'id': d['id'], 'title': d['title'],
+                    'horse_count': hc, 'updated_at': d['updated_at'],
+                })
+        else:
+            initial_drafts = []
     else:
         stable = []
         prefs  = {}
+        initial_drafts = []
     tag_categories = list_categories_with_tags()
     return render_template('poetry.html',
         stable_json=json.dumps(stable),
@@ -1469,6 +1555,7 @@ def poetry_editor():
         optional_tags_json=json.dumps(OPTIONAL_TAGS),
         tag_categories_json=json.dumps(tag_categories),
         initial_draft_json=json.dumps(initial_draft),
+        initial_drafts_json=json.dumps(initial_drafts),
     )
 
 
