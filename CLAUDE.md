@@ -250,7 +250,11 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: 1.27 — Save draft from poem builder**
+**PHASE: 1.28 — Draft polish: popover quick-create + editor auto-save redesign**
 **Model: Sonnet · Effort: medium**
 
-1.26 shipped and merged. This phase: "Save draft" button next to "Post poem"; draft stores poem text + stable + metadata in SQLite; horse chip gains "Send to stable for [draft]" picker; anonymous users get a persistent `horse-draft` localStorage shape (migrated from `horse-stable`); Drafts nav item wires to a drafts list page. Removes the temporary `stable_horses` table + `/me/stable/*` routes from PR #37.
+1.27 shipped and merged. This phase: replace hidden 0-draft popover state with inline quick-create form; add "Add to new draft" expander on 1+-draft state; replace explicit "Save Draft" model with auto-save (immediate on stable/poem add/remove, debounced ~5-10s on drag); editor page load shows draft picker when 1+ drafts exist; editor UI: "Currently editing DRAFT NAME [Change Draft ▾]" + renamed buttons (Clear Stable / Clear Poem / Edit Details / Post Poem) + clear dialog with destination options. Full spec in `spec/phase-1.28.md`.
+
+**Overrides in effect:**
+- "Save Draft" explicit button (1.27) → superseded by auto-save + "Edit Details"
+- 0-draft popover hiding (PR #39 bug fix) → superseded by quick-create form
