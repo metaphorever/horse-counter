@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Playfair+Display:wght@700&family=Smokum&family=Abril+Fatface&family=IM+Fell+English:ital@0;1&family=Playfair+Display+SC:ital,wght@0,400;1,400&display=swap">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='print.css') }}">
+<link rel="alternate" type="application/rss+xml" title="poet.horse" href="/feed.xml">
 {% block head %}{% endblock %}
 {% if clerk_publishable_key %}
 <script async crossorigin="anonymous"

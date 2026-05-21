@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>poet.horse</title>
+    <link>https://poet.horse/</link>
+    <description>Horse poems from poet.horse</description>
+    <language>en-us</language>
+    <atom:link href="https://poet.horse/feed.xml" rel="self" type="application/rss+xml"/>
+    <lastBuildDate>{{ now | rfc2822 }}</lastBuildDate>
+    {% for poem in poems %}<item>
+      <title>{% if poem.title %}{{ poem.title | e }}{% else %}untitled{% endif %}</title>
+      <link>https://poet.horse/p/{{ poem.short_code }}</link>
+      <guid isPermaLink="true">https://poet.horse/p/{{ poem.short_code }}</guid>
+      <pubDate>{{ poem.published_at | rfc2822 }}</pubDate>
+      <description>{{ poem.horse_count }} horse{{ 's' if poem.horse_count != 1 else '' }}{% if poem.author_display_name %} &amp;middot; by {{ poem.author_display_name | e }}{% endif %}</description>
+    </item>
+    {% endfor %}
+  </channel>
+</rss>

@@ -36,12 +36,14 @@ Admin routes (login required — Clerk role='admin' OR PIN fallback):
 
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import (
     Flask, g, request, redirect, session, url_for,
-    render_template, flash, jsonify,
+    render_template, flash, jsonify, make_response,
 )
 from functools import wraps
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 from config import (
     SECRET_KEY, SESSION_LIFETIME_SECONDS,
@@ -153,6 +155,13 @@ app.secret_key = SECRET_KEY
 app.jinja_env.globals['tile_style'] = _tile_style
 app.permanent_session_lifetime = SESSION_LIFETIME_SECONDS
 
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    storage_uri="memory://",
+    default_limits=[],
+)
+
 # ── Initialise singletons ─────────────────────────────────────────────────────
 
 print("Initialising Horse Counter...")
@@ -235,6 +244,16 @@ def _attribution_html(name: str, tumblr: str, prefix: str = 'Submitted by', titl
 @app.template_filter('datefmt')
 def datefmt(ts):
     return datetime.fromtimestamp(ts).strftime('%b %d %H:%M')
+
+
+@app.template_filter('rfc2822')
+def rfc2822(ts):
+    """Format a Unix timestamp or datetime as RFC 2822 (for RSS <pubDate>)."""
+    if isinstance(ts, datetime):
+        dt = ts if ts.tzinfo else ts.replace(tzinfo=timezone.utc)
+    else:
+        dt = datetime.fromtimestamp(float(ts), tz=timezone.utc)
+    return dt.strftime('%a, %d %b %Y %H:%M:%S +0000')
 
 
 def _auto_check_tags(post_data: dict) -> set:
@@ -323,6 +342,7 @@ def sign_out():
 
 
 @app.route('/auth/clerk/verify', methods=['POST'])
+@limiter.limit("20 per minute")
 def clerk_verify():
     """
     Exchange a Clerk session JWT for a Flask session.
@@ -499,6 +519,16 @@ def user_profile(slug):
 
 
 # ── Public browse / discover stubs (Phase 1.1) ───────────────────────────────
+
+@app.route('/feed.xml')
+def rss_feed():
+    poems = browse_poems(sort='newest', per_page=50)
+    now = datetime.now(tz=timezone.utc)
+    xml = render_template('feed.xml', poems=poems, now=now)
+    resp = make_response(xml)
+    resp.headers['Content-Type'] = 'application/rss+xml; charset=utf-8'
+    return resp
+
 
 @app.route('/featured')
 def featured():
@@ -1223,6 +1253,7 @@ def queue_post():
 # ── Public submissions ────────────────────────────────────────────────────────
 
 @app.route('/submit', methods=['POST'])
+@limiter.limit("10 per minute")
 def public_submit():
     """Accept a counted post submission (public or admin)."""
     draft_id = request.form.get('draft_id', '')
@@ -1263,6 +1294,7 @@ def public_submit():
 
 
 @app.route('/submit/poem', methods=['POST'])
+@limiter.limit("10 per minute")
 def submit_poem_public():
     """
     Accept a poem submission. New SQLite-backed flow:
@@ -1561,6 +1593,7 @@ def poetry_editor():
 
 
 @app.route('/poetry/search', methods=['POST'])
+@limiter.limit("60 per minute")
 def poetry_search():
     from flask import jsonify
     data    = request.get_json(silent=True) or {}
@@ -1598,6 +1631,7 @@ def poetry_short():
 
 
 @app.route('/poetry/rhyme/terms', methods=['POST'])
+@limiter.limit("60 per minute")
 def poetry_rhyme_terms():
     from flask import jsonify
     data = request.get_json(silent=True) or {}
@@ -1613,6 +1647,7 @@ def poetry_rhyme_terms():
 
 
 @app.route('/poetry/rhyme/horses', methods=['POST'])
+@limiter.limit("60 per minute")
 def poetry_rhyme_horses():
     from flask import jsonify
     data  = request.get_json(silent=True) or {}
@@ -1639,6 +1674,7 @@ def poetry_thesaurus_terms():
 
 
 @app.route('/poetry/thesaurus/horses', methods=['POST'])
+@limiter.limit("60 per minute")
 def poetry_thesaurus_horses():
     from flask import jsonify
     data  = request.get_json(silent=True) or {}
