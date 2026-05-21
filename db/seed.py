@@ -35,6 +35,8 @@ _COLUMN_MIGRATIONS = [
     ('drafts', 'inspired_by_url',   "TEXT NOT NULL DEFAULT ''"),
     ('drafts', 'tag_ids_json',      "TEXT NOT NULL DEFAULT '[]'"),
     ('drafts', 'created_at',        "REAL NOT NULL DEFAULT 0"),
+    # Phase 1.15 — bio poem on user profile (FK omitted; SQLite ALTER TABLE doesn't support it)
+    ('users', 'bio_poem_id', "INTEGER"),
 ]
 
 

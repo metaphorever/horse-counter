@@ -172,7 +172,34 @@
       <button class="poem-export-btn" id="export-copy-html" type="button">Copy HTML</button>
       <button class="poem-export-btn" id="export-dl-txt"   type="button">&#x2193; .txt</button>
     </span>
+    <span class="poem-action-btns">
+      {% if current_user %}
+      <button class="poem-ribbon-btn" id="poem-ribbon-btn" type="button"
+              aria-pressed="{{ 'true' if poem_saved else 'false' }}"
+              title="{{ 'Unsave poem' if poem_saved else 'Save poem' }}">
+        &#x1F380;
+      </button>
+      {% endif %}
+      <button class="poem-report-btn" id="poem-report-open" type="button"
+              title="Report this poem">Report</button>
+    </span>
   </footer>
+
+  {# ── Report form ──────────────────────────────────────────────────────── #}
+  <div class="report-form-wrap" id="report-form-wrap" hidden>
+    <form class="report-form" id="report-form">
+      <label for="report-reason" class="report-form-label">Why are you reporting this poem?</label>
+      <textarea class="report-form-textarea" id="report-reason" name="reason"
+                maxlength="500" rows="3" placeholder="Describe the issue…" required></textarea>
+      <div class="report-form-actions">
+        <button class="btn-pri" type="submit">Submit report</button>
+        <button class="btn-sec" type="button" id="report-cancel">Cancel</button>
+      </div>
+      <p class="report-form-confirm" id="report-confirm" hidden>
+        Thank you — this poem has been reported.
+      </p>
+    </form>
+  </div>
 
 </article>
 
@@ -627,6 +654,71 @@
     a.href = URL.createObjectURL(blob);
     a.click();
     URL.revokeObjectURL(a.href);
+  });
+})();
+</script>
+
+{# ── Ribbon save (Phase 1.19) ─────────────────────────────────────────────── #}
+{% if current_user %}
+<script>
+(function() {
+  const btn = document.getElementById('poem-ribbon-btn');
+  if (!btn) return;
+  function setSaved(saved) {
+    btn.setAttribute('aria-pressed', saved ? 'true' : 'false');
+    btn.title = saved ? 'Unsave poem' : 'Save poem';
+    btn.classList.toggle('poem-ribbon-saved', saved);
+  }
+  btn.addEventListener('click', function() {
+    fetch('/p/{{ poem.short_code }}/save', {method: 'POST'})
+      .then(r => r.json())
+      .then(d => { setSaved(d.saved); });
+  });
+})();
+</script>
+{% endif %}
+
+{# ── Report form (Phase 1.14) ─────────────────────────────────────────────── #}
+<script>
+(function() {
+  const openBtn   = document.getElementById('poem-report-open');
+  const wrap      = document.getElementById('report-form-wrap');
+  const form      = document.getElementById('report-form');
+  const cancelBtn = document.getElementById('report-cancel');
+  const confirm   = document.getElementById('report-confirm');
+
+  if (!openBtn) return;
+
+  openBtn.addEventListener('click', function() {
+    wrap.hidden = false;
+    form.querySelector('textarea').focus();
+  });
+  cancelBtn.addEventListener('click', function() {
+    wrap.hidden = true;
+    form.reset();
+    confirm.hidden = true;
+  });
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const reason = document.getElementById('report-reason').value.trim();
+    if (!reason) return;
+    fetch('/p/{{ poem.short_code }}/report', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({reason: reason}),
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        form.querySelector('textarea').value = '';
+        form.querySelector('.report-form-actions').hidden = true;
+        confirm.hidden = false;
+        openBtn.hidden = true;
+      }
+    })
+    .catch(() => {
+      alert('Something went wrong — please try again.');
+    });
   });
 })();
 </script>

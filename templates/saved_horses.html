@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Saved Horses — poet.horse{% endblock %}
+
+{% block content %}
+<div class="text-page collection-page">
+  <h1 class="page-title">Saved Horses</h1>
+  <p class="page-desc">Horses you've given the blue ribbon. Private — only you can see this.</p>
+
+  {% if horses %}
+  <ul class="collection-list" id="saved-horses-list">
+    {% for h in horses %}
+    <li class="collection-item" data-name="{{ h.name }}">
+      {% if h.url %}
+      <a class="collection-horse-name" href="{{ h.url }}" target="_blank" rel="noopener nofollow">
+        {{ h.display }}
+      </a>
+      {% else %}
+      <span class="collection-horse-name">{{ h.display }}</span>
+      {% endif %}
+      <span class="collection-meta">Saved {{ h.saved_at | datefmt }}</span>
+      <button class="btn-link collection-remove-btn" data-name="{{ h.name }}"
+              data-display="{{ h.display }}" data-url="{{ h.url or '' }}"
+              aria-label="Unsave {{ h.display }}">Unsave</button>
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="collection-count">{{ horses | length }} horse{{ 's' if horses | length != 1 }}</p>
+  {% else %}
+  <p class="collection-empty">
+    No saved horses yet. Give the blue ribbon 🎀 to a horse from its popover while reading poems.
+  </p>
+  {% endif %}
+</div>
+
+{% if horses %}
+<script>
+(function() {
+  document.querySelectorAll('.collection-remove-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const item = this.closest('.collection-item');
+      fetch('/horse/save', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          name: this.dataset.name,
+          display: this.dataset.display,
+          url: this.dataset.url,
+        }),
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (!d.saved) {
+          item.remove();
+          const remaining = document.querySelectorAll('.collection-item').length;
+          const count = document.querySelector('.collection-count');
+          if (count) count.textContent = remaining + ' horse' + (remaining !== 1 ? 's' : '');
+          if (remaining === 0) {
+            document.getElementById('saved-horses-list').remove();
+            if (count) count.remove();
+            document.querySelector('.collection-page').insertAdjacentHTML('beforeend',
+              '<p class="collection-empty">No saved horses yet.</p>');
+          }
+        }
+      });
+    });
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -37,10 +37,10 @@ VPS provisioning, SQLite schema, short-code permalinks, Clerk auth, localStorage
 - **1.27 Save draft from poem builder** ✅ (2026-05-19) — Save Draft button + modal; draft-centric stable model; SQLite-backed drafts with stable_json + full metadata; `/me/drafts` live page; horse popover gains "Add to draft stable" picker; anon `horse-draft` localStorage shape with migration; `syncLocalToAccount` saves anon draft on first login. Removes `stable_horses` table + `/me/stable/*` routes.
 - **1.28 Draft polish: popover quick-create + editor auto-save redesign** ✅ (2026-05-20) — Popover: 0-draft → inline quick-create form; 1+-draft → list + "Add to new draft ▸" expander. Editor: page-load picker when 1+ drafts; auto-save (immediate on add/remove, 7s debounced on drag); "Currently editing [NAME] [Change Draft ▾]" strip; renamed buttons (Clear Stable / Clear Poem / Edit Details / Post Poem); clear dialogs with destination options. PR #43 + hotfix PR #44 (admin user fix). Holds 1–9 verified by Clover (2026-05-21); hold 10 (anon flow) deferred.
 
-**In progress (current session):**
-- 1.14 Report button + report queue
-- 1.15 Poet profile `/u/<slug>`
-- 1.19 Save (Blue Ribbon) + Pasture collections
+**Shipped (pending live verification):**
+- **1.14 Report button + report queue** — report modal on poem permalink; `reports` table; `/admin/reports` queue with action/dismiss
+- **1.15 Poet profile `/u/<slug>`** — full profile with bio poem picker, published poems list, links; `/me/profile` edit page; `bio_poem_id` column on users
+- **1.19 Save (Blue Ribbon) + Pasture collections** — `saved_poems` table; ribbon button on poem permalink; `/me/saved-poems`, `/me/saved-horses`, `/me/pasture` list pages
 
 **Remaining (rough order):**
 - 1.12 Three-mode display system — replace binary plain/pasture with: **Plain** (workhorse/admin/accessibility — field is decorative bg; each independent content area is a count-page-style pinned note box with pin emoji; horse chips colored+shimmer, no body parts; bumped text/touch targets; reuses pasture CSS simplified), **Pasture** (field IS the surface; no container; text/UI elements separated from bg via contrasting color outline — specific color TBD at prototype stage; non-horse text de-emphasized; UI ornate; full body parts + walking horses), **Reader** (off-white page; typographic; print-stylesheet aesthetic on screen; woodprint-style button borders; no field). Site-wide persistent preference, server-resolved. Stored `"plain"`/`"pasture"` preference values can be discarded/reset on migration — no user-data concern (solo use). Requires renderer rearchitecture; mobile pasture layout (floating text on narrow viewport). Spec session required before implementation. Text styling in reader/pasture confirmed as prototype-first — commit only after Clover reviews options. `[opus · high]`

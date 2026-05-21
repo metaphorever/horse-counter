@@ -267,3 +267,17 @@ def get_random_published() -> Optional[str]:
             "SELECT short_code FROM poems WHERE status='published' ORDER BY RANDOM() LIMIT 1"
         ).fetchone()
     return row['short_code'] if row else None
+
+
+def get_published_poems_by_user(user_id: int) -> List[Dict]:
+    """All published poems by a user, newest first (for profile page)."""
+    with get_db() as conn:
+        rows = conn.execute(
+            """SELECT id, short_code, title, horse_count, published_at,
+                      inspired_by_text, inspired_by_url
+                 FROM poems
+                WHERE author_user_id = ? AND status = 'published'
+                ORDER BY published_at DESC""",
+            (user_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]

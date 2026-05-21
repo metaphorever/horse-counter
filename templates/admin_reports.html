@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Admin: Reports — poet.horse{% endblock %}
+
+{% block content %}
+<div class="text-page admin-reports-page">
+  <h1>Reports</h1>
+
+  <div class="admin-filter-bar">
+    <span class="admin-filter-label">Show:</span>
+    {% for s in [('pending', 'Pending'), ('actioned', 'Actioned'), ('dismissed', 'Dismissed'), ('all', 'All')] %}
+    <a class="admin-filter-btn {% if status_filter == s[0] %}admin-filter-active{% endif %}"
+       href="{{ url_for('admin_reports', status=s[0]) }}">{{ s[1] }}</a>
+    {% endfor %}
+  </div>
+
+  {% if reports %}
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Poem</th>
+        <th>Reporter</th>
+        <th>Reason</th>
+        <th>Reported</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in reports %}
+      <tr class="{% if r.status != 'pending' %}admin-row-inactive{% endif %}">
+        <td>
+          {% if r.poem_short_code %}
+          <a href="{{ url_for('poem_permalink', short_code=r.poem_short_code) }}" target="_blank">
+            {{ r.poem_title or r.poem_short_code }}
+          </a>
+          {% else %}
+          <span class="admin-missing">[deleted]</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if r.reporter_name %}
+          <a href="{{ url_for('user_profile', slug=r.reporter_slug) }}">{{ r.reporter_name }}</a>
+          {% else %}
+          anonymous{% if r.reporter_ip %} ({{ r.reporter_ip }}){% endif %}
+          {% endif %}
+        </td>
+        <td class="admin-report-reason">{{ r.reason }}</td>
+        <td class="admin-nowrap">{{ r.created_at | datefmt }}</td>
+        <td class="admin-nowrap">{{ r.status }}</td>
+        <td class="admin-actions">
+          {% if r.status == 'pending' %}
+          <form method="post" action="{{ url_for('admin_report_action', report_id=r.id) }}" style="display:inline">
+            <input type="hidden" name="action" value="actioned">
+            <button class="btn-sec admin-btn-sm" type="submit">Action</button>
+          </form>
+          <form method="post" action="{{ url_for('admin_report_action', report_id=r.id) }}" style="display:inline">
+            <input type="hidden" name="action" value="dismissed">
+            <button class="btn-sec admin-btn-sm danger-sec" type="submit">Dismiss</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="admin-empty">No {{ status_filter }} reports.</p>
+  {% endif %}
+</div>
+{% endblock %}

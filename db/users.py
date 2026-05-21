@@ -115,3 +115,50 @@ def update_preferences(user_id: int, updates: dict) -> dict:
             (json.dumps(current, ensure_ascii=False), user_id),
         )
     return current
+
+
+# ── Profile editing (Phase 1.15) ──────────────────────────────────────────────
+
+def update_profile(user_id: int, display_name: str, links: list) -> None:
+    """Update display_name and links_json for a user."""
+    display_name = (display_name or '').strip()[:80]
+    with get_db() as conn:
+        conn.execute(
+            'UPDATE users SET display_name = ?, links_json = ? WHERE id = ?',
+            (display_name, json.dumps(links, ensure_ascii=False), user_id),
+        )
+
+
+def set_bio_poem(user_id: int, poem_id) -> None:
+    """Set or clear the profile bio poem (pass None to clear)."""
+    with get_db() as conn:
+        conn.execute(
+            'UPDATE users SET bio_poem_id = ? WHERE id = ?',
+            (poem_id, user_id),
+        )
+
+
+def get_user_published_poems(user_id: int) -> list:
+    """Return all published poems by this user, newest first."""
+    with get_db() as conn:
+        rows = conn.execute(
+            """SELECT id, short_code, title, horse_count, published_at
+                 FROM poems
+                WHERE author_user_id = ? AND status = 'published'
+                ORDER BY published_at DESC""",
+            (user_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_user_poems_for_bio_picker(user_id: int) -> list:
+    """Return published + submitted poems for the bio picker, newest first."""
+    with get_db() as conn:
+        rows = conn.execute(
+            """SELECT id, short_code, title, horse_count, status, created_at
+                 FROM poems
+                WHERE author_user_id = ? AND status IN ('published', 'submitted')
+                ORDER BY created_at DESC""",
+            (user_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]

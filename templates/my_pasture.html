@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}My Pasture — poet.horse{% endblock %}
+
+{% block content %}
+<div class="text-page collection-page">
+  <h1 class="page-title">My Pasture</h1>
+  <p class="page-desc">Horses you've added to your working collection. Use them in the editor.</p>
+
+  {% if horses %}
+  <ul class="collection-list" id="pasture-list">
+    {% for h in horses %}
+    <li class="collection-item" data-name="{{ h.name }}">
+      <a class="collection-horse-name" href="{{ h.url }}" target="_blank" rel="noopener nofollow">
+        {{ h.display }}
+      </a>
+      <span class="collection-meta">Added {{ h.added_at | datefmt }}</span>
+      <button class="btn-link collection-remove-btn" data-name="{{ h.name }}"
+              aria-label="Remove {{ h.display }} from pasture">Remove</button>
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="collection-count">{{ horses | length }} horse{{ 's' if horses | length != 1 }}</p>
+  {% else %}
+  <p class="collection-empty">
+    Your pasture is empty. Add horses from the horse popover while reading poems,
+    or use the <a href="{{ url_for('poetry_editor') }}">poem editor</a>.
+  </p>
+  {% endif %}
+</div>
+
+{% if horses %}
+<script>
+(function() {
+  document.querySelectorAll('.collection-remove-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const name = this.dataset.name;
+      const item = this.closest('.collection-item');
+      fetch('{{ url_for("me_pasture_remove") }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: name}),
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok) {
+          item.remove();
+          const remaining = document.querySelectorAll('.collection-item').length;
+          const count = document.querySelector('.collection-count');
+          if (count) count.textContent = remaining + ' horse' + (remaining !== 1 ? 's' : '');
+          if (remaining === 0) {
+            document.getElementById('pasture-list').remove();
+            if (count) count.remove();
+            document.querySelector('.collection-page').insertAdjacentHTML('beforeend',
+              '<p class="collection-empty">Your pasture is empty.</p>');
+          }
+        }
+      });
+    });
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

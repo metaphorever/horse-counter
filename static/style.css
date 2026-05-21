@@ -1662,3 +1662,117 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
 .btn-danger { font: 12px 'Courier Prime','Courier New',monospace; background: #f5e8e0; border: 1px solid #c08060; border-radius: 2px; padding: 3px 8px; cursor: pointer; color: #7a2020; box-shadow: 1px 1px 0 #a06040; }
 .btn-danger:hover { background: #eecfbf; }
 .btn-danger:active { transform: translate(1px,1px); box-shadow: none; }
+
+/* ── Phase 1.14 + 1.15 + 1.19 shared: page-level elements ───────────────── */
+.page-title { font: 700 26px/1.2 'Playfair Display',Georgia,serif; margin-bottom: 6px; }
+.page-desc  { font: 14px/1.6 Georgia,'Times New Roman',serif; color: #6b5430; margin-bottom: 20px; }
+.btn-pri    { font: 13px 'Courier Prime','Courier New',monospace; background: #3a6b1a; border: 1px solid #2a5010; border-radius: 2px; padding: 5px 14px; cursor: pointer; color: #fdf8ed; box-shadow: 1px 1px 0 #1a3a08; }
+.btn-pri:hover  { background: #4a7f22; }
+.btn-pri:active { transform: translate(1px,1px); box-shadow: none; }
+
+/* ── Phase 1.14: poem report ─────────────────────────────────────────────── */
+.poem-action-btns  { display: flex; gap: 6px; align-items: center; margin-left: 8px; }
+.poem-ribbon-btn   { font: 18px/1 serif; background: none; border: 1px solid transparent; border-radius: 2px; padding: 2px 4px; cursor: pointer; opacity: .5; transition: opacity .15s; }
+.poem-ribbon-btn:hover, .poem-ribbon-btn[aria-pressed="true"] { opacity: 1; border-color: #c4a96b; }
+.poem-ribbon-btn.poem-ribbon-saved { opacity: 1; }
+.poem-report-btn   { font: 11px 'Courier Prime','Courier New',monospace; background: none; border: 1px solid transparent; border-radius: 2px; padding: 3px 7px; cursor: pointer; color: #a08060; }
+.poem-report-btn:hover { border-color: #c4a96b; color: #2d2316; }
+.report-form-wrap  { margin: 12px 0 0; padding: 14px 18px; background: #f5eedc; border: 1px solid #c4a96b; border-radius: 3px; max-width: 560px; }
+.report-form-label { display: block; font: 700 12px 'Courier Prime','Courier New',monospace; color: #6b5430; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+.report-form-textarea { width: 100%; box-sizing: border-box; font: 13px/1.5 Georgia,serif; border: 1px solid #c4a96b; background: #fdf8ed; border-radius: 2px; padding: 6px 8px; resize: vertical; }
+.report-form-actions { display: flex; gap: 8px; margin-top: 10px; }
+.report-form-confirm { font: 13px 'Courier Prime','Courier New',monospace; color: #3a6b1a; margin-top: 8px; }
+
+/* ── Phase 1.15: profile page ────────────────────────────────────────────── */
+.profile-page { max-width: 640px; }
+.profile-header { margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid #e8dcc0; }
+.profile-name   { font: 700 28px/1.2 'Playfair Display',Georgia,serif; margin-bottom: 4px; }
+.profile-slug   { font: 12px 'Courier Prime','Courier New',monospace; color: #a08060; margin-bottom: 4px; }
+.profile-joined { font: 12px 'Courier Prime','Courier New',monospace; color: #a08060; margin-bottom: 12px; }
+.profile-links  { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.profile-links a { font: 13px 'Courier Prime','Courier New',monospace; color: #3a6b1a; text-decoration: none; }
+.profile-links a:hover { text-decoration: underline; }
+.profile-edit-link { font: 12px 'Courier Prime','Courier New',monospace; }
+.profile-section-head { font: 700 12px 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .05em; color: #6b5430; margin: 0 0 10px; }
+.profile-bio-section  { margin-bottom: 28px; }
+.profile-bio-poem     { background: #f5eedc; border: 1px solid #c4a96b; border-radius: 3px; padding: 14px 18px; margin-bottom: 8px; }
+.bio-line             { font: 15px/1.8 Georgia,serif; margin: 0; }
+.bio-line .horse-chip { font: inherit; color: #2d2316; text-decoration: none; }
+.bio-line .horse-chip:hover { text-decoration: underline; }
+.bio-poem-link        { font: 12px 'Courier Prime','Courier New',monospace; margin: 8px 0 0; }
+.bio-poem-link a      { color: #3a6b1a; }
+.profile-no-bio       { font: 14px Georgia,serif; color: #a08060; }
+.profile-bio-actions  { display: flex; gap: 12px; margin-top: 4px; }
+.profile-bio-clear    { color: #7a2020; }
+.profile-poems-section { margin-bottom: 28px; }
+.profile-poem-list    { list-style: none; padding: 0; margin: 0; }
+.profile-poem-item    { padding: 8px 0; border-bottom: 1px solid #e8dcc0; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.profile-poem-item:last-child { border-bottom: none; }
+.profile-poem-title   { font: 14px/1.4 Georgia,serif; color: #3a6b1a; text-decoration: none; flex: 1 1 auto; }
+.profile-poem-title:hover { text-decoration: underline; }
+.profile-poem-meta    { font: 12px 'Courier Prime','Courier New',monospace; color: #a08060; white-space: nowrap; }
+.profile-no-poems     { font: italic 14px Georgia,serif; color: #a08060; }
+
+/* ── Phase 1.15: profile edit ────────────────────────────────────────────── */
+.profile-edit-page   { max-width: 540px; }
+.profile-edit-form   { margin-top: 20px; }
+.form-field          { margin-bottom: 20px; }
+.form-label          { display: block; font: 700 12px 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .04em; color: #6b5430; margin-bottom: 5px; }
+.form-hint           { font: 12px 'Courier Prime','Courier New',monospace; color: #a08060; margin: 0 0 8px; }
+.form-input          { font: 14px 'Courier Prime','Courier New',monospace; border: 1px solid #c4a96b; background: #fdf8ed; border-radius: 2px; padding: 5px 8px; width: 100%; box-sizing: border-box; }
+.form-input:focus    { outline: 2px solid #3a6b1a; outline-offset: 1px; }
+.form-actions        { display: flex; gap: 10px; align-items: center; margin-top: 24px; }
+.profile-links-field { border: none; padding: 0; margin: 0; }
+.profile-links-field legend { font: 700 12px 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .04em; color: #6b5430; margin-bottom: 5px; float: left; width: 100%; }
+.link-row            { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.link-label-input    { width: 140px; flex: 0 0 140px; }
+.link-url-input      { flex: 1; }
+.link-remove-btn     { font: 11px 'Courier Prime','Courier New',monospace; color: #a08060; white-space: nowrap; flex-shrink: 0; }
+.link-remove-btn:hover { color: #7a2020; }
+
+/* ── Phase 1.15: bio picker modal ────────────────────────────────────────── */
+.modal-box    { background: #faf5e9; border-radius: 2px; padding: 24px; width: min(520px, 95vw); max-height: 85vh; overflow-y: auto; box-shadow: 2px 3px 16px rgba(0,0,0,.2); position: relative; }
+.modal-close  { position: absolute; top: 10px; right: 12px; font: 20px/1 'Courier Prime',monospace; background: none; border: none; cursor: pointer; color: #6b5430; padding: 4px 6px; }
+.modal-close:hover { color: #2d2316; }
+.modal-title  { font: 700 18px/1.2 'Playfair Display',Georgia,serif; margin-bottom: 6px; }
+.modal-hint   { font: 13px Georgia,serif; color: #6b5430; margin-bottom: 14px; }
+.bio-picker-list    { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.bio-picker-item    { border: 1px solid #e8dcc0; border-radius: 2px; background: #fdf8ed; }
+.bio-picker-current { border-color: #3a6b1a; background: #f0f8e8; }
+.bio-picker-btn     { width: 100%; text-align: left; font: 14px 'Courier Prime','Courier New',monospace; background: none; border: none; padding: 8px 12px; cursor: pointer; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.bio-picker-btn:hover { background: #ede0b0; }
+.bio-picker-meta    { font: 12px 'Courier Prime','Courier New',monospace; color: #a08060; }
+.bio-picker-pending { font: 11px 'Courier Prime','Courier New',monospace; color: #a06030; }
+.bio-picker-active-label { font: 11px 'Courier Prime','Courier New',monospace; color: #3a6b1a; margin-left: auto; }
+
+/* ── Phase 1.19: collection pages ────────────────────────────────────────── */
+.collection-page  { max-width: 640px; }
+.collection-list  { list-style: none; padding: 0; margin: 0 0 10px; }
+.collection-item  { display: flex; align-items: baseline; gap: 10px; padding: 8px 0; border-bottom: 1px solid #e8dcc0; flex-wrap: wrap; }
+.collection-item:last-child { border-bottom: none; }
+.collection-horse-name,
+.collection-poem-title  { font: 14px Georgia,serif; color: #3a6b1a; text-decoration: none; flex: 1 1 auto; }
+.collection-horse-name  { font-family: 'Courier Prime','Courier New',monospace; }
+a.collection-horse-name:hover,
+a.collection-poem-title:hover { text-decoration: underline; }
+.collection-meta        { font: 12px 'Courier Prime','Courier New',monospace; color: #a08060; white-space: nowrap; }
+.collection-meta a      { color: #6b5430; text-decoration: none; }
+.collection-meta a:hover { text-decoration: underline; }
+.collection-remove-btn  { font: 11px 'Courier Prime','Courier New',monospace; color: #a08060; white-space: nowrap; flex-shrink: 0; }
+.collection-remove-btn:hover { color: #7a2020; }
+.collection-empty { font: italic 14px Georgia,serif; color: #a08060; }
+.collection-count { font: 12px 'Courier Prime','Courier New',monospace; color: #a08060; margin-top: 8px; }
+
+/* ── Phase 1.14: admin report queue ─────────────────────────────────────── */
+.admin-reports-page  { max-width: 900px; }
+.admin-filter-bar    { display: flex; gap: 8px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+.admin-filter-label  { font: 12px 'Courier Prime','Courier New',monospace; color: #6b5430; text-transform: uppercase; letter-spacing: .04em; }
+.admin-filter-btn    { font: 12px 'Courier Prime','Courier New',monospace; color: #3a6b1a; text-decoration: none; padding: 3px 8px; border: 1px solid #c4a96b; border-radius: 2px; background: #fdf8ed; }
+.admin-filter-btn:hover   { background: #ede0b0; }
+.admin-filter-active      { background: #ede0b0; font-weight: 700; border-color: #8a7050; }
+.admin-report-reason      { max-width: 320px; font: 13px Georgia,serif; color: #2d2316; }
+.admin-nowrap             { white-space: nowrap; }
+.admin-actions            { display: flex; gap: 5px; white-space: nowrap; }
+.admin-btn-sm             { font-size: 11px; padding: 2px 7px; }
+.admin-empty              { font: italic 14px Georgia,serif; color: #a08060; }
+.admin-missing            { font: italic 12px 'Courier Prime','Courier New',monospace; color: #a08060; }
