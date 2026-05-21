@@ -217,6 +217,7 @@ let history         = [];
 let userPrefs       = {{ user_prefs_json|safe }};
 const OPTIONAL_TAGS = {{ optional_tags_json|safe }};
 let TAG_CATEGORIES = {{ tag_categories_json|safe }};  // [{id,slug,label,behavior,tags:[…]}, …]
+const INITIAL_DRAFT  = {{ initial_draft_json|safe }};  // full draft row or null (set when ?draft=<id>)
 let selectedTagIds = new Set();  // tag IDs the user has picked for the current poem
 let draftId        = null;       // ID of the currently active saved draft (null = unsaved)
 let currentDraftMeta = null;     // last-saved draft field values; used to pre-populate re-opens
@@ -349,10 +350,28 @@ async function syncLocalToAccount(){
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // Anonymous users hydrate from horse-draft localStorage (with migration from
-  // legacy horse-stable). Logged-in users start empty; if there's a pending
-  // anonymous draft, syncLocalToAccount() creates a SQLite draft from it.
-  if(!isAdmin && !isLoggedIn){
+  // If the page was opened with ?draft=<id> (e.g. "Resume editing" from
+  // /me/drafts), the server injected the full draft row as INITIAL_DRAFT.
+  // Load it directly instead of going through the anon/sync paths.
+  if(INITIAL_DRAFT){
+    try { stable = JSON.parse(INITIAL_DRAFT.stable_json || '[]'); } catch(e){ stable = []; }
+    try {
+      lines = JSON.parse(INITIAL_DRAFT.lines_json || '[[]]');
+      if(!Array.isArray(lines) || !lines.length) lines = [[]];
+    } catch(e){ lines = [[]]; }
+    draftId = INITIAL_DRAFT.id;
+    currentDraftMeta = {
+      title:           INITIAL_DRAFT.title            || '',
+      submitterName:   INITIAL_DRAFT.submitter_name   || '',
+      submitterTumblr: INITIAL_DRAFT.submitter_tumblr || '',
+      inspiredText:    INITIAL_DRAFT.inspired_by_text || '',
+      inspiredUrl:     INITIAL_DRAFT.inspired_by_url  || '',
+      tagIds:          JSON.parse(INITIAL_DRAFT.tag_ids_json || '[]'),
+    };
+  } else if(!isAdmin && !isLoggedIn){
+    // Anonymous users hydrate from horse-draft localStorage (with migration from
+    // legacy horse-stable). Logged-in users start empty; if there's a pending
+    // anonymous draft, syncLocalToAccount() creates a SQLite draft from it.
     const saved = loadDraftLocal();
     if(saved){
       stable = saved.stable || [];
@@ -1403,47 +1422,87 @@ let selectedDraftTagIds = new Set();
 function _renderTagSectionsInto(hostId, tagSet, onRerender){
   const host = document.getElementById(hostId);
   if(!host) return;
-  host.innerHTML = TAG_CATEGORIES.map(cat=>{
+  host.innerHTML = '';   // clear first
+
+  TAG_CATEGORIES.forEach(cat => {
     const inputType  = cat.behavior === 'single_select' ? 'radio' : 'checkbox';
     const ns         = `${hostId}-tagcat-${cat.id}`;
     const warningCls = cat.behavior === 'content_warning' ? ' content-warning' : '';
-    const chips = cat.tags.map(t=>{
-      const checked = tagSet.has(t.id) ? ' checked' : '';
-      const pending = t.status === 'pending' ? ' tag-pending' : '';
-      return `
-        <label class=”tag-chip${warningCls}${pending}”>
-          <input type=”${inputType}” name=”${ns}” value=”${t.id}” data-cat=”${cat.id}”${checked}>
-          <span>${esc(t.label)}${pending?' <em>(pending)</em>':''}</span>
-        </label>`;
-    }).join('');
-    return `
-      <div class=”tag-section” data-cat-id=”${cat.id}” data-behavior=”${esc(cat.behavior)}”>
-        <div class=”tag-section-head”>
-          <span class=”tag-section-label”>${esc(cat.label)}</span>
-          <span class=”tag-section-hint”>${cat.behavior==='single_select' ? 'pick one' : 'pick any'}</span>
-        </div>
-        <div class=”tag-chip-cloud”>${chips}</div>
-        <button type=”button” class=”tag-suggest-btn” data-cat-id=”${cat.id}” data-cat-label=”${esc(cat.label)}”>
-          + Suggest a new ${esc(cat.label).toLowerCase()} tag
-        </button>
-      </div>`;
-  }).join('');
 
-  host.querySelectorAll('input[type=”checkbox”], input[type=”radio”]').forEach(inp=>{
-    inp.addEventListener('change', ()=>{
-      const id = parseInt(inp.value);
-      if(inp.type === 'radio'){
-        const catId = parseInt(inp.dataset.cat);
-        const cat = TAG_CATEGORIES.find(c=>c.id===catId);
-        if(cat) cat.tags.forEach(t=>tagSet.delete(t.id));
+    // Section wrapper
+    const section = document.createElement('div');
+    section.className = 'tag-section';
+    section.dataset.catId    = cat.id;
+    section.dataset.behavior = cat.behavior;
+
+    // Header
+    const head = document.createElement('div');
+    head.className = 'tag-section-head';
+    const labelSpan = document.createElement('span');
+    labelSpan.className   = 'tag-section-label';
+    labelSpan.textContent = cat.label;
+    const hintSpan = document.createElement('span');
+    hintSpan.className   = 'tag-section-hint';
+    hintSpan.textContent = cat.behavior === 'single_select' ? 'pick one' : 'pick any';
+    head.appendChild(labelSpan);
+    head.appendChild(hintSpan);
+    section.appendChild(head);
+
+    // Chip cloud — use DOM APIs so input.type is set as a property, not parsed HTML
+    const cloud = document.createElement('div');
+    cloud.className = 'tag-chip-cloud';
+
+    cat.tags.forEach(t => {
+      const isPending = t.status === 'pending';
+      const label = document.createElement('label');
+      label.className = `tag-chip${warningCls}${isPending ? ' tag-pending' : ''}`;
+
+      const inp = document.createElement('input');
+      inp.type    = inputType;   // property assignment — no HTML parsing involved
+      inp.name    = ns;
+      inp.value   = t.id;
+      inp.dataset.cat = cat.id;
+      if(tagSet.has(t.id)) inp.checked = true;
+
+      inp.addEventListener('change', () => {
+        const id = parseInt(inp.value);
+        if(inp.type === 'radio'){
+          const catId = parseInt(inp.dataset.cat);
+          const catObj = TAG_CATEGORIES.find(c => c.id === catId);
+          if(catObj) catObj.tags.forEach(tag => tagSet.delete(tag.id));
+        }
+        if(inp.checked) tagSet.add(id);
+        else            tagSet.delete(id);
+      });
+
+      const span = document.createElement('span');
+      if(isPending){
+        span.textContent = t.label + ' ';
+        const em = document.createElement('em');
+        em.textContent = '(pending)';
+        span.appendChild(em);
+      } else {
+        span.textContent = t.label;
       }
-      if(inp.checked) tagSet.add(id);
-      else            tagSet.delete(id);
-    });
-  });
 
-  host.querySelectorAll('.tag-suggest-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=> suggestTagInline(parseInt(btn.dataset.catId), btn.dataset.catLabel, tagSet, onRerender));
+      label.appendChild(inp);
+      label.appendChild(span);
+      cloud.appendChild(label);
+    });
+
+    section.appendChild(cloud);
+
+    // Suggest button
+    const btn = document.createElement('button');
+    btn.type      = 'button';
+    btn.className = 'tag-suggest-btn';
+    btn.dataset.catId   = cat.id;
+    btn.dataset.catLabel = cat.label;
+    btn.textContent = `+ Suggest a new ${cat.label.toLowerCase()} tag`;
+    btn.addEventListener('click', () => suggestTagInline(parseInt(btn.dataset.catId), btn.dataset.catLabel, tagSet, onRerender));
+    section.appendChild(btn);
+
+    host.appendChild(section);
   });
 }
 
