@@ -193,6 +193,7 @@ def inject_globals():
     """Make is_admin, current_user, and Clerk key available in every template."""
     return {
         'is_admin':              _is_admin(),
+        'is_pin_admin':          bool(session.get('logged_in')),
         'current_user':          g.get('current_user'),
         'clerk_publishable_key': CLERK_PUBLISHABLE_KEY,
         'tumblr_auth':           tumblr.authenticated,

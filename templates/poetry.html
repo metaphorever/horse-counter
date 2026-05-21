@@ -253,6 +253,7 @@
 <script>
 // ── State ─────────────────────────────────────────────────────────────────────
 const isAdmin        = {{ is_admin|tojson }};
+const isPinAdmin     = {{ is_pin_admin|tojson }};
 const isLoggedIn     = {{ (current_user is not none)|tojson }};
 let stable           = {{ stable_json|safe }};
 let lines            = [[], [], []];
@@ -414,7 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
       tagIds:          JSON.parse(INITIAL_DRAFT.tag_ids_json || '[]'),
     };
     updateDraftStrip();
-  } else if(!isAdmin && !isLoggedIn){
+  } else if(!isPinAdmin && !isLoggedIn){
     // Anonymous users hydrate from horse-draft localStorage (with migration from
     // legacy horse-stable). Logged-in users start empty; if there's a pending
     // anonymous draft, syncLocalToAccount() creates a SQLite draft from it.
@@ -423,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
       stable = saved.stable || [];
       if(saved.lines && saved.lines.length) lines = saved.lines;
     }
-  } else if(isLoggedIn && !isAdmin){
+  } else if(isLoggedIn && !isPinAdmin){
     // Check for an anonymous draft in localStorage to sync on first login.
     const anon = loadDraftLocal();
     const hasAnonContent = anon && (
@@ -942,7 +943,7 @@ async function addToStable(name, display, url, count=1){
   if(stable.find(h=>h.name===name)) return;
   stable.push({name, display, url, remaining: count});
   renderStable();
-  if(isAdmin){
+  if(isPinAdmin){
     const d = await apiPost('/poetry/stable/add', {name, display, url, remaining: count});
     if(d){ stable = d.horses; renderStable(); }
   } else if(isLoggedIn){
@@ -955,7 +956,7 @@ async function addToStable(name, display, url, count=1){
 async function removeFromStable(name){
   stable = stable.filter(h=>h.name!==name);
   renderStable();
-  if(isAdmin){
+  if(isPinAdmin){
     await apiPost('/poetry/stable/remove', {name});
   } else if(isLoggedIn){
     autoSave();
@@ -988,7 +989,7 @@ async function clearStableDestination(dest){
     stable = horses; renderStable(); return;
   }
   // 'loose': horses are simply removed (already cleared above)
-  if(isAdmin){
+  if(isPinAdmin){
     await apiPost('/poetry/stable/clear');
   } else if(isLoggedIn){
     autoSave();
@@ -1080,8 +1081,8 @@ async function clearPoemDestination(dest){
   lines = [[]];
   renderPoem();
   renderStable();
-  if(isAdmin){
-    /* admin stable is server-synced; no poem clear endpoint needed */
+  if(isPinAdmin){
+    /* pin-admin stable is server-synced; no poem clear endpoint needed */
   } else if(isLoggedIn){
     autoSave();
   } else {
@@ -1097,12 +1098,12 @@ function removeTile(li,hi){
   const existing = stable.find(h=>h.name===horse.name);
   if(existing){
     existing.remaining = (existing.remaining||1) + 1;
-    if(isAdmin)        apiPost('/poetry/stable/add', {name:existing.name, display:existing.display, url:existing.url, remaining:existing.remaining});
+    if(isPinAdmin)      apiPost('/poetry/stable/add', {name:existing.name, display:existing.display, url:existing.url, remaining:existing.remaining});
     else if(isLoggedIn) autoSave();
     else               saveDraftLocal();
   } else {
     stable.push({name:horse.name, display:horse.display, url:horse.url, remaining:1});
-    if(isAdmin)        apiPost('/poetry/stable/add', {name:horse.name, display:horse.display, url:horse.url, remaining:1});
+    if(isPinAdmin)      apiPost('/poetry/stable/add', {name:horse.name, display:horse.display, url:horse.url, remaining:1});
     else if(isLoggedIn) autoSave();
     else               saveDraftLocal();
   }
@@ -1137,9 +1138,9 @@ function dropHorseOnLine(horse, li, refHi, insertAfter){
       entry.remaining = (entry.remaining||1) - 1;
       if(entry.remaining <= 0){
         stable = stable.filter(h=>h.name!==horse.name);
-        if(isAdmin) apiPost('/poetry/stable/remove', {name:horse.name});
+        if(isPinAdmin) apiPost('/poetry/stable/remove', {name:horse.name});
       } else {
-        if(isAdmin) apiPost('/poetry/stable/add', {name:entry.name, display:entry.display, url:entry.url, remaining:entry.remaining});
+        if(isPinAdmin) apiPost('/poetry/stable/add', {name:entry.name, display:entry.display, url:entry.url, remaining:entry.remaining});
       }
     }
   }
@@ -1153,7 +1154,7 @@ function dropHorseOnLine(horse, li, refHi, insertAfter){
   renderPoem();
   renderStable();
 
-  if(!isAdmin){
+  if(!isPinAdmin){
     if(isReposition){ autoSaveDrag(); }
     else if(isLoggedIn){ autoSave(); }
     else { saveDraftLocal(); }
@@ -1514,7 +1515,7 @@ function moveWithinPoem(li, hi, delta){
   const [h] = line.splice(hi, 1);
   line.splice(newHi, 0, h);
   renderPoem();
-  if(!isAdmin){ if(isLoggedIn){ autoSaveDrag(); } else { saveDraftLocal(); } }
+  if(!isPinAdmin){ if(isLoggedIn){ autoSaveDrag(); } else { saveDraftLocal(); } }
 }
 
 async function sendHorseToPasture(horse, srcType, srcLine, srcIdx){
@@ -1539,7 +1540,7 @@ async function sendHorseToPasture(horse, srcType, srcLine, srcIdx){
 function removeHorseFromSource(srcType, srcLine, srcIdx, horse){
   if(srcType==='stable'){
     stable = stable.filter(h=>h.name!==horse.name);
-    if(isAdmin)        apiPost('/poetry/stable/remove', {name:horse.name});
+    if(isPinAdmin)      apiPost('/poetry/stable/remove', {name:horse.name});
     else if(isLoggedIn) autoSave();
     else               saveDraftLocal();
     renderStable();
@@ -1547,7 +1548,7 @@ function removeHorseFromSource(srcType, srcLine, srcIdx, horse){
     lines[srcLine].splice(srcIdx, 1);
     pruneEmptyLines();
     renderPoem();
-    if(!isAdmin){ if(isLoggedIn){ autoSave(); } else { saveDraftLocal(); } }
+    if(!isPinAdmin){ if(isLoggedIn){ autoSave(); } else { saveDraftLocal(); } }
   }
 }
 
