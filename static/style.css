@@ -722,6 +722,7 @@ button[type="submit"]:active { transform: translate(2px, 2px); box-shadow: none;
 .help-note { font: 11px 'Courier Prime','Courier New',monospace; color: #a08060; border-top: 1px solid #e0d4b0; padding-top: 8px; margin-top: 0; line-height: 1.8; }
 .help-note code { background: #f0ead8; padding: 0 3px; border-radius: 2px; }
 .search-results { max-height: 240px; overflow-y: auto; }
+.search-results .horse-tile { touch-action: auto; }
 .search-error { font: 12px 'Courier Prime','Courier New',monospace; color: #7a2020; margin: 4px 0; }
 .result-item { display: flex; align-items: center; gap: 8px; padding: 10px 4px 8px; }
 .result-chip { flex: 1; min-width: 0; cursor: default; }
@@ -1218,6 +1219,7 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
   border: 2px solid #c4a96b; border-radius: 2px;
   cursor: pointer; user-select: none;
   min-height: 36px;
+  position: relative;
   /* Override the global `label` text-transform / letter-spacing / font-size /
      color so chip labels read as plain text. */
   text-transform: none; letter-spacing: normal; font-weight: normal;

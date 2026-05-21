@@ -219,6 +219,7 @@ const OPTIONAL_TAGS = {{ optional_tags_json|safe }};
 let TAG_CATEGORIES = {{ tag_categories_json|safe }};  // [{id,slug,label,behavior,tags:[…]}, …]
 let selectedTagIds = new Set();  // tag IDs the user has picked for the current poem
 let draftId        = null;       // ID of the currently active saved draft (null = unsaved)
+let currentDraftMeta = null;     // last-saved draft field values; used to pre-populate re-opens
 
 // ── Horse tile appearance ─────────────────────────────────────────────────────
 const COATS = [
@@ -1501,16 +1502,28 @@ function openDraftModal(){
   document.getElementById('draft-modal-err').style.display='none';
   document.getElementById('draft-modal-ok').style.display='none';
   document.getElementById('draft-modal-actions').style.display='';
-  // Pre-fill title from current draftId's title if known, otherwise blank.
-  const titleEl = document.getElementById('draft-modal-title');
-  if(titleEl) titleEl.value = '';
+  const titleEl  = document.getElementById('draft-modal-title');
   const nameEl   = document.getElementById('draft-modal-name');
   const tumblrEl = document.getElementById('draft-modal-tumblr');
-  if(nameEl)   nameEl.value   = userPrefs.poem_name   || '';
-  if(tumblrEl) tumblrEl.value = userPrefs.poem_tumblr || '';
-  const itext = document.getElementById('draft-modal-inspired-text'); if(itext) itext.value = '';
-  const iurl  = document.getElementById('draft-modal-inspired-url');  if(iurl)  iurl.value  = '';
-  selectedDraftTagIds = new Set();
+  const itext    = document.getElementById('draft-modal-inspired-text');
+  const iurl     = document.getElementById('draft-modal-inspired-url');
+  if(draftId && currentDraftMeta){
+    // Re-opening an existing draft — restore last-saved values
+    if(titleEl)  titleEl.value  = currentDraftMeta.title           || '';
+    if(nameEl)   nameEl.value   = currentDraftMeta.submitterName   || '';
+    if(tumblrEl) tumblrEl.value = currentDraftMeta.submitterTumblr || '';
+    if(itext)    itext.value    = currentDraftMeta.inspiredText    || '';
+    if(iurl)     iurl.value     = currentDraftMeta.inspiredUrl     || '';
+    selectedDraftTagIds = new Set(currentDraftMeta.tagIds || []);
+  } else {
+    // New draft — blank with prefs pre-fill for name/tumblr
+    if(titleEl)  titleEl.value  = '';
+    if(nameEl)   nameEl.value   = userPrefs.poem_name   || '';
+    if(tumblrEl) tumblrEl.value = userPrefs.poem_tumblr || '';
+    if(itext)    itext.value    = '';
+    if(iurl)     iurl.value     = '';
+    selectedDraftTagIds = new Set();
+  }
   renderDraftTagSections();
   document.getElementById('draft-modal').classList.add('open');
 }
@@ -1552,6 +1565,7 @@ async function saveDraftFromModal(){
   }
 
   draftId = d.draft.id;
+  currentDraftMeta = { title, submitterName, submitterTumblr, inspiredText, inspiredUrl, tagIds: Array.from(selectedDraftTagIds) };
   closeDraftModal();
   showToast(`Draft "${d.draft.title}" saved.`);
 }

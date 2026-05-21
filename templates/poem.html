@@ -317,8 +317,8 @@
     pDraftSection.innerHTML = '<span class="popover-draft-loading">Loading drafts…</span>';
     fetchDraftList().then(drafts => {
       if(!drafts.length){
-        pDraftSection.innerHTML =
-          '<span class="popover-draft-empty">No drafts — <a href="/poetry">start a poem</a> and save a draft first.</span>';
+        pDraftSection.hidden = true;
+        pDraftSection.innerHTML = '';
         return;
       }
       if(drafts.length === 1){

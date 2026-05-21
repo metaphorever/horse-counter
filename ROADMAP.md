@@ -119,6 +119,7 @@ These came out of the step-5 audit of the current codebase. They're not bugs to 
 
 - **`poems.lines_json` schema comment is outdated.** `db/schema.sql:36` describes a different shape than the code stores. Code passes raw JSON through so it's invisible at runtime but misleading on read. Fix the comment.
 - **Admin PIN logout has no UI affordance.** `/logout` exists but isn't linked from the admin nav. A PIN-logged-in admin can't sign out without typing the URL. Add a link.
+- **Same-name horses all render with the first horse's URL.** When a poem uses "Dash" multiple times, every instance gets dash1's link. The dictionary has multiple distinct entries for "Dash" (dash1, dash2, dash3…) each with a unique URL. Fix: at render time, cycle through the dictionary entries for that name so each occurrence in the poem gets a distinct URL. No need to preserve which specific horse goes in which position — just avoid duplicates within the poem.
 
 ---
 
