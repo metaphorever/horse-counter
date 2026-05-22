@@ -95,6 +95,14 @@ from db.tags import (
     tags_for_poem,
     create_tag_category,
     create_tag,
+    list_pending_tags,
+    approve_tag,
+    reject_tag,
+    update_tag_label,
+    deactivate_tag,
+    delete_tag_if_safe,
+    update_tag_category,
+    delete_tag_category_if_safe,
     list_featured_sections,
     list_all_featured_sections,
     add_featured_section,
@@ -613,19 +621,21 @@ def random_poem():
     return redirect(url_for('browse'))
 
 
-# ── Admin: featured sections + tag management (Phase 1.8) ─────────────────────
+# ── Admin: featured sections + tag management (Phase 1.8 / 1.4) ──────────────
 
 @app.route('/admin/featured')
 @login_required
 def admin_featured():
-    sections   = list_all_featured_sections()
-    admin_cats = list_admin_only_categories_with_tags()
-    all_cats   = list_all_categories_with_tags()
+    sections      = list_all_featured_sections()
+    admin_cats    = list_admin_only_categories_with_tags()
+    all_cats      = list_all_categories_with_tags()
+    pending_tags  = list_pending_tags()
     return render_template(
         'admin_featured.html',
-        sections   = sections,
-        admin_cats = admin_cats,
-        all_cats   = all_cats,
+        sections      = sections,
+        admin_cats    = admin_cats,
+        all_cats      = all_cats,
+        pending_tags  = pending_tags,
     )
 
 
@@ -702,6 +712,85 @@ def admin_tag_add():
         flash(f'Tag "{label}" already exists in that category or label is invalid.', 'error')
     else:
         flash(f'Tag "{label}" created.', 'success')
+    return redirect(url_for('admin_featured'))
+
+
+@app.route('/admin/tag/<int:tag_id>/approve', methods=['POST'])
+@login_required
+def admin_tag_approve(tag_id):
+    if approve_tag(tag_id):
+        flash('Tag approved and activated.', 'success')
+    else:
+        flash('Tag not found or already reviewed.', 'error')
+    return redirect(url_for('admin_featured'))
+
+
+@app.route('/admin/tag/<int:tag_id>/reject', methods=['POST'])
+@login_required
+def admin_tag_reject(tag_id):
+    if reject_tag(tag_id):
+        flash('Tag suggestion rejected.', 'success')
+    else:
+        flash('Tag not found or already reviewed.', 'error')
+    return redirect(url_for('admin_featured'))
+
+
+@app.route('/admin/tag/<int:tag_id>/update', methods=['POST'])
+@login_required
+def admin_tag_update(tag_id):
+    label = (request.form.get('label') or '').strip()
+    if update_tag_label(tag_id, label):
+        flash(f'Tag renamed to "{label}".', 'success')
+    else:
+        flash('Could not rename — label is invalid or already exists in this category.', 'error')
+    return redirect(url_for('admin_featured'))
+
+
+@app.route('/admin/tag/<int:tag_id>/deactivate', methods=['POST'])
+@login_required
+def admin_tag_deactivate(tag_id):
+    if deactivate_tag(tag_id):
+        flash('Tag deactivated (hidden from pickers; existing poem tags preserved).', 'success')
+    else:
+        flash('Tag not found or already inactive.', 'error')
+    return redirect(url_for('admin_featured'))
+
+
+@app.route('/admin/tag/<int:tag_id>/delete', methods=['POST'])
+@login_required
+def admin_tag_delete(tag_id):
+    if delete_tag_if_safe(tag_id):
+        flash('Tag deleted.', 'success')
+    else:
+        flash('Tag is referenced by poems and cannot be deleted. Deactivate it instead.', 'error')
+    return redirect(url_for('admin_featured'))
+
+
+@app.route('/admin/tag-category/<int:cat_id>/update', methods=['POST'])
+@login_required
+def admin_tag_category_update(cat_id):
+    label      = (request.form.get('label') or '').strip() or None
+    behavior   = request.form.get('behavior') or None
+    admin_only = request.form.get('admin_only', '0') == '1'
+    try:
+        sort_order = int(request.form['sort_order']) if 'sort_order' in request.form else None
+    except (ValueError, TypeError):
+        sort_order = None
+    if update_tag_category(cat_id, label=label, behavior=behavior,
+                           sort_order=sort_order, admin_only=admin_only):
+        flash('Category updated.', 'success')
+    else:
+        flash('Could not update category — invalid input.', 'error')
+    return redirect(url_for('admin_featured'))
+
+
+@app.route('/admin/tag-category/<int:cat_id>/delete', methods=['POST'])
+@login_required
+def admin_tag_category_delete(cat_id):
+    if delete_tag_category_if_safe(cat_id):
+        flash('Category deleted.', 'success')
+    else:
+        flash('Category still has tags — remove all tags first.', 'error')
     return redirect(url_for('admin_featured'))
 
 

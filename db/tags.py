@@ -252,6 +252,131 @@ def update_poem_tags(
     return apply_tags_to_poem(poem_id, wanted, applied_by=applied_by, status='approved')
 
 
+def list_pending_tags() -> List[Dict]:
+    """All pending (user-suggested) tags, newest first, with category and suggester name."""
+    sql = """
+        SELECT t.id, t.slug, t.label, t.created_at,
+               c.id AS cat_id, c.label AS cat_label, c.admin_only,
+               u.display_name AS suggester_name
+          FROM tags t
+          JOIN tag_categories c ON c.id = t.category_id
+          LEFT JOIN users u ON u.id = t.suggested_by
+         WHERE t.status = 'pending'
+         ORDER BY t.created_at DESC
+    """
+    with get_db() as conn:
+        rows = conn.execute(sql).fetchall()
+    return [dict(r) for r in rows]
+
+
+def approve_tag(tag_id: int) -> bool:
+    """Set a pending tag to active. Returns True if found."""
+    with get_db() as conn:
+        cur = conn.execute(
+            "UPDATE tags SET status = 'active' WHERE id = ? AND status = 'pending'",
+            (tag_id,),
+        )
+        return cur.rowcount > 0
+
+
+def reject_tag(tag_id: int) -> bool:
+    """Set a pending tag to rejected. Returns True if found."""
+    with get_db() as conn:
+        cur = conn.execute(
+            "UPDATE tags SET status = 'rejected' WHERE id = ? AND status = 'pending'",
+            (tag_id,),
+        )
+        return cur.rowcount > 0
+
+
+def update_tag_label(tag_id: int, label: str) -> bool:
+    """Rename a tag (label only — slug is preserved). Returns True if found."""
+    label = (label or '').strip()
+    if not label or len(label) > 60:
+        return False
+    with get_db() as conn:
+        existing = conn.execute(
+            """SELECT 1 FROM tags
+                WHERE category_id = (SELECT category_id FROM tags WHERE id = ?)
+                  AND label = ? COLLATE NOCASE
+                  AND id != ?""",
+            (tag_id, label, tag_id),
+        ).fetchone()
+        if existing:
+            return False
+        cur = conn.execute(
+            "UPDATE tags SET label = ? WHERE id = ?", (label, tag_id)
+        )
+        return cur.rowcount > 0
+
+
+def deactivate_tag(tag_id: int) -> bool:
+    """Set an active tag to inactive (hidden from pickers; poem_tags rows preserved).
+    Returns True if found and was active."""
+    with get_db() as conn:
+        cur = conn.execute(
+            "UPDATE tags SET status = 'inactive' WHERE id = ? AND status = 'active'",
+            (tag_id,),
+        )
+        return cur.rowcount > 0
+
+
+def delete_tag_if_safe(tag_id: int) -> bool:
+    """Delete a tag only if no poem_tags rows reference it. Returns True if deleted."""
+    with get_db() as conn:
+        refs = conn.execute(
+            "SELECT COUNT(*) FROM poem_tags WHERE tag_id = ?", (tag_id,)
+        ).fetchone()[0]
+        if refs:
+            return False
+        cur = conn.execute("DELETE FROM tags WHERE id = ?", (tag_id,))
+        return cur.rowcount > 0
+
+
+def update_tag_category(
+    cat_id:     int,
+    label:      Optional[str]  = None,
+    behavior:   Optional[str]  = None,
+    sort_order: Optional[int]  = None,
+    admin_only: Optional[bool] = None,
+) -> bool:
+    """Update one or more provided fields on a tag category. Returns True if found."""
+    sets, params = [], []
+    if label is not None:
+        label = label.strip()
+        if not label or len(label) > 60:
+            return False
+        sets.append("label = ?");      params.append(label)
+    if behavior is not None:
+        if behavior not in ('multi_select', 'single_select', 'content_warning'):
+            return False
+        sets.append("behavior = ?");   params.append(behavior)
+    if sort_order is not None:
+        sets.append("sort_order = ?"); params.append(sort_order)
+    if admin_only is not None:
+        sets.append("admin_only = ?"); params.append(int(admin_only))
+    if not sets:
+        return False
+    params.append(cat_id)
+    with get_db() as conn:
+        cur = conn.execute(
+            f"UPDATE tag_categories SET {', '.join(sets)} WHERE id = ?", params
+        )
+        return cur.rowcount > 0
+
+
+def delete_tag_category_if_safe(cat_id: int) -> bool:
+    """Delete a category only if it has no tags. Returns True if deleted."""
+    with get_db() as conn:
+        count = conn.execute(
+            "SELECT COUNT(*) FROM tags WHERE category_id = ?", (cat_id,)
+        ).fetchone()[0]
+        if count:
+            return False
+        cur = conn.execute("DELETE FROM tag_categories WHERE id = ?", (cat_id,))
+        return cur.rowcount > 0
+
+
 def create_tag_category(
     label:      str,
     behavior:   str  = 'multi_select',
