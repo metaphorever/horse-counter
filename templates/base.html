@@ -105,6 +105,20 @@
   </footer>
 </div>
 
+{% if clerk_publishable_key and not current_user %}
+<script>
+(async () => {
+  // If Clerk has a live session but Flask doesn't (e.g. after an OAuth redirect that
+  // lands somewhere other than /sign-in), send the user back to /sign-in where
+  // _verifyWithBackend() will bridge the gap and set the Flask session cookie.
+  if (window.location.pathname === '/sign-in') return;
+  while (!window.Clerk) await new Promise(r => setTimeout(r, 30));
+  await Clerk.load();
+  if (Clerk.user) window.location.href = '/sign-in';
+})();
+</script>
+{% endif %}
+
 <script>
 (function(){
   var nav       = document.getElementById('site-nav');
