@@ -1,0 +1,23 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: zap.rupture.net
+          username: metaphorever
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            cd /data/home/metaphorever/horse-counter
+            git pull origin master
+            source /home/metaphorever/.venv/bin/activate && uv pip install -r requirements.txt --quiet
+            export XDG_RUNTIME_DIR=/run/user/$(id -u)
+            systemctl --user restart poet-horse.service
