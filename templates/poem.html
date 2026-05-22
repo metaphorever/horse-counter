@@ -195,10 +195,10 @@
         <button class="btn-pri" type="submit">Submit report</button>
         <button class="btn-sec" type="button" id="report-cancel">Cancel</button>
       </div>
-      <p class="report-form-confirm" id="report-confirm" hidden>
-        Thank you — this poem has been reported.
-      </p>
     </form>
+    <p class="report-form-confirm" id="report-confirm" hidden>
+      Thank you — this poem has been reported.
+    </p>
   </div>
 
 </article>
@@ -710,10 +710,10 @@
     .then(r => r.json())
     .then(d => {
       if (d.ok) {
-        form.querySelector('textarea').value = '';
-        form.querySelector('.report-form-actions').hidden = true;
+        form.hidden = true;
         confirm.hidden = false;
         openBtn.hidden = true;
+        setTimeout(function() { wrap.hidden = true; }, 15000);
       }
     })
     .catch(() => {

@@ -36,28 +36,23 @@ VPS provisioning, SQLite schema, short-code permalinks, Clerk auth, localStorage
 - **1.26 Horse search area rework** ✅ (2026-05-19) — short names link → button; random horse button in search panel; pasture horses button with pagination; compact help/how-to button.
 - **1.27 Save draft from poem builder** ✅ (2026-05-19) — Save Draft button + modal; draft-centric stable model; SQLite-backed drafts with stable_json + full metadata; `/me/drafts` live page; horse popover gains "Add to draft stable" picker; anon `horse-draft` localStorage shape with migration; `syncLocalToAccount` saves anon draft on first login. Removes `stable_horses` table + `/me/stable/*` routes.
 - **1.28 Draft polish: popover quick-create + editor auto-save redesign** ✅ (2026-05-20) — Popover: 0-draft → inline quick-create form; 1+-draft → list + "Add to new draft ▸" expander. Editor: page-load picker when 1+ drafts; auto-save (immediate on add/remove, 7s debounced on drag); "Currently editing [NAME] [Change Draft ▾]" strip; renamed buttons (Clear Stable / Clear Poem / Edit Details / Post Poem); clear dialogs with destination options. PR #43 + hotfix PR #44 (admin user fix). Holds 1–9 verified by Clover (2026-05-21); hold 10 (anon flow) deferred.
-
-**Shipped (pending live verification):**
-- **1.14 Report button + report queue** — report modal on poem permalink; `reports` table; `/admin/reports` queue with action/dismiss
-- **1.15 Poet profile `/u/<slug>`** — full profile with bio poem picker, published poems list, links; `/me/profile` edit page; `bio_poem_id` column on users
-- **1.19 Save (Blue Ribbon) + Pasture collections** — `saved_poems` table; ribbon button on poem permalink; `/me/saved-poems`, `/me/saved-horses`, `/me/pasture` list pages
+- **1.16 RSS feed** ✅ (2026-05-21) — shipped in PR #45 alongside 1.17 + 1.21
+- **1.17 Rate limiting** ✅ (2026-05-21) — shipped in PR #45 alongside 1.16 + 1.21
+- **1.21 Soft sign-in prompts** ✅ (2026-05-21) — shipped in PR #45 alongside 1.16 + 1.17
+- **1.14 Report button + report queue** ✅ (2026-05-21, verified) — report modal on poem permalink; `reports` table; `/admin/reports` queue with action/dismiss; thank-you auto-dismisses after 15s
+- **1.15 Poet profile `/u/<slug>`** ✅ (2026-05-21, verified) — full profile with bio poem picker, published poems list, links; `/me/profile` edit page; `bio_poem_id` column on users
+- **1.19 Save (Blue Ribbon) + Pasture collections** ✅ (2026-05-21, verified) — `saved_poems` table; ribbon button on poem permalink; `/me/saved-poems`, `/me/saved-horses`, `/me/pasture` list pages
 
 **Remaining (rough order):**
 - 1.12 Three-mode display system — replace binary plain/pasture with: **Plain** (workhorse/admin/accessibility — field is decorative bg; each independent content area is a count-page-style pinned note box with pin emoji; horse chips colored+shimmer, no body parts; bumped text/touch targets; reuses pasture CSS simplified), **Pasture** (field IS the surface; no container; text/UI elements separated from bg via contrasting color outline — specific color TBD at prototype stage; non-horse text de-emphasized; UI ornate; full body parts + walking horses), **Reader** (off-white page; typographic; print-stylesheet aesthetic on screen; woodprint-style button borders; no field). Site-wide persistent preference, server-resolved. Stored `"plain"`/`"pasture"` preference values can be discarded/reset on migration — no user-data concern (solo use). Requires renderer rearchitecture; mobile pasture layout (floating text on narrow viewport). Spec session required before implementation. Text styling in reader/pasture confirmed as prototype-first — commit only after Clover reviews options. `[opus · high]`
 - 1.13 Admin moderation queue overhaul `[sonnet · high]`
 - **1.13.1 Trust score system** `[sonnet · medium]` — Pairs with 1.13. Integer trust score per user (column on `users`), starts at 0 for new accounts and anonymous/pseudonymous. Scoring: +1 per admin-approved poem where no tag edits were made; -1 per poem where admin edited tags before/during approval. Admin can manually override score from the user page. Admin sets per-action thresholds stored in DB (not hardcoded), e.g. `auto_post_threshold = N` → users with trust ≥ N bypass the queue and post instantly. Default threshold 0 = open posting for new/anon users; raising it gates newcomers when abuse spikes. Enables: "let loyal Tumblr fans post freely while blocking bad actors" without a code deploy. Depends on 1.13 (queue overhaul ships the approval/edit event hooks needed to update scores). Current behavior (admin = instant, everyone else = queue) is the threshold-0 / threshold-∞ special case and does not need to change until this ships.
-- 1.14 Report button + report queue `[sonnet · medium]`
-- 1.15 Poet profile `/u/<slug>` `[sonnet · medium]`
-- 1.16 RSS feed `[sonnet · low]`
-- 1.17 Rate limiting `[sonnet · low]`
 - ~~1.18 One-shot import of legacy data~~ — **STRUCK 2026-05-17.** Fresh launch instead; see `spec/product.md` "Permanently out of scope." Old poems stay on Tumblr / wherever they already are; nothing imported into the new explicit-ToS environment.
-- 1.19 Save (Blue Ribbon) + Pasture collections `[sonnet · medium]`
 - 1.20 Cross-post queue (admin-flagged, Tumblr connector) `[sonnet · high]`
-- 1.21 Soft sign-in prompts `[sonnet · low]`
 - 1.23 GitHub Actions deploy `[sonnet · medium]`
 - 1.24 DNS cutover + PA shutdown `[haiku · low — owner action]`
 - 1.4 Admin tag management `[sonnet · medium]` — slot after 1.13 ships the queue
-- **Style pass session** — focused styling session before beta (fancy/plain/high-contrast/typography-only print modes side-by-side; restore decorated editor chips; **wandering pasture/saved-horses layout**: horse chips scattered at random 2D positions with sort modes — date added / alphabetical / random / wandering; all non-wandering modes use column layout). Pre-beta, not mid-feature.
+- **Style pass session** — focused styling session before beta (fancy/plain/high-contrast/typography-only print modes side-by-side; restore decorated editor chips; **wandering pasture/saved-horses layout**: horse chips scattered at random 2D positions with sort modes — date added / alphabetical / random / wandering; all non-wandering modes use column layout; fix green font color on `/me/saved-horses` and `/me/pasture`; bio poem on `/u/<slug>` should render with full poem styles consistent with user display settings). Pre-beta, not mid-feature.
 
 ### Phase 2 — Beta & feedback · ⏳ pending soft launch
 

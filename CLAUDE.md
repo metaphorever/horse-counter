@@ -250,11 +250,14 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: 1.14 + 1.15 + 1.19 — Report button, Poet profiles, Save/Pasture collections**
-**Model: Sonnet · Effort: medium**
+**PHASE: choose next — 1.14 + 1.15 + 1.19 closed ✅**
 
-Three features shipped together. Full spec in `spec/phase-1.14-1.15-1.19.md`.
+Phases 1.14, 1.15, 1.19 fully shipped and verified (2026-05-21). Also confirmed shipped: 1.16, 1.17, 1.21.
 
-- **1.14** — Report button on poem permalink + admin report queue
-- **1.15** — Full poet profile `/u/<slug>`: published poems list, bio poem picker, links, `/me/profile` edit page
-- **1.19** — Save/Pasture collection pages: `/me/saved-poems`, `/me/saved-horses`, `/me/pasture`; poem ribbon save button; `saved_poems` table migration
+Next candidates (see ROADMAP for full detail):
+- **1.13** Admin moderation queue overhaul `[sonnet · high]`
+- **1.12** Three-mode display system — spec session required first `[opus · high]`
+- **1.4** Admin tag management — after 1.13 `[sonnet · medium]`
+- **1.20** Cross-post queue `[sonnet · high]`
+- **1.23** GitHub Actions deploy `[sonnet · medium]`
+- **Style pass session** — pre-beta `[sonnet · medium]`
