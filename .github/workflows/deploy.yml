@@ -18,6 +18,6 @@ jobs:
             set -e
             cd /data/home/metaphorever/horse-counter
             git pull origin master
-            source /home/metaphorever/.local/bin/env && source /home/metaphorever/.venv/bin/activate && uv pip install -r requirements.txt --quiet
+            /home/metaphorever/.local/bin/uv pip install -r requirements.txt --quiet --python /home/metaphorever/.venv/bin/python
             export XDG_RUNTIME_DIR=/run/user/$(id -u)
             systemctl --user restart poet-horse.service
