@@ -339,13 +339,16 @@ let drag = null;
 function saveDraftLocal(){
   if(isLoggedIn) return;  // logged-in users persist via explicit Save Draft → SQLite
   try {
+    // Preserve attribution fields set via the post modal (post_as, submitter_name).
+    // Only overwrite the live poem state (lines, stable, tag_ids).
+    const existing = loadDraftLocal() || {};
     const draft = {
       lines,
       stable,
-      title:           (document.getElementById('draft-modal-title')?.value || '').trim(),
-      submitter_name:  (document.getElementById('draft-modal-name')?.value  || '').trim(),
-      submitter_tumblr:(document.getElementById('draft-modal-tumblr')?.value || '').trim(),
-      tag_ids:         Array.from(selectedTagIds),
+      title:          existing.title          || '',
+      post_as:        existing.post_as        || 'anonymous',
+      submitter_name: existing.submitter_name || '',
+      tag_ids:        Array.from(selectedTagIds),
     };
     localStorage.setItem('horse-draft', JSON.stringify(draft));
   } catch(e){}
@@ -359,7 +362,7 @@ function loadDraftLocal(){
       localStorage.setItem('horse-draft', JSON.stringify({
         lines: [[]],
         stable: oldStable,
-        title: '', submitter_name: '', submitter_tumblr: '', tag_ids: [],
+        title: '', post_as: 'anonymous', submitter_name: '', tag_ids: [],
       }));
       localStorage.removeItem('horse-stable');
     }
@@ -369,7 +372,7 @@ function loadDraftLocal(){
       localStorage.setItem('horse-draft', JSON.stringify({
         lines: [[]],
         stable: oldStable,
-        title: '', submitter_name: '', submitter_tumblr: '', tag_ids: [],
+        title: '', post_as: 'anonymous', submitter_name: '', tag_ids: [],
       }));
       localStorage.removeItem('horse-pasture');
     }
@@ -383,8 +386,6 @@ function loadDraftLocal(){
 // anonymous session. Save it as a new SQLite draft, then sync preferences.
 async function syncLocalToAccount(){
   const localDraft  = loadDraftLocal();
-  const poemName    = localStorage.getItem('horse-poem-name');
-  const poemTumblr  = localStorage.getItem('horse-poem-tumblr');
   const pageSizeLS  = localStorage.getItem('horse-page-size');
 
   // Save anonymous draft to the account if it has any content
@@ -394,11 +395,11 @@ async function syncLocalToAccount(){
   )){
     const d = await apiPost('/me/draft/save', {
       draft_id:        null,
-      title:           localDraft.title || '',
+      title:           localDraft.title   || '',
       lines_json:      JSON.stringify(localDraft.lines  || [[]]),
       stable_json:     JSON.stringify(localDraft.stable || []),
-      submitter_name:  localDraft.submitter_name  || poemName   || '',
-      submitter_tumblr:localDraft.submitter_tumblr || poemTumblr || '',
+      post_as:         localDraft.post_as || 'account',
+      submitter_name:  localDraft.submitter_name || '',
       inspired_by_text:'',
       inspired_by_url: '',
       tag_ids_json:    JSON.stringify(localDraft.tag_ids || []),
@@ -413,17 +414,15 @@ async function syncLocalToAccount(){
     }
   }
 
-  // Sync preferences
+  // Sync preferences (page size only — name/tumblr were legacy anonymous prefs, removed)
   const prefBody = {};
-  if(poemName)   prefBody.poem_name   = poemName;
-  if(poemTumblr) prefBody.poem_tumblr = poemTumblr;
-  if(pageSizeLS) prefBody.page_size   = pageSizeLS;
+  if(pageSizeLS) prefBody.page_size = pageSizeLS;
   if(Object.keys(prefBody).length){
     const p = await apiPost('/me/sync', prefBody);
     if(p && p.ok) userPrefs = p.preferences || userPrefs;
   }
 
-  // Clear all legacy local keys
+  // Clear all legacy local keys (including old horse-poem-name / horse-poem-tumblr)
   ['horse-draft','horse-stable','horse-pasture',
    'horse-poem-name','horse-poem-tumblr','horse-page-size']
     .forEach(k => { try{ localStorage.removeItem(k); }catch(e){} });
@@ -1705,15 +1704,6 @@ async function suggestTagInline(categoryId, categoryLabel, tagSet, onRerender){
 }
 
 // ── Post modal ────────────────────────────────────────────────────────────────
-function _anonPrefs(){
-  // For anonymous users, pull attribution from horse-draft localStorage.
-  const saved = loadDraftLocal();
-  return {
-    name:   (saved && saved.submitter_name)   || '',
-    tumblr: (saved && saved.submitter_tumblr) || '',
-  };
-}
-
 function openModal(){
   document.getElementById('modal-err').style.display='none';
   document.getElementById('empty-line-warning').style.display='none';

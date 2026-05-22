@@ -430,7 +430,9 @@ def setup_account():
 
 # Preference keys synced from localStorage. Keep stable names — clients clear
 # the matching local keys after a successful sync.
-_SYNCABLE_PREF_KEYS = ('poem_name', 'poem_tumblr', 'page_size')
+# poem_name and poem_tumblr were removed from the sync path when the attribution
+# 3-way chooser replaced the free-text name/Tumblr fields; page_size remains.
+_SYNCABLE_PREF_KEYS = ('page_size',)
 
 
 @app.route('/me/sync', methods=['POST'])
@@ -439,7 +441,7 @@ def me_sync():
     Sync anonymous localStorage preferences into the logged-in user's account.
 
     Body (all fields optional):
-        { "poem_name": "...", "poem_tumblr": "...", "page_size": "25" }
+        { "page_size": "25" }
 
     Returns: { ok: true, preferences: {...} }
     """
