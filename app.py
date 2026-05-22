@@ -2067,6 +2067,10 @@ def poem_permalink(short_code):
     # so the template can render decorated chips without any client-side work.
     # The hooks are inert in plain mode — CSS only acts on them under
     # `[data-view-mode='pasture']`.
+    # Also cycle through dictionary registrations for repeated names so each
+    # occurrence in the poem gets a distinct URL instead of all pointing at
+    # the first registration.
+    name_counters: dict = {}
     for line in poem.get('lines', []):
         for h in line:
             name = h.get('name', '')
@@ -2074,6 +2078,12 @@ def poem_permalink(short_code):
             h['coat']      = appearance['coat']
             h['rev']       = appearance['rev']
             h['is_famous'] = bool(name) and famous_horses.lookup(name) is not None
+            if name:
+                idx = name_counters.get(name, 0)
+                name_counters[name] = idx + 1
+                regs = dictionary.horses.get(name)
+                if regs and len(regs) > 1:
+                    h['url'] = regs[idx % len(regs)]['url']
 
     # Default view mode for permalinks is pasture (per ROADMAP 1.6). A
     # logged-in user's stored preference overrides; otherwise the client
@@ -2182,15 +2192,57 @@ def admin_report_action(report_id):
 @login_required
 def admin_poem_queue():
     pending = load_pending_poem_submissions()
-    return render_template('poem_queue.html', submissions=pending)
+
+    # Enrich horse chips with appearance data
+    for sub in pending:
+        for line in sub.get('lines', []):
+            for h in line:
+                name = h.get('name', '')
+                appearance = horse_appearance(name)
+                h['coat']      = appearance['coat']
+                h['rev']       = appearance['rev']
+                h['is_famous'] = bool(name) and famous_horses.lookup(name) is not None
+
+    # Attach pending tags per submission for the collapsed chip view
+    with get_db() as conn:
+        for sub in pending:
+            rows = conn.execute(
+                """SELECT pt.tag_id, t.label AS tag_label, t.slug AS tag_slug
+                     FROM poem_tags pt
+                     JOIN tags t ON t.id = pt.tag_id
+                    WHERE pt.poem_id = ? AND pt.status = 'pending'
+                    ORDER BY t.label COLLATE NOCASE""",
+                (sub['id'],),
+            ).fetchall()
+            sub['pending_tags']    = [dict(r) for r in rows]
+            sub['pending_tag_ids'] = {r['tag_id'] for r in rows}
+
+    all_tag_cats = list_all_categories_with_tags()
+    return render_template('poem_queue.html', submissions=pending, all_tag_cats=all_tag_cats)
 
 
 @app.route('/admin/poem-queue/publish', methods=['POST'])
 @login_required
 def admin_poem_publish():
-    sub_id = int(request.form.get('id', '0') or 0)
-    notes  = request.form.get('notes', '').strip()
-    poem   = approve_poem_submission(sub_id, reviewer_user_id=None, review_notes=notes)
+    sub_id  = int(request.form.get('id', '0') or 0)
+    notes   = request.form.get('notes', '').strip()
+    tag_ids = [int(x) for x in request.form.getlist('tag_ids') if x.strip().isdigit()]
+
+    sub = load_poem_submission(sub_id)
+    if not sub:
+        flash('Submission not found.', 'err')
+        return redirect(url_for('admin_poem_queue'))
+
+    current_user = g.get('current_user')
+    reviewer_id  = current_user['id'] if current_user else None
+
+    # Replace all tags (pending + approved) with admin's explicit selection
+    with get_db() as conn:
+        conn.execute("DELETE FROM poem_tags WHERE poem_id = ?", (sub['id'],))
+    if tag_ids:
+        apply_tags_to_poem(sub['id'], tag_ids, applied_by=reviewer_id, status='approved')
+
+    poem = approve_poem_submission(sub_id, reviewer_user_id=reviewer_id, review_notes=notes)
     if poem:
         flash(f'Published: /p/{poem["short_code"]}', 'ok')
     else:
@@ -2203,7 +2255,9 @@ def admin_poem_publish():
 def admin_poem_reject():
     sub_id = int(request.form.get('id', '0') or 0)
     notes  = request.form.get('notes', '').strip()
-    reject_poem_submission(sub_id, reviewer_user_id=None, review_notes=notes)
+    current_user = g.get('current_user')
+    reviewer_id  = current_user['id'] if current_user else None
+    reject_poem_submission(sub_id, reviewer_user_id=reviewer_id, review_notes=notes)
     flash('Rejected.', 'ok')
     return redirect(url_for('admin_poem_queue'))
 
