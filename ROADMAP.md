@@ -45,7 +45,7 @@ VPS provisioning, SQLite schema, short-code permalinks, Clerk auth, localStorage
 
 **Remaining (rough order):**
 - 1.12 Three-mode display system — replace binary plain/pasture with: **Plain** (workhorse/admin/accessibility — field is decorative bg; each independent content area is a count-page-style pinned note box with pin emoji; horse chips colored+shimmer, no body parts; bumped text/touch targets; reuses pasture CSS simplified), **Pasture** (field IS the surface; no container; text/UI elements separated from bg via contrasting color outline — specific color TBD at prototype stage; non-horse text de-emphasized; UI ornate; full body parts + walking horses), **Reader** (off-white page; typographic; print-stylesheet aesthetic on screen; woodprint-style button borders; no field). Site-wide persistent preference, server-resolved. Stored `"plain"`/`"pasture"` preference values can be discarded/reset on migration — no user-data concern (solo use). Requires renderer rearchitecture; mobile pasture layout (floating text on narrow viewport). Spec session required before implementation. Text styling in reader/pasture confirmed as prototype-first — commit only after Clover reviews options. `[opus · high]`
-- 1.13 Admin moderation queue overhaul `[sonnet · high]`
+- **1.13 Admin moderation queue overhaul** ✅ (2026-05-22, verified) — chip render in queue cards; submitter tags as removable chips by default with "Edit tags" toggle for full picker; publish explicitly sets admin's tag selection; reviewer ID wired to Clerk user; full preview link per card
 - **1.13.1 Trust score system** `[sonnet · medium]` — Pairs with 1.13. Integer trust score per user (column on `users`), starts at 0 for new accounts and anonymous/pseudonymous. Scoring: +1 per admin-approved poem where no tag edits were made; -1 per poem where admin edited tags before/during approval. Admin can manually override score from the user page. Admin sets per-action thresholds stored in DB (not hardcoded), e.g. `auto_post_threshold = N` → users with trust ≥ N bypass the queue and post instantly. Default threshold 0 = open posting for new/anon users; raising it gates newcomers when abuse spikes. Enables: "let loyal Tumblr fans post freely while blocking bad actors" without a code deploy. Depends on 1.13 (queue overhaul ships the approval/edit event hooks needed to update scores). Current behavior (admin = instant, everyone else = queue) is the threshold-0 / threshold-∞ special case and does not need to change until this ships.
 - ~~1.18 One-shot import of legacy data~~ — **STRUCK 2026-05-17.** Fresh launch instead; see `spec/product.md` "Permanently out of scope." Old poems stay on Tumblr / wherever they already are; nothing imported into the new explicit-ToS environment.
 - 1.20 Cross-post queue (admin-flagged, Tumblr connector) `[sonnet · high]`
@@ -119,9 +119,9 @@ These came out of the step-5 audit of the current codebase. They're not bugs to 
 
 ### Bugs (small, drop into next available PR)
 
-- **`poems.lines_json` schema comment is outdated.** `db/schema.sql:36` describes a different shape than the code stores. Code passes raw JSON through so it's invisible at runtime but misleading on read. Fix the comment.
-- **Admin PIN logout has no UI affordance.** `/logout` exists but isn't linked from the admin nav. A PIN-logged-in admin can't sign out without typing the URL. Add a link.
-- **Same-name horses all render with the first horse's URL.** When a poem uses "Dash" multiple times, every instance gets dash1's link. The dictionary has multiple distinct entries for "Dash" (dash1, dash2, dash3…) each with a unique URL. Fix: at render time, cycle through the dictionary entries for that name so each occurrence in the poem gets a distinct URL. No need to preserve which specific horse goes in which position — just avoid duplicates within the poem.
+- ~~**`poems.lines_json` schema comment is outdated.**~~ Fixed 2026-05-22.
+- **Admin PIN logout has no UI affordance.** Deliberately deferred — PIN auth is scheduled for full removal; no point adding a link for a deprecated path.
+- ~~**Same-name horses all render with the first horse's URL.**~~ Fixed 2026-05-22 — render-time URL cycling.
 
 ---
 
