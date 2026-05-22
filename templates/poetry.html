@@ -294,7 +294,7 @@
 const isAdmin        = {{ is_admin|tojson }};
 const isPinAdmin     = {{ is_pin_admin|tojson }};
 const isLoggedIn     = {{ (current_user is not none)|tojson }};
-const CURRENT_USER_DISPLAY_NAME = {{ ((current_user.display_name or current_user.slug) if current_user else null)|tojson }};
+const CURRENT_USER_DISPLAY_NAME = {{ ((current_user.display_name or current_user.slug) if current_user else none)|tojson }};
 let stable           = {{ stable_json|safe }};
 let lines            = [[], [], []];
 let history          = [];
