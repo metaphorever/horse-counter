@@ -36,7 +36,8 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 
 -- ── Poems ────────────────────────────────────────────────────────────────────
--- lines_json shape: [{"horses": [{"name": "...", "display": "...", "url": "..."}], "break": "newline"}, ...]
+-- lines_json shape: [[{"name": "...", "display": "...", "url": "..."}], ...]
+--   Outer list = lines (one element per line break); inner list = horses on that line.
 -- status: 'draft' | 'submitted' | 'published' | 'hidden' | 'rejected'
 --
 -- Authorship model:

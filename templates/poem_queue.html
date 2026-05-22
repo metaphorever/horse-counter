@@ -2,15 +2,40 @@
 {% block title %}Poem Queue — poet.horse{% endblock %}
 {% block content %}
 
+<style>
+.queue-card { border: 1px solid #d4c490; border-radius: 6px; padding: 18px; margin-bottom: 24px; background: #fdfaf2; }
+.queue-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.queue-card-meta { font-size: 14px; color: #5a4a1a; flex: 1; line-height: 1.7; }
+.queue-stat  { font-size: 13px; color: #7a6a3a; }
+.queue-date  { font-size: 12px; color: #9a8a5a; }
+.queue-preview-link { font-size: 13px; color: #5a7a2a; white-space: nowrap; }
+.queue-poem  { margin: 10px 0 14px; padding: 10px 14px; background: #fff8e8; border-left: 3px solid #d4c490; border-radius: 3px; }
+.queue-poem-line { margin: 2px 0; line-height: 1.9; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.queue-tag-chips { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; min-height: 28px; }
+.queue-chips-list { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.queue-tag-chip { display: inline-flex; align-items: center; gap: 3px; background: #eef5e0; border: 1px solid #b0cc80; border-radius: 12px; padding: 2px 8px 2px 10px; font-size: 13px; color: #3a5a1a; }
+.chip-remove { background: none; border: none; cursor: pointer; font-size: 15px; line-height: 1; color: #7a6a3a; padding: 0 2px; }
+.chip-remove:hover { color: #c04040; }
+.queue-no-tags { font-size: 13px; color: #9a8a5a; font-style: italic; }
+.queue-edit-tags-btn { background: none; border: none; cursor: pointer; font: inherit; font-size: 13px; color: #5a7a2a; text-decoration: underline; padding: 0; }
+.queue-edit-tags-btn:hover { color: #3a5a1a; }
+.queue-tag-editor { margin: 8px 0; padding: 12px 14px; background: #f5f2e8; border: 1px solid #d4c490; border-radius: 4px; }
+.queue-tag-cat { margin-bottom: 10px; }
+.queue-tag-cat:last-of-type { margin-bottom: 8px; }
+.queue-tag-cat-label { font-size: 11px; font-weight: bold; color: #7a6a3a; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 5px; }
+.queue-tag-check { display: inline-flex; align-items: center; gap: 4px; margin-right: 12px; margin-bottom: 3px; font-size: 13px; cursor: pointer; }
+.queue-done-btn { margin-top: 4px; font-size: 13px; padding: 3px 10px; }
+.queue-actions { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+</style>
+
 <div class="box">
   <div class="nav-links">
-    <a href="/">← Back</a>
-    <a href="/poetry">Poetry editor →</a>
-    <a href="/submissions">Counter submissions →</a>
-    <a href="/admin/dictionary">Dictionary →</a>
+    <a href="/">← Home</a>
+    <a href="/admin/featured">Featured →</a>
+    <a href="/admin/reports">Reports →</a>
   </div>
 
-  <h1>Pending Poem Submissions</h1>
+  <h1>Poem Queue</h1>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, message in messages %}
@@ -19,57 +44,147 @@
   {% endwith %}
 
   {% if not submissions %}
-  <div class="msg ok">No pending poem submissions — all caught up!</div>
+  <div class="msg ok">Queue empty — all caught up!</div>
   {% endif %}
 
   {% for sub in submissions %}
-  <div class="sub-card">
-    <div class="sub-card-header">
-      <div class="sub-card-meta">
-        <span class="type-badge">poem</span>
-        {% if sub.title %}<strong><em>{{ sub.title }}</em></strong>{% endif %}
-        <strong>{{ sub.horse_count }} horse{{ 's' if sub.horse_count != 1 else '' }}</strong>
-        <span class="sub-date">{{ sub.submitted_at | datefmt }}</span>
-        {% if sub.author_display_name %}
-        <span class="sub-author">—
-          {% if sub.author_link_url %}
-            <a href="{{ sub.author_link_url }}" target="_blank">{{ sub.author_display_name }}</a>
-          {% else %}
-            {{ sub.author_display_name }}
-          {% endif %}
-        </span>
-        {% else %}
-        <span class="sub-author">— anonymous</span>
+  {% set sid = sub.submission_id %}
+  <div class="queue-card">
+
+    <div class="queue-card-head">
+      <div class="queue-card-meta">
+        {% if sub.title %}<strong><em>{{ sub.title }}</em></strong> · {% endif %}
+        <span class="queue-stat">{{ sub.horse_count }} horse{{ 's' if sub.horse_count != 1 else '' }}</span>
+        · <span class="queue-date">{{ sub.submitted_at | datefmt }}</span>
+        · {% if sub.author_display_name %}
+            {% if sub.author_link_url %}<a href="{{ sub.author_link_url }}" target="_blank">{{ sub.author_display_name }}</a>{% else %}{{ sub.author_display_name }}{% endif %}
+          {% else %}<em>anonymous</em>{% endif %}
+        {% if sub.inspired_by_text %}
+          · <em>After {% if sub.inspired_by_url %}<a href="{{ sub.inspired_by_url }}" rel="nofollow noopener" target="_blank">{{ sub.inspired_by_text }}</a>{% else %}{{ sub.inspired_by_text }}{% endif %}</em>
         {% endif %}
       </div>
-      <div class="sub-card-actions">
-        <form method="post" action="/admin/poem-queue/publish" style="display:inline">
-          <input type="hidden" name="id" value="{{ sub.submission_id }}">
-          <button type="submit" class="btn-primary">Publish to site</button>
-        </form>
-        <form method="post" action="/admin/poem-queue/reject" style="display:inline"
-              onsubmit="return confirm('Reject this poem?')">
-          <input type="hidden" name="id" value="{{ sub.submission_id }}">
-          <button type="submit" class="btn-sec btn-danger">Reject</button>
-        </form>
-      </div>
+      <a class="queue-preview-link" href="/p/{{ sub.short_code }}" target="_blank">Full preview →</a>
     </div>
 
-    <details>
-      <summary class="sub-preview-toggle">Preview</summary>
-      <div class="sub-preview-content" style="line-height:1.9">
-        {% for line in sub.lines %}
-          <p>
-            {% for h in line %}<a href="{{ h.url }}">{{ h.display }}</a>{% if not loop.last %} {% endif %}{% endfor %}
-          </p>
-        {% endfor %}
-      </div>
-      <p style="font:11px 'Courier Prime', monospace; color:#888; margin-top:8px">
-        Once published it will live at <code>/p/{{ sub.short_code }}</code>.
+    <div class="queue-poem">
+      {% for line in sub.lines %}
+      <p class="queue-poem-line">
+        {%- for h in line -%}
+          {%- set cls = 'poem-horse coat-' ~ h.coat ~ (' rev' if h.rev else '') ~ (' famous-horse' if h.is_famous else '') -%}
+          <span class="{{ cls }}" data-name="{{ h.name }}">{{ h.display }}</span>{% if not loop.last %} {% endif %}
+        {%- endfor -%}
       </p>
-    </details>
+      {% endfor %}
+    </div>
+
+    {# Publish form — wraps tag review only; publish button outside via form= attr #}
+    <form method="post" action="/admin/poem-queue/publish" id="pub-{{ sid }}">
+      <input type="hidden" name="id" value="{{ sid }}">
+
+      {# Full checkbox editor — hidden by default, always the source of truth for tag_ids #}
+      <div id="editor-{{ sid }}" class="queue-tag-editor" style="display:none">
+        {% for cat in all_tag_cats %}
+        <div class="queue-tag-cat">
+          <span class="queue-tag-cat-label">{{ cat.label }}</span>
+          {% for tag in cat.tags %}
+          <label class="queue-tag-check">
+            <input type="checkbox" name="tag_ids" value="{{ tag.id }}"
+                   data-label="{{ tag.label }}"
+                   {% if tag.id in sub.pending_tag_ids %}checked{% endif %}>
+            {{ tag.label }}
+          </label>
+          {% endfor %}
+        </div>
+        {% endfor %}
+        <button type="button" class="btn-sec queue-done-btn" onclick="doneEditingTags({{ sid }})">Done editing</button>
+      </div>
+
+      {# Chip view — default visible; chips mirror the checked checkboxes above #}
+      <div id="chips-{{ sid }}" class="queue-tag-chips">
+        <div class="queue-chips-list" id="chips-list-{{ sid }}">
+          {% if sub.pending_tags %}
+            {% for tag in sub.pending_tags %}
+            <span class="queue-tag-chip" id="chip-{{ sid }}-{{ tag.tag_id }}">
+              {{ tag.tag_label }}<button type="button" class="chip-remove" aria-label="Remove {{ tag.tag_label }}" onclick="removeTagChip({{ sid }}, {{ tag.tag_id }})">×</button>
+            </span>
+            {% endfor %}
+          {% else %}
+            <span class="queue-no-tags" id="no-tags-msg-{{ sid }}">No tags submitted</span>
+          {% endif %}
+        </div>
+        <button type="button" class="queue-edit-tags-btn" onclick="editTags({{ sid }})">Edit tags</button>
+      </div>
+    </form>
+
+    <div class="queue-actions">
+      <button type="submit" form="pub-{{ sid }}" class="btn-primary">Publish</button>
+      <form method="post" action="/admin/poem-queue/reject"
+            onsubmit="return confirm('Reject this submission?')">
+        <input type="hidden" name="id" value="{{ sid }}">
+        <button type="submit" class="btn-sec btn-danger">Reject</button>
+      </form>
+    </div>
+
   </div>
   {% endfor %}
 
 </div>
+
+<script>
+function removeTagChip(sid, tagId) {
+  const cb = document.querySelector('#editor-' + sid + ' input[value="' + tagId + '"]');
+  if (cb) cb.checked = false;
+  const chip = document.getElementById('chip-' + sid + '-' + tagId);
+  if (chip) chip.remove();
+  const list = document.getElementById('chips-list-' + sid);
+  if (list && !list.querySelector('.queue-tag-chip')) {
+    const existing = document.getElementById('no-tags-msg-' + sid);
+    if (!existing) {
+      const span = document.createElement('span');
+      span.className = 'queue-no-tags';
+      span.id = 'no-tags-msg-' + sid;
+      span.textContent = 'No tags';
+      list.appendChild(span);
+    }
+  }
+}
+
+function editTags(sid) {
+  document.getElementById('chips-' + sid).style.display = 'none';
+  document.getElementById('editor-' + sid).style.display = '';
+}
+
+function doneEditingTags(sid) {
+  const editor = document.getElementById('editor-' + sid);
+  const list   = document.getElementById('chips-list-' + sid);
+  list.innerHTML = '';
+  const checked = editor.querySelectorAll('input[type=checkbox]:checked');
+  if (checked.length === 0) {
+    const span = document.createElement('span');
+    span.className = 'queue-no-tags';
+    span.id = 'no-tags-msg-' + sid;
+    span.textContent = 'No tags';
+    list.appendChild(span);
+  } else {
+    checked.forEach(function(cb) {
+      const chip = document.createElement('span');
+      chip.className = 'queue-tag-chip';
+      chip.id = 'chip-' + sid + '-' + cb.value;
+      const lbl = document.createTextNode(cb.dataset.label + ' ');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chip-remove';
+      btn.setAttribute('aria-label', 'Remove ' + cb.dataset.label);
+      btn.textContent = '×';
+      btn.setAttribute('onclick', 'removeTagChip(' + sid + ',' + cb.value + ')');
+      chip.appendChild(lbl);
+      chip.appendChild(btn);
+      list.appendChild(chip);
+    });
+  }
+  editor.style.display = 'none';
+  document.getElementById('chips-' + sid).style.display = '';
+}
+</script>
+
 {% endblock %}

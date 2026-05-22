@@ -72,6 +72,7 @@ Ko-fi tip-jar polish, Carbon-style static ads, ad-free supporter keys, supporter
 
 Surfaced items not yet committed to a phase. Promote to a phase when ready.
 
+- **Editor button layout tweaks** — "Wrangle a Poem" page: (1) Clear Poem button should match Clear Stable styling (danger-colored, wide, short); (2) Post Poem and Edit Details buttons should move below the poem area under the draft picker; (3) "Poem" and "Stable" section labels should be the same font size. Slot into the pre-beta style pass session.
 - **Tumblr post CSS desync** — new posts lose chip structural styling because Tumblr appears to strip `class` attributes; `--bg`/`--fg` inlined vars survive but `.horse-link` body-shape rules don't. Fix path: data-attribute selectors or inlined structural CSS. Deprioritized — most Tumblr viewers use dashboard (CSS stripped there anyway). Revisit after website CSS is locked. (Originally tracked in pre-migration TODO.md.)
 - **Link validator** for `short-names-validation.html` and eventually the full dictionary — Cloudflare-aware Playwright session, polite rate-limit, page-content check for "not found", outputs annotated HTML or `data/link_validation.json`. Pilot with the short-names list (1362 horses). (Originally TODO.md.)
 - **Sync `data/horse_overrides.json` from production back to git** — canonical overrides file lives on the server and gets edited in prod; doesn't automatically flow back. Options: one-click admin export, cron commit, or deploy-time pull-first hook. (Originally TODO.md.)
