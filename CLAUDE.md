@@ -250,14 +250,13 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: choose next — 1.14 + 1.15 + 1.19 closed ✅**
+**PHASE: choose next — 1.23 closed ✅**
 
-Phases 1.14, 1.15, 1.19 fully shipped and verified (2026-05-21). Also confirmed shipped: 1.16, 1.17, 1.21.
+Phases 1.14, 1.15, 1.19, 1.23 fully shipped and verified. Also confirmed shipped: 1.16, 1.17, 1.21.
 
 Next candidates (see ROADMAP for full detail):
 - **1.13** Admin moderation queue overhaul `[sonnet · high]`
 - **1.12** Three-mode display system — spec session required first `[opus · high]`
 - **1.4** Admin tag management — after 1.13 `[sonnet · medium]`
 - **1.20** Cross-post queue `[sonnet · high]`
-- **1.23** GitHub Actions deploy `[sonnet · medium]`
 - **Style pass session** — pre-beta `[sonnet · medium]`

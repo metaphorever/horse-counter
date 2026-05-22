@@ -49,7 +49,7 @@ VPS provisioning, SQLite schema, short-code permalinks, Clerk auth, localStorage
 - **1.13.1 Trust score system** `[sonnet · medium]` — Pairs with 1.13. Integer trust score per user (column on `users`), starts at 0 for new accounts and anonymous/pseudonymous. Scoring: +1 per admin-approved poem where no tag edits were made; -1 per poem where admin edited tags before/during approval. Admin can manually override score from the user page. Admin sets per-action thresholds stored in DB (not hardcoded), e.g. `auto_post_threshold = N` → users with trust ≥ N bypass the queue and post instantly. Default threshold 0 = open posting for new/anon users; raising it gates newcomers when abuse spikes. Enables: "let loyal Tumblr fans post freely while blocking bad actors" without a code deploy. Depends on 1.13 (queue overhaul ships the approval/edit event hooks needed to update scores). Current behavior (admin = instant, everyone else = queue) is the threshold-0 / threshold-∞ special case and does not need to change until this ships.
 - ~~1.18 One-shot import of legacy data~~ — **STRUCK 2026-05-17.** Fresh launch instead; see `spec/product.md` "Permanently out of scope." Old poems stay on Tumblr / wherever they already are; nothing imported into the new explicit-ToS environment.
 - 1.20 Cross-post queue (admin-flagged, Tumblr connector) `[sonnet · high]`
-- 1.23 GitHub Actions deploy `[sonnet · medium]`
+- **1.23 GitHub Actions deploy** ✅ (2026-05-22, verified) — `appleboy/ssh-action`; git pull + uv pip install + systemctl --user restart on every push to master
 - 1.24 DNS cutover + PA shutdown `[haiku · low — owner action]`
 - 1.4 Admin tag management `[sonnet · medium]` — slot after 1.13 ships the queue
 - **Style pass session** — focused styling session before beta (fancy/plain/high-contrast/typography-only print modes side-by-side; restore decorated editor chips; **wandering pasture/saved-horses layout**: horse chips scattered at random 2D positions with sort modes — date added / alphabetical / random / wandering; all non-wandering modes use column layout; fix green font color on `/me/saved-horses` and `/me/pasture`; bio poem on `/u/<slug>` should render with full poem styles consistent with user display settings). Pre-beta, not mid-feature.
@@ -132,7 +132,7 @@ Pre-migration architecture and product calls. Each is labeled per the vocabulary
 
 - Domain `poet.horse` (only one for MVP) · `[pre-migration — provenance unknown]`
 - Hosting on Jon's radio-station VPS (`zap.rupture.net`); independent VPS only if traffic warrants · `[pre-migration — provenance unknown]`
-- Deploy: GitHub → VPS, manual `git pull` + service restart for now; GitHub Actions in 1.23 · `[pre-migration — provenance unknown]`
+- Deploy: GitHub → VPS via GitHub Actions (1.23 ✅); `appleboy/ssh-action`, DEPLOY_SSH_KEY secret, full uv path · `[pre-migration — provenance unknown]`
 - Stack: Flask + Jinja + vanilla JS (no SPA) · `[pre-migration — provenance unknown]`
 - Datastore: SQLite (single file, FTS5 for poem search) for poems/users/tags/submissions · `[pre-migration — provenance unknown]`
 - Horse dictionary: static `data/horses.json.gz` (~30 MB) loaded at app start; not in SQLite (lookups O(1) via `word_index`, SQLite would add overhead) · `[pre-migration — provenance unknown]`
