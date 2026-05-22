@@ -46,6 +46,7 @@ def save_user_draft(
     inspired_by_text: str = '',
     inspired_by_url: str = '',
     tag_ids_json: str = '[]',
+    post_as: str = 'account',
 ) -> dict:
     """Create or update a draft. Returns the saved row as a dict.
 
@@ -65,12 +66,12 @@ def save_user_draft(
                        SET title=?, lines_json=?, stable_json=?,
                            submitter_name=?, submitter_tumblr=?,
                            inspired_by_text=?, inspired_by_url=?,
-                           tag_ids_json=?, updated_at=?
+                           tag_ids_json=?, post_as=?, updated_at=?
                        WHERE id = ? AND user_id = ?""",
                     (title, lines_json, stable_json,
                      submitter_name, submitter_tumblr,
                      inspired_by_text, inspired_by_url,
-                     tag_ids_json, now,
+                     tag_ids_json, post_as, now,
                      draft_id, user_id),
                 )
                 conn.commit()
@@ -85,12 +86,12 @@ def save_user_draft(
                (user_id, title, lines_json, stable_json,
                 submitter_name, submitter_tumblr,
                 inspired_by_text, inspired_by_url,
-                tag_ids_json, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                tag_ids_json, post_as, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (user_id, title, lines_json, stable_json,
              submitter_name, submitter_tumblr,
              inspired_by_text, inspired_by_url,
-             tag_ids_json, now, now),
+             tag_ids_json, post_as, now, now),
         )
         conn.commit()
         return get_user_draft(cur.lastrowid, user_id)

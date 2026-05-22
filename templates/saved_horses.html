@@ -7,23 +7,18 @@
   <p class="page-desc">Horses you've given the blue ribbon. Private — only you can see this.</p>
 
   {% if horses %}
-  <ul class="collection-list" id="saved-horses-list">
+  <div class="collection-chips" id="saved-horses-chips">
     {% for h in horses %}
-    <li class="collection-item" data-name="{{ h.name }}">
+    <div class="collection-chip-wrap" data-name="{{ h.name }}" data-display="{{ h.display }}" data-url="{{ h.url or '' }}">
       {% if h.url %}
-      <a class="collection-horse-name" href="{{ h.url }}" target="_blank" rel="noopener nofollow">
-        {{ h.display }}
-      </a>
+      <a class="horse-link" href="{{ h.url }}" target="_blank" rel="noopener nofollow">{{ h.display }}<span class="legs"></span></a>
       {% else %}
-      <span class="collection-horse-name">{{ h.display }}</span>
+      <span class="horse-link">{{ h.display }}<span class="legs"></span></span>
       {% endif %}
-      <span class="collection-meta">Saved {{ h.saved_at | datefmt }}</span>
-      <button class="btn-link collection-remove-btn" data-name="{{ h.name }}"
-              data-display="{{ h.display }}" data-url="{{ h.url or '' }}"
-              aria-label="Unsave {{ h.display }}">Unsave</button>
-    </li>
+      <button class="collection-chip-remove" aria-label="Unsave {{ h.display }}">×</button>
+    </div>
     {% endfor %}
-  </ul>
+  </div>
   <p class="collection-count">{{ horses | length }} horse{{ 's' if horses | length != 1 }}</p>
   {% else %}
   <p class="collection-empty">
@@ -35,28 +30,40 @@
 {% if horses %}
 <script>
 (function() {
-  document.querySelectorAll('.collection-remove-btn').forEach(function(btn) {
+  const COATS = [
+    {bg:'#7a3520',fg:'#f5ecd7'},{bg:'#1c1c1c',fg:'#e8d5b0'},
+    {bg:'#7a7a7a',fg:'#f0ead6'},{bg:'#8b3a1f',fg:'#fae8c8'},
+    {bg:'#c8961a',fg:'#2a1800'},{bg:'#c8bfaa',fg:'#1c1008'},
+    {bg:'#4a2812',fg:'#ead8b8'},{bg:'#8a6a5a',fg:'#f0e4d0'},
+  ];
+  function nameHash(n){ return n.split('').reduce(function(s,c){ return s+c.charCodeAt(0); }, 0); }
+
+  document.querySelectorAll('.collection-chip-wrap').forEach(function(wrap) {
+    const link = wrap.querySelector('.horse-link');
+    if(!link) return;
+    const c = COATS[nameHash(wrap.dataset.name) % COATS.length];
+    link.style.setProperty('--bg', c.bg);
+    link.style.setProperty('--fg', c.fg);
+  });
+
+  document.querySelectorAll('.collection-chip-remove').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      const item = this.closest('.collection-item');
+      const wrap = this.closest('.collection-chip-wrap');
       fetch('/horse/save', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          name: this.dataset.name,
-          display: this.dataset.display,
-          url: this.dataset.url,
-        }),
+        body: JSON.stringify({name: wrap.dataset.name, display: wrap.dataset.display, url: wrap.dataset.url}),
       })
-      .then(r => r.json())
-      .then(d => {
-        if (!d.saved) {
-          item.remove();
-          const remaining = document.querySelectorAll('.collection-item').length;
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        if(!d.saved) {
+          wrap.remove();
+          const remaining = document.querySelectorAll('.collection-chip-wrap').length;
           const count = document.querySelector('.collection-count');
-          if (count) count.textContent = remaining + ' horse' + (remaining !== 1 ? 's' : '');
-          if (remaining === 0) {
-            document.getElementById('saved-horses-list').remove();
-            if (count) count.remove();
+          if(count) count.textContent = remaining + ' horse' + (remaining !== 1 ? 's' : '');
+          if(remaining === 0) {
+            document.getElementById('saved-horses-chips').remove();
+            if(count) count.remove();
             document.querySelector('.collection-page').insertAdjacentHTML('beforeend',
               '<p class="collection-empty">No saved horses yet.</p>');
           }

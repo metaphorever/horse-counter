@@ -137,11 +137,28 @@
     <label>Title <span class="opt">(optional)</span>:</label>
     <input type="text" id="modal-title" placeholder="Poem title" maxlength="120">
 
-    <label>Your name <span class="opt">(optional — for attribution on the post)</span>:</label>
-    <div class="modal-name-row">
-      <input type="text" id="modal-submitter-name"   placeholder="Your name"       maxlength="60">
-      <input type="text" id="modal-submitter-tumblr" placeholder="Tumblr @ (no @)" maxlength="32">
+    {% if current_user %}
+    <div class="modal-post-as-row">
+      <span class="modal-post-as-text">Posting as: <strong id="modal-post-as-display">{{ current_user.display_name or current_user.slug }}</strong></span>
+      <button type="button" class="btn-link modal-post-as-change" onclick="closeModal();openEditDetails()">Change in Edit Details</button>
     </div>
+    {% else %}
+    <label>Post as</label>
+    <div class="post-as-chooser" id="modal-post-as-chooser">
+      <label class="post-as-option">
+        <input type="radio" name="modal-post-as" value="anonymous" checked>
+        <span>Anonymously</span>
+      </label>
+      <label class="post-as-option">
+        <input type="radio" name="modal-post-as" value="pseudonymous">
+        <span>With a name</span>
+      </label>
+    </div>
+    <div id="modal-pseudo-name-row" style="display:none">
+      <input type="text" id="modal-submitter-name" placeholder="Display name" maxlength="60">
+    </div>
+    <p class="modal-signin-nudge"><a href="/sign-in">Sign in</a> to save your poems to your account.</p>
+    {% endif %}
 
     <label>After <span class="opt">(optional — credit a work this poem riffs on)</span>:</label>
     <div class="modal-name-row">
@@ -216,11 +233,27 @@
     <label>Title <span class="opt">(optional — leave blank to auto-name)</span>:</label>
     <input type="text" id="draft-modal-title" placeholder="e.g. Morning field poem" maxlength="120">
 
-    <label>Your name <span class="opt">(optional)</span>:</label>
-    <div class="modal-name-row">
-      <input type="text" id="draft-modal-name"   placeholder="Your name"       maxlength="60">
-      <input type="text" id="draft-modal-tumblr" placeholder="Tumblr @ (no @)" maxlength="32">
+    <label>Post as</label>
+    <div class="post-as-chooser" id="draft-post-as-chooser">
+      <label class="post-as-option">
+        <input type="radio" name="draft-post-as" value="account">
+        <span>{{ current_user.display_name or current_user.slug if current_user else 'Your account' }}</span>
+      </label>
+      <label class="post-as-option">
+        <input type="radio" name="draft-post-as" value="anonymous">
+        <span>Anonymously</span>
+      </label>
+      <label class="post-as-option">
+        <input type="radio" name="draft-post-as" value="pseudonymous">
+        <span>Pseudonymously</span>
+      </label>
     </div>
+    <div id="draft-pseudo-name-row" style="display:none">
+      <input type="text" id="draft-modal-name" placeholder="Display name" maxlength="60">
+    </div>
+    <p class="post-as-warning" id="draft-post-as-warning" style="display:none">
+      This poem won't be linked to your account once posted.
+    </p>
 
     <label>After <span class="opt">(optional)</span>:</label>
     <div class="modal-name-row">
@@ -261,6 +294,7 @@
 const isAdmin        = {{ is_admin|tojson }};
 const isPinAdmin     = {{ is_pin_admin|tojson }};
 const isLoggedIn     = {{ (current_user is not none)|tojson }};
+const CURRENT_USER_DISPLAY_NAME = {{ ((current_user.display_name or current_user.slug) if current_user else null)|tojson }};
 let stable           = {{ stable_json|safe }};
 let lines            = [[], [], []];
 let history          = [];
@@ -299,7 +333,7 @@ let drag = null;
 
 // ── localStorage helpers (anonymous users only) ───────────────────────────────
 // Phase 1.27: anonymous state is stored as a single object under 'horse-draft'
-// shape: {lines, stable, title, submitter_name, submitter_tumblr, tag_ids}
+// shape: {lines, stable, title, post_as, submitter_name, tag_ids}
 // Migration: if 'horse-stable' exists but 'horse-draft' doesn't, import it.
 
 function saveDraftLocal(){
@@ -414,8 +448,8 @@ document.addEventListener('DOMContentLoaded', () => {
     draftId = INITIAL_DRAFT.id;
     currentDraftMeta = {
       title:           INITIAL_DRAFT.title            || '',
+      postAs:          INITIAL_DRAFT.post_as          || 'account',
       submitterName:   INITIAL_DRAFT.submitter_name   || '',
-      submitterTumblr: INITIAL_DRAFT.submitter_tumblr || '',
       inspiredText:    INITIAL_DRAFT.inspired_by_text || '',
       inspiredUrl:     INITIAL_DRAFT.inspired_by_url  || '',
       tagIds:          JSON.parse(INITIAL_DRAFT.tag_ids_json || '[]'),
@@ -1684,11 +1718,37 @@ function openModal(){
   document.getElementById('modal-err').style.display='none';
   document.getElementById('empty-line-warning').style.display='none';
   document.getElementById('modal-actions').style.display='';
-  const prefs  = isLoggedIn ? {name: userPrefs.poem_name||'', tumblr: userPrefs.poem_tumblr||''} : _anonPrefs();
-  const nameEl   = document.getElementById('modal-submitter-name');
-  const tumblrEl = document.getElementById('modal-submitter-tumblr');
-  if (nameEl)   nameEl.value   = prefs.name;
-  if (tumblrEl) tumblrEl.value = prefs.tumblr;
+
+  if(isLoggedIn){
+    // Update the "Posting as" summary label from current draft state
+    const display = document.getElementById('modal-post-as-display');
+    if(display){
+      const postAs = currentDraftMeta?.postAs || 'account';
+      if(postAs === 'anonymous')       display.textContent = 'Anonymous';
+      else if(postAs === 'pseudonymous') display.textContent = currentDraftMeta?.submitterName || 'Pseudonymous';
+      else                              display.textContent = CURRENT_USER_DISPLAY_NAME || 'you';
+    }
+  } else {
+    // Restore anon prefs from localStorage
+    const saved      = loadDraftLocal() || {};
+    const savedPostAs = saved.post_as || 'anonymous';
+    const savedName   = saved.submitter_name || '';
+    const pseudoRow  = document.getElementById('modal-pseudo-name-row');
+    const nameEl     = document.getElementById('modal-submitter-name');
+    const radioAnon  = document.querySelector('input[name="modal-post-as"][value="anonymous"]');
+    const radioPseudo= document.querySelector('input[name="modal-post-as"][value="pseudonymous"]');
+    if(savedPostAs === 'pseudonymous' && radioPseudo) radioPseudo.checked = true;
+    else if(radioAnon) radioAnon.checked = true;
+    if(nameEl)    nameEl.value = savedName;
+    if(pseudoRow) pseudoRow.style.display = savedPostAs === 'pseudonymous' ? '' : 'none';
+    // Wire up change handler (onchange = replaces, no stacking)
+    document.querySelectorAll('input[name="modal-post-as"]').forEach(function(r){
+      r.onchange = function(){
+        if(pseudoRow) pseudoRow.style.display = this.value === 'pseudonymous' ? '' : 'none';
+      };
+    });
+  }
+
   const itext = document.getElementById('modal-inspired-text'); if (itext) itext.value = '';
   const iurl  = document.getElementById('modal-inspired-url');  if (iurl)  iurl.value  = '';
   selectedTagIds = new Set();
@@ -1703,24 +1763,39 @@ function openEditDetails(){
   document.getElementById('draft-modal-err').style.display='none';
   document.getElementById('draft-modal-ok').style.display='none';
   document.getElementById('draft-modal-actions').style.display='';
-  const titleEl  = document.getElementById('draft-modal-title');
-  const nameEl   = document.getElementById('draft-modal-name');
-  const tumblrEl = document.getElementById('draft-modal-tumblr');
-  const itext    = document.getElementById('draft-modal-inspired-text');
-  const iurl     = document.getElementById('draft-modal-inspired-url');
+
+  const titleEl    = document.getElementById('draft-modal-title');
+  const itext      = document.getElementById('draft-modal-inspired-text');
+  const iurl       = document.getElementById('draft-modal-inspired-url');
+  const pseudoRow  = document.getElementById('draft-pseudo-name-row');
+  const nameEl     = document.getElementById('draft-modal-name');
+  const warning    = document.getElementById('draft-post-as-warning');
+
+  const postAs = currentDraftMeta?.postAs || 'account';
+  const radioEl = document.querySelector(`input[name="draft-post-as"][value="${postAs}"]`);
+  if(radioEl) radioEl.checked = true;
+  if(pseudoRow) pseudoRow.style.display = postAs === 'pseudonymous' ? '' : 'none';
+  if(nameEl)   nameEl.value = postAs === 'pseudonymous' ? (currentDraftMeta?.submitterName || '') : '';
+  if(warning)  warning.style.display = (postAs === 'anonymous' || postAs === 'pseudonymous') ? '' : 'none';
+
+  // Wire up radio changes (use .onchange to avoid listener stacking)
+  document.querySelectorAll('input[name="draft-post-as"]').forEach(function(r){
+    r.onchange = function(){
+      const v = this.value;
+      if(pseudoRow) pseudoRow.style.display = v === 'pseudonymous' ? '' : 'none';
+      if(warning)   warning.style.display   = (v === 'anonymous' || v === 'pseudonymous') ? '' : 'none';
+    };
+  });
+
   if(currentDraftMeta){
-    if(titleEl)  titleEl.value  = currentDraftMeta.title           || '';
-    if(nameEl)   nameEl.value   = currentDraftMeta.submitterName   || '';
-    if(tumblrEl) tumblrEl.value = currentDraftMeta.submitterTumblr || '';
-    if(itext)    itext.value    = currentDraftMeta.inspiredText    || '';
-    if(iurl)     iurl.value     = currentDraftMeta.inspiredUrl     || '';
+    if(titleEl) titleEl.value = currentDraftMeta.title        || '';
+    if(itext)   itext.value   = currentDraftMeta.inspiredText || '';
+    if(iurl)    iurl.value    = currentDraftMeta.inspiredUrl  || '';
     selectedDraftTagIds = new Set(currentDraftMeta.tagIds || []);
   } else {
-    if(titleEl)  titleEl.value  = '';
-    if(nameEl)   nameEl.value   = userPrefs.poem_name   || '';
-    if(tumblrEl) tumblrEl.value = userPrefs.poem_tumblr || '';
-    if(itext)    itext.value    = '';
-    if(iurl)     iurl.value     = '';
+    if(titleEl) titleEl.value = '';
+    if(itext)   itext.value   = '';
+    if(iurl)    iurl.value    = '';
     selectedDraftTagIds = new Set();
   }
   renderDraftTagSections();
@@ -1731,11 +1806,13 @@ function closeDraftModal(){ document.getElementById('draft-modal').classList.rem
 async function saveDraftFromModal(){
   if(!isLoggedIn) return;
 
-  const title           = (document.getElementById('draft-modal-title')?.value          || '').trim();
-  const submitterName   = (document.getElementById('draft-modal-name')?.value           || '').trim();
-  const submitterTumblr = (document.getElementById('draft-modal-tumblr')?.value         || '').trim().replace(/^@/, '');
-  const inspiredText    = (document.getElementById('draft-modal-inspired-text')?.value  || '').trim();
-  const inspiredUrl     = (document.getElementById('draft-modal-inspired-url')?.value   || '').trim();
+  const title        = (document.getElementById('draft-modal-title')?.value         || '').trim();
+  const postAs       = document.querySelector('input[name="draft-post-as"]:checked')?.value || 'account';
+  const pseudoName   = postAs === 'pseudonymous'
+    ? (document.getElementById('draft-modal-name')?.value || '').trim()
+    : '';
+  const inspiredText = (document.getElementById('draft-modal-inspired-text')?.value || '').trim();
+  const inspiredUrl  = (document.getElementById('draft-modal-inspired-url')?.value  || '').trim();
 
   const submitBtn = document.getElementById('draft-modal-submit');
   if(submitBtn) submitBtn.disabled = true;
@@ -1745,8 +1822,8 @@ async function saveDraftFromModal(){
     title,
     lines_json:       JSON.stringify(lines),
     stable_json:      JSON.stringify(stable),
-    submitter_name:   submitterName,
-    submitter_tumblr: submitterTumblr,
+    post_as:          postAs,
+    submitter_name:   pseudoName,
     inspired_by_text: inspiredText,
     inspired_by_url:  inspiredUrl,
     tag_ids_json:     JSON.stringify(Array.from(selectedDraftTagIds)),
@@ -1765,7 +1842,7 @@ async function saveDraftFromModal(){
   if(!window.location.search.includes('draft=')){
     window.history.replaceState(null, '', '?draft=' + draftId);
   }
-  currentDraftMeta = { title: d.draft.title, submitterName, submitterTumblr, inspiredText, inspiredUrl, tagIds: Array.from(selectedDraftTagIds) };
+  currentDraftMeta = { title: d.draft.title, postAs, submitterName: pseudoName, inspiredText, inspiredUrl, tagIds: Array.from(selectedDraftTagIds) };
   closeDraftModal();
   updateDraftStrip();
   showToast(`Draft "${d.draft.title}" saved.`);
@@ -1776,20 +1853,20 @@ async function autoSave(){
   if(!isLoggedIn) return;
   const d = await apiPost('/me/draft/save', {
     draft_id:         draftId,
-    title:            currentDraftMeta?.title            || '',
+    title:            currentDraftMeta?.title         || '',
     lines_json:       JSON.stringify(lines),
     stable_json:      JSON.stringify(stable),
-    submitter_name:   currentDraftMeta?.submitterName   || '',
-    submitter_tumblr: currentDraftMeta?.submitterTumblr || '',
-    inspired_by_text: currentDraftMeta?.inspiredText    || '',
-    inspired_by_url:  currentDraftMeta?.inspiredUrl     || '',
+    post_as:          currentDraftMeta?.postAs        || 'account',
+    submitter_name:   currentDraftMeta?.submitterName || '',
+    inspired_by_text: currentDraftMeta?.inspiredText  || '',
+    inspired_by_url:  currentDraftMeta?.inspiredUrl   || '',
     tag_ids_json:     JSON.stringify(currentDraftMeta?.tagIds || []),
   });
   if(d && d.ok){
     if(!draftId){
       draftId = d.draft.id;
       window.history.replaceState(null, '', '?draft=' + draftId);
-      if(!currentDraftMeta) currentDraftMeta = { title: d.draft.title, submitterName:'', submitterTumblr:'', inspiredText:'', inspiredUrl:'', tagIds:[] };
+      if(!currentDraftMeta) currentDraftMeta = { title: d.draft.title, postAs:'account', submitterName:'', inspiredText:'', inspiredUrl:'', tagIds:[] };
       else currentDraftMeta.title = d.draft.title;
       updateDraftStrip();
     }
@@ -1896,8 +1973,8 @@ async function loadDraftById(id){
   draftId = d.id;
   currentDraftMeta = {
     title:           d.title            || '',
+    postAs:          d.post_as          || 'account',
     submitterName:   d.submitter_name   || '',
-    submitterTumblr: d.submitter_tumblr || '',
     inspiredText:    d.inspired_by_text || '',
     inspiredUrl:     d.inspired_by_url  || '',
     tagIds:          JSON.parse(d.tag_ids_json || '[]'),
@@ -1954,23 +2031,29 @@ async function resolveEmptyLines(strip){
 }
 
 async function _doSubmitPoem(){
-  const submitterName   = (document.getElementById('modal-submitter-name')?.value   || '').trim();
-  const submitterTumblr = (document.getElementById('modal-submitter-tumblr')?.value || '').trim().replace(/^@/, '');
-  const poemTitle       = (document.getElementById('modal-title')?.value            || '').trim();
-  if(!isLoggedIn){
+  let postAs, submitterName;
+  if(isLoggedIn){
+    postAs        = currentDraftMeta?.postAs || 'account';
+    submitterName = postAs === 'pseudonymous' ? (currentDraftMeta?.submitterName || '').trim() : '';
+  } else {
+    postAs        = document.querySelector('input[name="modal-post-as"]:checked')?.value || 'anonymous';
+    submitterName = postAs === 'pseudonymous'
+      ? (document.getElementById('modal-submitter-name')?.value || '').trim()
+      : '';
     // Persist attribution into horse-draft so the modal pre-fills next time.
     try{
       const saved = loadDraftLocal() || {lines:[], stable:[], tag_ids:[]};
-      saved.submitter_name   = submitterName;
-      saved.submitter_tumblr = submitterTumblr;
+      saved.post_as        = postAs;
+      saved.submitter_name = submitterName;
       localStorage.setItem('horse-draft', JSON.stringify(saved));
     }catch(e){}
   }
+  const poemTitle    = (document.getElementById('modal-title')?.value         || '').trim();
   const inspiredText = (document.getElementById('modal-inspired-text')?.value || '').trim();
   const inspiredUrl  = (document.getElementById('modal-inspired-url')?.value  || '').trim();
   const tag_ids = Array.from(selectedTagIds);
   const d = await apiPost('/submit/poem', {
-    lines, submitter_name: submitterName, submitter_tumblr: submitterTumblr,
+    lines, post_as: postAs, submitter_name: submitterName,
     poem_title: poemTitle,
     inspired_by_text: inspiredText, inspired_by_url: inspiredUrl,
     tag_ids,

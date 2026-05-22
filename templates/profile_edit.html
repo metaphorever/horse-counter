@@ -42,7 +42,101 @@
       <a class="btn-sec" href="{{ url_for('user_profile', slug=current_user.slug) }}">View profile</a>
     </div>
   </form>
+
+  {# ── Bio poem ─────────────────────────────────────────────────────────── #}
+  <div class="form-section profile-bio-edit-section">
+    <h2 class="form-section-head">Bio poem</h2>
+    <p class="form-hint">Your bio is a published poem of yours that appears at the top of your profile.</p>
+    {% if bio_poem %}
+    <p class="profile-bio-current">
+      Currently: <a href="{{ url_for('poem_permalink', short_code=bio_poem.short_code) }}">{{ bio_poem.title or '(untitled)' }}</a>
+    </p>
+    <div class="form-actions-inline">
+      {% if bio_picker_poems %}
+      <button class="btn-sec" id="bio-picker-open" type="button">Change bio poem</button>
+      {% endif %}
+      <button class="btn-link profile-bio-clear" id="bio-clear-btn" type="button">Remove bio</button>
+    </div>
+    {% elif bio_picker_poems %}
+    <button class="btn-sec" id="bio-picker-open" type="button">Choose a poem as your bio</button>
+    {% else %}
+    <p class="collection-empty">Publish a poem first — it'll appear here as a candidate.</p>
+    {% endif %}
+  </div>
 </div>
+
+{% if bio_picker_poems %}
+<div class="modal-overlay" id="bio-picker-modal" role="dialog"
+     aria-modal="true" aria-label="Choose bio poem">
+  <div class="modal-box">
+    <button class="modal-close" id="bio-picker-close" aria-label="Close">×</button>
+    <h2 class="modal-title">Choose a bio poem</h2>
+    <p class="modal-hint">Pick a published poem to display at the top of your profile.</p>
+    <ul class="bio-picker-list" id="bio-picker-list">
+      {% for p in bio_picker_poems %}
+      <li class="bio-picker-item {% if bio_poem and bio_poem.id == p.id %}bio-picker-current{% endif %}"
+          data-poem-id="{{ p.id }}" data-poem-title="{{ p.title or '(untitled)' }}">
+        <button class="bio-picker-btn" type="button">
+          {{ p.title or '(untitled)' }}
+          <span class="bio-picker-meta">{{ p.horse_count }} horse{{ 's' if p.horse_count != 1 }}</span>
+          {% if p.status == 'submitted' %}
+          <span class="bio-picker-pending" title="Pending admin approval">⏳ pending review</span>
+          {% endif %}
+          {% if bio_poem and bio_poem.id == p.id %}
+          <span class="bio-picker-active-label">Currently set</span>
+          {% endif %}
+        </button>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<script>
+(function() {
+  const modal    = document.getElementById('bio-picker-modal');
+  const openBtns = document.querySelectorAll('#bio-picker-open');
+  const closeBtn = document.getElementById('bio-picker-close');
+  const clearBtn = document.getElementById('bio-clear-btn');
+
+  function openPicker() { modal.classList.add('open'); closeBtn.focus(); }
+  function closePicker() { modal.classList.remove('open'); }
+
+  openBtns.forEach(function(b) { if(b) b.addEventListener('click', openPicker); });
+  closeBtn.addEventListener('click', closePicker);
+  modal.addEventListener('click', function(e) { if(e.target === modal) closePicker(); });
+  document.addEventListener('keydown', function(e) {
+    if(modal.classList.contains('open') && e.key === 'Escape') closePicker();
+  });
+
+  document.querySelectorAll('.bio-picker-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const li     = this.closest('.bio-picker-item');
+      const poemId = li.dataset.poemId;
+      fetch('{{ url_for("me_profile_bio") }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({poem_id: parseInt(poemId)}),
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(d){ if(d.ok) location.reload(); });
+    });
+  });
+
+  if(clearBtn) {
+    clearBtn.addEventListener('click', function() {
+      fetch('{{ url_for("me_profile_bio") }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({poem_id: null}),
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(d){ if(d.ok) location.reload(); });
+    });
+  }
+})();
+</script>
+{% endif %}
 
 <script>
 (function() {

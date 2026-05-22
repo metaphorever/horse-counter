@@ -57,7 +57,7 @@ VPS provisioning, SQLite schema, short-code permalinks, Clerk auth, localStorage
 - 1.23 GitHub Actions deploy `[sonnet · medium]`
 - 1.24 DNS cutover + PA shutdown `[haiku · low — owner action]`
 - 1.4 Admin tag management `[sonnet · medium]` — slot after 1.13 ships the queue
-- **Style pass session** — focused styling session before beta (fancy/plain/high-contrast/typography-only print modes side-by-side; restore decorated editor chips). Pre-beta, not mid-feature.
+- **Style pass session** — focused styling session before beta (fancy/plain/high-contrast/typography-only print modes side-by-side; restore decorated editor chips; **wandering pasture/saved-horses layout**: horse chips scattered at random 2D positions with sort modes — date added / alphabetical / random / wandering; all non-wandering modes use column layout). Pre-beta, not mid-feature.
 
 ### Phase 2 — Beta & feedback · ⏳ pending soft launch
 

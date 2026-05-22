@@ -37,6 +37,8 @@ _COLUMN_MIGRATIONS = [
     ('drafts', 'created_at',        "REAL NOT NULL DEFAULT 0"),
     # Phase 1.15 — bio poem on user profile (FK omitted; SQLite ALTER TABLE doesn't support it)
     ('users', 'bio_poem_id', "INTEGER"),
+    # Pre-1.13 polish — attribution mode stored on draft
+    ('drafts', 'post_as', "TEXT NOT NULL DEFAULT 'account'"),
 ]
 
 

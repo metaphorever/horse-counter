@@ -807,6 +807,10 @@ def me_draft_save():
     except Exception:
         tag_raw = '[]'
 
+    raw_post_as = (body.get('post_as') or 'account').strip()
+    if raw_post_as not in ('account', 'anonymous', 'pseudonymous'):
+        raw_post_as = 'account'
+
     draft = save_user_draft(
         user_id         = user['id'],
         draft_id        = draft_id,
@@ -818,6 +822,7 @@ def me_draft_save():
         inspired_by_text= (body.get('inspired_by_text') or '').strip()[:200],
         inspired_by_url = (body.get('inspired_by_url')  or '').strip()[:300],
         tag_ids_json    = tag_raw,
+        post_as         = raw_post_as,
     )
     return jsonify({'ok': True, 'draft': {
         'id':         draft['id'],
@@ -1018,7 +1023,17 @@ def me_profile():
         links = _json.loads(user.get('links_json') or '[]')
     except (TypeError, ValueError):
         links = []
-    return render_template('profile_edit.html', profile_links=links)
+    bio_poem = None
+    if user.get('bio_poem_id'):
+        from poem_db import get_poem_by_id as _get_poem_by_id
+        bio_poem = _get_poem_by_id(user['bio_poem_id'])
+        if bio_poem and bio_poem.get('status') != 'published':
+            bio_poem = None
+    bio_picker_poems = get_user_poems_for_bio_picker(user['id'])
+    return render_template('profile_edit.html',
+                           profile_links=links,
+                           bio_poem=bio_poem,
+                           bio_picker_poems=bio_picker_poems)
 
 
 @app.route('/me/profile/save', methods=['POST'])
@@ -1394,7 +1409,6 @@ def submit_poem_public():
     if not any(lines):
         return jsonify({'ok': False, 'error': 'Poem is empty'})
 
-    submitter_name   = _sanitize_name(data.get('submitter_name', ''))
     poem_title       = _sanitize_name(data.get('poem_title', ''))
     submitter_link   = (data.get('submitter_link') or '').strip()[:300]
     submitter_tumblr = _sanitize_tumblr(data.get('submitter_tumblr', ''))
@@ -1402,9 +1416,29 @@ def submit_poem_public():
     inspired_url     = (data.get('inspired_by_url')  or '').strip()[:300]
     raw_tag_ids      = data.get('tag_ids') or []
 
-    author_link_url = submitter_link
-    if not author_link_url and submitter_tumblr:
-        author_link_url = f'https://www.tumblr.com/{submitter_tumblr}'
+    # Attribution: 3-way chooser — account / anonymous / pseudonymous.
+    # Legacy clients omit post_as; treat as 'account' when logged in, else anonymous.
+    post_as = (data.get('post_as') or '').strip()
+    if post_as not in ('account', 'anonymous', 'pseudonymous'):
+        post_as = 'account'
+
+    current_user = g.get('current_user')
+
+    if post_as == 'account' and current_user:
+        author_user_id      = current_user['id']
+        author_display_name = current_user.get('display_name') or current_user.get('slug', '')
+        author_link_url     = f'/u/{current_user["slug"]}'
+    elif post_as == 'pseudonymous':
+        author_user_id      = None
+        author_display_name = _sanitize_name(data.get('submitter_name', ''))
+        author_link_url     = submitter_link or (
+            f'https://www.tumblr.com/{submitter_tumblr}' if submitter_tumblr else ''
+        )
+    else:
+        # anonymous (or 'account' but not logged in — fall back gracefully)
+        author_user_id      = None
+        author_display_name = ''
+        author_link_url     = ''
 
     tag_ids = []
     if isinstance(raw_tag_ids, list):
@@ -1417,8 +1451,8 @@ def submit_poem_public():
     poem = save_poem_db(
         lines               = lines,
         title               = poem_title,
-        author_user_id      = None,           # anonymous; logged-in flow lands later
-        author_display_name = submitter_name,
+        author_user_id      = author_user_id,
+        author_display_name = author_display_name,
         author_link_url     = author_link_url,
         inspired_by_text    = inspired_text,
         inspired_by_url     = inspired_url,
@@ -2094,7 +2128,7 @@ def poem_report(short_code):
         reporter_user_id=user['id'] if user else None,
         reporter_ip=request.remote_addr or '',
     )
-    if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+    if request.is_json:
         return jsonify({'ok': True})
     flash('Thank you — this poem has been reported.', 'ok')
     return redirect(url_for('poem_permalink', short_code=short_code))
