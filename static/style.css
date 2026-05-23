@@ -1110,40 +1110,112 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
   --coat-roan-bg: #8a6a5a;      --coat-roan-fg: #f0e4d0;
 }
 
-/* Grass backdrop + cream note-box panels — shared by Fancy and Plain (the
-   `view-decorated` modes). Reader has no field. Fancy floats decorated chips on
-   the grass; Plain shows functional colour chips on the same backdrop. The
-   gated Fancy "text floats on grass" treatment (step 4) will diverge from here. */
-body.view-decorated .poem-view,
-body.view-decorated .collection-chips,
-body.view-decorated .profile-bio-poem,
-body.view-decorated .queue-poem {
+/* ── Plain: grass-backdrop container + cream note-box panels ──────────────────
+   Plain keeps the field as a decorative backdrop *on each container*, with the
+   header / tags / footer rendered as pinned cream note-boxes. Fancy diverges
+   below — there the body-level grass field becomes the surface and content
+   floats directly on it. (Coat colours, the famous shimmer, and the poem-body
+   line treatment stay shared via `view-decorated` further down.) */
+body.view-plain .poem-view,
+body.view-plain .collection-chips,
+body.view-plain .profile-bio-poem,
+body.view-plain .queue-poem {
   background-color: #4d7432;
   background-image: url('/static/grass.svg');
   background-size: 40px 40px;
   border-color: #6b4820;
   color: #fdf8f0;
 }
-body.view-decorated .poem-view-head,
-body.view-decorated .poem-view-tags,
-body.view-decorated .poem-view-footer {
+body.view-plain .poem-view-head,
+body.view-plain .poem-view-tags,
+body.view-plain .poem-view-footer {
   background: rgba(253, 248, 240, 0.92);
   border-radius: 2px;
   padding: 14px 16px;
   border-color: transparent;
   color: #2d2316;
 }
-body.view-decorated .poem-view-head {
-  margin-bottom: 18px;
-}
-body.view-decorated .poem-view-tags { margin-top: 18px; }
-body.view-decorated .poem-view-footer { margin-top: 18px; }
-body.view-decorated .poem-view-title,
-body.view-decorated .poem-view-attribution,
-body.view-decorated .poem-view-footer,
-body.view-decorated .poem-view-footer code {
+body.view-plain .poem-view-head { margin-bottom: 18px; }
+body.view-plain .poem-view-tags { margin-top: 18px; }
+body.view-plain .poem-view-footer { margin-top: 18px; }
+body.view-plain .poem-view-title,
+body.view-plain .poem-view-attribution,
+body.view-plain .poem-view-footer,
+body.view-plain .poem-view-footer code {
   color: #2d2316;
 }
+
+/* ── Fancy (1.12 step 4): the field IS the surface ───────────────────────────
+   The site already paints the grass field on <body> (the .container is
+   transparent), so in Fancy the display containers simply go transparent and
+   the poem floats directly on that field — this is also the bio-poem
+   "transparent-to-grass" fix. Variant C "ink-on-field": the title + poem float
+   BARE (cream, dark halo for legibility, the stars of the page); the
+   utilitarian clusters (tags, footer) become INVERTED NOTES — dark fill, warm
+   tan text, framed by a gold hairline. Non-horse text is de-emphasised. */
+body.view-fancy .poem-view,
+body.view-fancy .collection-chips,
+body.view-fancy .profile-bio-poem,
+body.view-fancy .queue-poem {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: #fdf8f0;
+}
+/* header floats bare — no panel */
+body.view-fancy .poem-view-head {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-bottom: 18px;
+}
+body.view-fancy .poem-view-title {
+  color: #fdf8f0;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .55), 0 2px 6px rgba(0, 0, 0, .5);
+}
+body.view-fancy .poem-view-title-after { color: rgba(253, 248, 240, .78); }
+/* attribution de-emphasised: warm tan, letter-spaced, haloed for legibility */
+body.view-fancy .poem-view-attribution {
+  color: #e8d5b0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
+  letter-spacing: .03em;
+}
+body.view-fancy .poem-attr-link,
+body.view-fancy .poem-after-link { color: #f0e0b8; }
+/* tags + footer: inverted notes with a gold hairline (the contrasting edge) */
+body.view-fancy .poem-view-tags,
+body.view-fancy .poem-view-footer {
+  background: rgba(38, 29, 18, 0.86);
+  border: 1px solid rgba(196, 169, 107, 0.95);
+  border-radius: 3px;
+  color: #e8d5b0;
+}
+body.view-fancy .poem-view-tags   { margin-top: 18px; padding: 12px 16px; }
+body.view-fancy .poem-view-footer { margin-top: 18px; padding: 9px 14px; }
+body.view-fancy .poem-tag-cat { color: rgba(232, 213, 176, .72); }
+body.view-fancy .poem-tag {
+  color: #e8d5b0;
+  background: transparent;
+  border-color: rgba(196, 169, 107, .6);
+}
+body.view-fancy .poem-tag:hover {
+  background: rgba(196, 169, 107, .18);
+  border-color: rgba(196, 169, 107, .95);
+  color: #fdf8f0;
+}
+body.view-fancy .poem-view-footer code { color: #e8d5b0; }
+body.view-fancy .poem-export-btn {
+  color: #e8d5b0;
+  border-color: rgba(196, 169, 107, .55);
+}
+body.view-fancy .poem-export-btn:hover:not(:disabled) {
+  color: #fdf8f0;
+  border-color: rgba(196, 169, 107, .95);
+}
+/* admin tag editing carries its own light surfaces, so it stays legible on the
+   dark note (admin guts stay utilitarian even in Fancy); only the bare hint text
+   needs lightening so "none applied" reads against the dark fill. */
+body.view-fancy .admin-hint { color: #cbb98a; }
 body.view-fancy .poem-view-body {
   /* Extra vertical room so chip heads + legs don't crash into the head/tag
      blocks. The decoration extends 20px above and 6px below each chip. */
@@ -1286,10 +1358,188 @@ body.view-plain a.poem-horse:hover { filter: brightness(1.08); }
   }
 }
 
-/* Mobile tightening — Fancy chips need a touch more line-height to keep the
-   head glyphs above the previous line's leg stubs. */
+/* Mobile tightening (1.12 step 6) — Fancy holds up on a narrow viewport at the
+   current chip scale: registered names cap at 18 chars, so even the longest
+   single token fits one chip-line on a phone (verified). No chip shrink needed.
+   We only keep the extra line-height (head glyphs clear the previous line's leg
+   stubs) and nudge the floating title down so it doesn't dominate a phone.
+   (Enlarging chips + harmonising the chip font with the display type is routed
+   to the style/font pass, where chip size + font are decided together.) */
 @media (max-width: 520px) {
   body.view-fancy .poem-line-out { line-height: 2.6; }
+  body.view-fancy .poem-view-title { font-size: 1.45rem; }
+  body.view-fancy .poem-view-body { padding-top: 20px; }
+}
+
+/* ───── Reader skin (1.12 step 5) ─────────────────────────────────────────────
+   The 1.11 print stylesheet, ported to screen: off-white paper (no field),
+   Smokum/Abril/IM-Fell/Playfair-SC type toolbox, small-caps body with the
+   turnover indent, underline-separated names, woodprint (stamped-block)
+   buttons. Decisions (Clover-reviewed): W1 stamped block + pressed/inked
+   engaged state, warm #f5efe0 paper, masthead stays print-only (.print-head /
+   .print-colophon remain display:none on screen). Sizes scaled pt -> rem.
+   Reader is NOT a `view-decorated` mode, so it falls through the base
+   .poem-view styling, which these rules override. */
+body.view-reader {
+  background-color: #f5efe0;
+  background-image: none;
+  color: #0f0c06;
+}
+body.view-reader .poem-view {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+/* header centred, no rule (the body's top border is the separator) */
+body.view-reader .poem-view-head {
+  text-align: center;
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+body.view-reader .poem-view-title {
+  display: block;
+  text-align: center;
+  font: 2.1rem/1.1 'Abril Fatface', Georgia, serif;
+  font-weight: normal;
+  letter-spacing: .03em;
+  color: #0f0c06;
+}
+body.view-reader .poem-view-title-main { display: block; font: inherit; }
+body.view-reader .poem-view-title-after {
+  display: block;
+  margin-top: 4px;
+  font: italic 1.2rem 'IM Fell English', Georgia, serif;
+  color: #3a2e18;
+}
+body.view-reader .poem-view-attribution {
+  text-align: center;
+  font: 1rem 'Playfair Display SC', Georgia, serif;
+  letter-spacing: .1em;
+  color: #3a2e18;
+}
+body.view-reader .poem-attr-link,
+body.view-reader .poem-after-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted #3a2e18;
+}
+/* body — IM Fell small-caps, turnover indent inherited from base .poem-line-out */
+body.view-reader .poem-view-body {
+  border-top: 1px solid #0f0c06;
+  margin-top: 14px;
+  padding: 10px 0 0;
+}
+body.view-reader .poem-line-out {
+  font: 1.35rem/1.7 'IM Fell English', Georgia, serif;
+  font-variant: small-caps;
+  letter-spacing: .04em;
+  color: #0f0c06;
+}
+/* names — no chip; a thin underline marks extent, the gap is the separator */
+body.view-reader .poem-horse {
+  border: none;
+  color: #0f0c06;
+  text-decoration: underline;
+  text-decoration-color: #b7a584;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+body.view-reader a.poem-horse:hover { text-decoration-color: #0f0c06; }
+/* tags — Playfair SC, comma-separated inline */
+body.view-reader .poem-view-tags {
+  margin-top: 16px;
+  padding-top: 10px;
+  border-top: 1px solid #0f0c06;
+}
+body.view-reader .poem-tag-group { display: block; margin-bottom: 4px; }
+body.view-reader .poem-tag-cat {
+  font: 0.85rem 'Playfair Display SC', Georgia, serif;
+  letter-spacing: .1em;
+  color: #5a4a28;
+  text-transform: none;
+  min-width: 0;
+  margin-right: 8px;
+}
+body.view-reader .poem-tag-list { display: inline; }
+body.view-reader .poem-tag {
+  display: inline;
+  font: 0.95rem 'Playfair Display SC', Georgia, serif;
+  color: #5a4a28;
+  text-decoration: none;
+  padding: 0;
+  background: none;
+  border: none;
+}
+body.view-reader .poem-tag::after { content: ',\00A0'; }
+body.view-reader .poem-tag:last-child::after { content: ''; }
+body.view-reader .poem-tag-group.cw .poem-tag {
+  color: #7a2020;
+  background: none;
+  border: none;
+}
+/* bio poem + queue follow the same paper-transparent treatment */
+body.view-reader .profile-bio-poem,
+body.view-reader .queue-poem {
+  background: transparent;
+  border: none;
+}
+/* footer + woodprint (stamped-block) buttons */
+body.view-reader .poem-view-footer {
+  margin-top: 16px;
+  padding-top: 10px;
+  border-top: 1px solid #0f0c06;
+  font: 0.9rem 'Playfair Display SC', Georgia, serif;
+  letter-spacing: .06em;
+  color: #5a4a28;
+}
+body.view-reader .poem-view-footer code {
+  color: #5a4a28;
+  font-family: 'Courier Prime', 'Courier New', monospace;
+}
+body.view-reader .poem-export-btn,
+body.view-reader .poem-report-btn,
+body.view-reader .poem-ribbon-btn {
+  font: 0.85rem 'Playfair Display SC', Georgia, serif;
+  letter-spacing: .06em;
+  color: #0f0c06;
+  background: #f5efe0;
+  border: 2px solid #0f0c06;
+  border-radius: 0;
+  box-shadow: 2px 2px 0 #0f0c06;
+  padding: 5px 12px;
+  opacity: 1;
+  cursor: pointer;
+  transition: box-shadow .08s, transform .08s, background .08s, color .08s;
+}
+body.view-reader .poem-ribbon-btn { font-size: 16px; padding: 4px 9px; }
+body.view-reader .poem-export-btn:hover:not(:disabled),
+body.view-reader .poem-report-btn:hover,
+body.view-reader .poem-ribbon-btn:hover {
+  box-shadow: 3px 3px 0 #0f0c06;
+  transform: translate(-1px, -1px);
+  color: #0f0c06;
+  border-color: #0f0c06;
+}
+body.view-reader .poem-export-btn:active,
+body.view-reader .poem-report-btn:active,
+body.view-reader .poem-ribbon-btn:active {
+  box-shadow: 1px 1px 0 #0f0c06;
+  transform: translate(1px, 1px);
+}
+body.view-reader .poem-export-btn:disabled {
+  opacity: .55;
+  box-shadow: 1px 1px 0 #0f0c06;
+  transform: translate(1px, 1px);
+  cursor: default;
+}
+/* engaged / saved ribbon (and any aria-pressed control): pressed in + inked */
+body.view-reader .poem-ribbon-btn.poem-ribbon-saved,
+body.view-reader .poem-ribbon-btn[aria-pressed="true"] {
+  background: #0f0c06;
+  color: #f5efe0;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, .5);
+  transform: translate(2px, 2px);
 }
 
 /* Tag picker — inside the publish modal */
@@ -1767,9 +2017,8 @@ body.view-plain a.poem-horse:hover { filter: brightness(1.08); }
 .profile-section-head { font: 700 12px 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .05em; color: #6b5430; margin: 0 0 10px; }
 .profile-bio-section  { margin-bottom: 28px; }
 .profile-bio-poem     { background: #f5eedc; border: 1px solid #c4a96b; border-radius: 3px; padding: 14px 18px; margin-bottom: 8px; }
-.bio-line             { font: 15px/1.8 Georgia,serif; margin: 0; }
-.bio-line .horse-chip { font: inherit; color: #2d2316; text-decoration: none; }
-.bio-line .horse-chip:hover { text-decoration: underline; }
+/* (.bio-line / .horse-chip rules removed 1.12 step 4 — the bio poem renders via
+   the render_poem macro now (.poem-line-out / .poem-horse), so those were dead.) */
 .bio-poem-link        { font: 12px 'Courier Prime','Courier New',monospace; margin: 8px 0 0; }
 .bio-poem-link a      { color: #3a6b1a; }
 .profile-no-bio       { font: 14px Georgia,serif; color: #a08060; }
