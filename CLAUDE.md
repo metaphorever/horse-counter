@@ -250,14 +250,16 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: 1.12 build — steps 1–3 shipped, awaiting live verification (2026-05-23)**
+**PHASE: choose next — 1.12 foundation (steps 1–3) shipped + verified live ✅ (2026-05-23)**
 
-1.12 steps 1–3 (infrastructure + picker + Plain skin) built this session on branch `claude/phase-1.12-foundation` — see `sessions/2026-05-23-phase-1.12-foundation.md`. **Testing hold:** Clover must deploy and verify the three modes live across surfaces (nothing was testable in the preview pane — Flask SSR) before steps 4–6 begin. Steps 4–6 (Fancy enhancements, Reader skin, Fancy mobile) are prototype-gated — they require Clover's review of rendered options before commit.
+1.12 steps 1–3 (infrastructure + server-resolved picker + Plain skin) are live on `poet.horse` and verified by Clover; architecture accepted, remaining nitpicks are styling. Logs: `sessions/2026-05-23-phase-1.12-foundation.md` + `…-picker-tryon.md`. No open testing holds.
 
 Phases 1.4, 1.13, 1.14, 1.15, 1.19, 1.23, 1.29 fully shipped and verified. Also confirmed shipped: 1.16, 1.17, 1.21.
 
 Next candidates (see ROADMAP for full detail):
-- **1.12 steps 4–6** — Fancy skin enhancements + Reader skin + Fancy mobile, each behind a prototype review gate `[opus · high]`
+- **1.12 steps 4–6** — Fancy skin enhancements + Reader skin + Fancy mobile, each **prototype-gated** (Clover reviews rendered options before commit) `[opus · high]`
+- **Style pass session** — pre-beta; prototypes for each mode's final look (Clover wants this for the 1.12 visual nitpicks) `[sonnet · medium]`
 - **1.13.1** Trust score system — pairs with 1.13 `[sonnet · medium]`
 - **1.20** Cross-post queue `[sonnet · high]`
-- **Style pass session** — pre-beta `[sonnet · medium]`
+
+New backlog (2026-05-23): featured page mixed section types; site root as a real home/landing page.
