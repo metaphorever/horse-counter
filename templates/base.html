@@ -75,17 +75,22 @@
   </nav>
 </div>
 
-{% if not view_mode_set and display_surface %}
+{% if display_surface and not picker_decided %}
 <div class="mode-firstrun" role="region" aria-label="Choose a display mode">
-  <span class="mode-firstrun-label">New here? Pick how poet.horse looks &mdash; you can change it anytime.</span>
+  <span class="mode-firstrun-label">New here? Try a look &mdash; click to preview, then save when you find one you like.</span>
   <form class="mode-firstrun-form" method="post" action="{{ url_for('set_view_mode') }}">
     <input type="hidden" name="next" value="{{ request.path }}">
-    <button class="mode-opt mode-opt-current" type="submit" name="mode" value="fancy">Fancy</button>
-    <button class="mode-opt"                  type="submit" name="mode" value="plain">Plain</button>
-    <button class="mode-opt"                  type="submit" name="mode" value="reader">Reader</button>
-    <button class="mode-firstrun-dismiss" type="submit" name="mode" value="fancy"
-            aria-label="Dismiss &mdash; keep Fancy">&times;</button>
+    <button class="mode-opt{% if view_mode == 'fancy' %} mode-opt-current{% endif %}"  type="submit" name="mode" value="fancy">Fancy</button>
+    <button class="mode-opt{% if view_mode == 'plain' %} mode-opt-current{% endif %}"  type="submit" name="mode" value="plain">Plain</button>
+    <button class="mode-opt{% if view_mode == 'reader' %} mode-opt-current{% endif %}" type="submit" name="mode" value="reader">Reader</button>
+    <button class="mode-firstrun-save" type="submit" name="decide" value="1">Save view setting</button>
+    <button class="mode-firstrun-dismiss" type="submit" name="decide" value="1"
+            aria-label="Dismiss &mdash; keep current view">&times;</button>
   </form>
+</div>
+{% elif display_surface and view_picker_saved %}
+<div class="mode-firstrun mode-firstrun-msg" role="status">
+  You can always change your view settings from the &#x2299; menu{% if current_user %} or your Settings page{% endif %}.
 </div>
 {% endif %}
 
