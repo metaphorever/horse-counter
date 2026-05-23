@@ -945,7 +945,7 @@ body.dragging .drop-zones {
 /* Plain mode is the default and the only mode 1.5 styles. Pasture mode CSS
    arrives in 1.6 (decorated chips, grass background, etc.). Selectors here
    stay scoped to `.poem-view` so 1.6 can layer pasture-only overrides via
-   `.poem-view[data-view-mode='pasture']`. */
+   `[data-view-mode='pasture']`. */
 .poem-view {
   max-width: 720px; margin: 24px auto; padding: 24px 28px;
   background: #fdf8f0; border: 2px solid #c4a96b; border-radius: 2px;
@@ -977,7 +977,7 @@ body.dragging .drop-zones {
 .poem-view-body { padding: 8px 0 4px; }
 .poem-line-out {
   font: 1.05rem 'Playfair Display', Georgia, serif; color: #2d2316;
-  margin: 0; padding: 6px 0; line-height: 1.6;
+  margin: 0; padding: 6px 0 6px 2em; line-height: 1.6; text-indent: -2em;
 }
 .poem-line-out:empty::before { content: '\00A0'; }  /* preserve blank lines */
 .poem-horse {
@@ -1030,7 +1030,7 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
    Ported from tumblr-theme.html — same chip decoration (legs/tail via pseudo-
    elements, coat colours via class, famous shimmer). The plain-mode rules
    above are untouched; everything below is gated on
-   `.poem-view[data-view-mode='pasture']` so toggling is a one-attribute flip.
+   `[data-view-mode='pasture']` so toggling is a one-attribute flip.
 
    Coat-class variables live in :root so the editor and other surfaces can
    reuse them when they pick up the styling. */
@@ -1046,46 +1046,46 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
   --coat-roan-bg: #8a6a5a;      --coat-roan-fg: #f0e4d0;
 }
 
-.poem-view[data-view-mode='pasture'] {
+[data-view-mode='pasture'] {
   background-color: #4d7432;
   background-image: url('/static/grass.svg');
   background-size: 40px 40px;
   border-color: #6b4820;
   color: #fdf8f0;
 }
-.poem-view[data-view-mode='pasture'] .poem-view-head,
-.poem-view[data-view-mode='pasture'] .poem-view-tags,
-.poem-view[data-view-mode='pasture'] .poem-view-footer {
+[data-view-mode='pasture'] .poem-view-head,
+[data-view-mode='pasture'] .poem-view-tags,
+[data-view-mode='pasture'] .poem-view-footer {
   background: rgba(253, 248, 240, 0.92);
   border-radius: 2px;
   padding: 14px 16px;
   border-color: transparent;
   color: #2d2316;
 }
-.poem-view[data-view-mode='pasture'] .poem-view-head {
+[data-view-mode='pasture'] .poem-view-head {
   margin-bottom: 18px;
 }
-.poem-view[data-view-mode='pasture'] .poem-view-tags { margin-top: 18px; }
-.poem-view[data-view-mode='pasture'] .poem-view-footer { margin-top: 18px; }
-.poem-view[data-view-mode='pasture'] .poem-view-title,
-.poem-view[data-view-mode='pasture'] .poem-view-attribution,
-.poem-view[data-view-mode='pasture'] .poem-view-footer,
-.poem-view[data-view-mode='pasture'] .poem-view-footer code {
+[data-view-mode='pasture'] .poem-view-tags { margin-top: 18px; }
+[data-view-mode='pasture'] .poem-view-footer { margin-top: 18px; }
+[data-view-mode='pasture'] .poem-view-title,
+[data-view-mode='pasture'] .poem-view-attribution,
+[data-view-mode='pasture'] .poem-view-footer,
+[data-view-mode='pasture'] .poem-view-footer code {
   color: #2d2316;
 }
-.poem-view[data-view-mode='pasture'] .poem-view-body {
+[data-view-mode='pasture'] .poem-view-body {
   /* Extra vertical room so chip heads + legs don't crash into the head/tag
      blocks. The decoration extends 20px above and 6px below each chip. */
   padding: 26px 0 14px;
 }
-.poem-view[data-view-mode='pasture'] .poem-line-out {
+[data-view-mode='pasture'] .poem-line-out {
   line-height: 2.4;
   color: #fdf8f0;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
 /* ── Decorated chips — pasture mode only ─────────────────────────────────── */
-.poem-view[data-view-mode='pasture'] .poem-horse {
+[data-view-mode='pasture'] .poem-horse {
   display: inline-block;
   position: relative;
   overflow: visible;
@@ -1103,18 +1103,18 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
   transition: transform .1s, box-shadow .1s;
 }
 /* Coat-class wiring — same hash buckets as matcher._tile_appearance */
-.poem-view[data-view-mode='pasture'] .coat-bay       { --bg: var(--coat-bay-bg);       --fg: var(--coat-bay-fg);       transform: rotate(-1.5deg); }
-.poem-view[data-view-mode='pasture'] .coat-black     { --bg: var(--coat-black-bg);     --fg: var(--coat-black-fg);     transform: rotate( 1.0deg); }
-.poem-view[data-view-mode='pasture'] .coat-grey      { --bg: var(--coat-grey-bg);      --fg: var(--coat-grey-fg);      transform: rotate(-0.7deg); }
-.poem-view[data-view-mode='pasture'] .coat-chestnut  { --bg: var(--coat-chestnut-bg);  --fg: var(--coat-chestnut-fg);  transform: rotate( 1.3deg); }
-.poem-view[data-view-mode='pasture'] .coat-palomino  { --bg: var(--coat-palomino-bg);  --fg: var(--coat-palomino-fg);  transform: rotate(-1.0deg); }
-.poem-view[data-view-mode='pasture'] .coat-greywhite { --bg: var(--coat-greywhite-bg); --fg: var(--coat-greywhite-fg); transform: rotate( 0.5deg); }
-.poem-view[data-view-mode='pasture'] .coat-liver     { --bg: var(--coat-liver-bg);     --fg: var(--coat-liver-fg);     transform: rotate(-1.3deg); }
-.poem-view[data-view-mode='pasture'] .coat-roan      { --bg: var(--coat-roan-bg);      --fg: var(--coat-roan-fg);      transform: rotate( 0.8deg); }
+[data-view-mode='pasture'] .coat-bay       { --bg: var(--coat-bay-bg);       --fg: var(--coat-bay-fg);       transform: rotate(-1.5deg); }
+[data-view-mode='pasture'] .coat-black     { --bg: var(--coat-black-bg);     --fg: var(--coat-black-fg);     transform: rotate( 1.0deg); }
+[data-view-mode='pasture'] .coat-grey      { --bg: var(--coat-grey-bg);      --fg: var(--coat-grey-fg);      transform: rotate(-0.7deg); }
+[data-view-mode='pasture'] .coat-chestnut  { --bg: var(--coat-chestnut-bg);  --fg: var(--coat-chestnut-fg);  transform: rotate( 1.3deg); }
+[data-view-mode='pasture'] .coat-palomino  { --bg: var(--coat-palomino-bg);  --fg: var(--coat-palomino-fg);  transform: rotate(-1.0deg); }
+[data-view-mode='pasture'] .coat-greywhite { --bg: var(--coat-greywhite-bg); --fg: var(--coat-greywhite-fg); transform: rotate( 0.5deg); }
+[data-view-mode='pasture'] .coat-liver     { --bg: var(--coat-liver-bg);     --fg: var(--coat-liver-fg);     transform: rotate(-1.3deg); }
+[data-view-mode='pasture'] .coat-roan      { --bg: var(--coat-roan-bg);      --fg: var(--coat-roan-fg);      transform: rotate( 0.8deg); }
 
 /* ::before draws the head glyph (top) plus four leg stubs (bottom) using
    background gradients. Single pseudo-element keeps the markup clean. */
-.poem-view[data-view-mode='pasture'] .poem-horse::before {
+[data-view-mode='pasture'] .poem-horse::before {
   content: '♞';
   position: absolute;
   pointer-events: none;
@@ -1129,7 +1129,7 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
     linear-gradient(var(--bg), var(--bg)) calc(100% -  4px) 100% / 2px 6px no-repeat;
 }
 /* ::after draws the tail off the right side. */
-.poem-view[data-view-mode='pasture'] .poem-horse::after {
+[data-view-mode='pasture'] .poem-horse::after {
   content: '∫';
   position: absolute;
   pointer-events: none;
@@ -1140,14 +1140,14 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
 }
 /* Reversed direction — name-hash parity puts roughly half of horses facing
    the other way so a line of them doesn't look like a conga line. */
-.poem-view[data-view-mode='pasture'] .poem-horse.rev::before {
+[data-view-mode='pasture'] .poem-horse.rev::before {
   left: auto; right: 0; transform: scaleX(-1);
 }
-.poem-view[data-view-mode='pasture'] .poem-horse.rev::after {
+[data-view-mode='pasture'] .poem-horse.rev::after {
   right: auto; left: -10px;
   transform: translateY(-50%) scaleY(-1) scaleX(-1);
 }
-.poem-view[data-view-mode='pasture'] .poem-horse:hover {
+[data-view-mode='pasture'] .poem-horse:hover {
   transform: scale(1.06) !important;
   box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.28);
 }
@@ -1157,7 +1157,7 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
 }
-.poem-view[data-view-mode='pasture'] .poem-horse.famous-horse {
+[data-view-mode='pasture'] .poem-horse.famous-horse {
   background-color: var(--bg);
   background-image: linear-gradient(
     105deg,
@@ -1176,11 +1176,11 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
    stop the rotational tilt on each chip. The chip stays decorated — only
    the motion is removed. */
 @media (prefers-reduced-motion: reduce) {
-  .poem-view[data-view-mode='pasture'] .poem-horse {
+  [data-view-mode='pasture'] .poem-horse {
     transform: none;
     transition: none;
   }
-  .poem-view[data-view-mode='pasture'] .poem-horse.famous-horse {
+  [data-view-mode='pasture'] .poem-horse.famous-horse {
     animation: none;
     background-image: none;
   }
@@ -1189,7 +1189,7 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
 /* Mobile tightening — pasture chips need a touch more line-height to keep
    the head glyphs above the previous line's leg stubs. */
 @media (max-width: 520px) {
-  .poem-view[data-view-mode='pasture'] .poem-line-out { line-height: 2.6; }
+  [data-view-mode='pasture'] .poem-line-out { line-height: 2.6; }
 }
 
 /* Tag picker — inside the publish modal */

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from 'macros.html' import render_poem %}
 {% block title %}{{ page_title }} — poet.horse{% endblock %}
 
 {% block head %}
@@ -58,21 +59,7 @@
   </header>
 
   <section class="poem-view-body" aria-label="Poem">
-    {% for line in poem.lines %}
-      <p class="poem-line-out">
-        {%- for h in line -%}
-          {%- set chip_cls = 'poem-horse coat-' ~ h.coat -%}
-          {%- if h.rev %}{% set chip_cls = chip_cls ~ ' rev' %}{% endif -%}
-          {%- if h.is_famous %}{% set chip_cls = chip_cls ~ ' famous-horse' %}{% endif -%}
-          {%- if h.url -%}
-            <a class="{{ chip_cls }}" data-name="{{ h.name }}" href="{{ h.url }}" rel="nofollow noopener" target="_blank">{{ h.display }}</a>
-          {%- else -%}
-            <span class="{{ chip_cls }}" data-name="{{ h.name }}">{{ h.display }}</span>
-          {%- endif -%}
-          {%- if not loop.last %} {% endif -%}
-        {%- endfor -%}
-      </p>
-    {% endfor %}
+    {{ render_poem(poem.lines) }}
   </section>
 
   {% if grouped_tags or (is_admin and editor_pub_cats) %}
