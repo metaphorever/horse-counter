@@ -250,16 +250,19 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: 1.12 ✅ CLOSED (2026-05-23) — next: Style pass / font pass session**
+**PHASE: Style pass built — ⚠ OPEN TESTING HOLD: Clover live-verification before style pass closes (2026-05-23)**
 
-All six 1.12 steps live + verified by Clover. Admin tag editor styles on the inverted Fancy note deferred to admin cleanup; Plain note background absence is expected.
+Style pass is built on branch `claude/style-pass`, PR #57 open, awaiting squash-merge → auto-deploy → Clover live test.
+
+What's in PR #57: SVG wordmark in nav (text fallback); Fancy chips → Playfair Display SC small-caps; attributions → Playfair SC across all modes; Plain poem body → IM Fell English; page titles → Abril Fatface; collection chip green-color fix; editor layout restructure (Clear Poem danger style + Post Poem/Edit Details below draft strip); Saved Horses quick-pick button in editor search.
+
+**Next session opens by confirming the testing holds in `sessions/2026-05-23-style-pass.md`** (Fancy chips; Plain body; nav SVG logo; collection chip colors; page titles; editor layout; Saved Horses route). If all clear → close style pass. If issues → fix-forward.
 
 Phases 1.4, 1.12, 1.13, 1.14, 1.15, 1.19, 1.23, 1.29 fully shipped and verified. Also confirmed shipped: 1.16, 1.17, 1.21.
 
-**Next session: Style pass / font pass** `[sonnet · medium]` — pre-beta; final type for each mode + **enlarge Fancy chips & harmonise chip font** (deferred from 1.12 step 6) + restore decorated editor chips + wandering pasture layout. No testing holds to clear.
-
-Other next candidates (see ROADMAP for full detail):
+After style pass closes, next candidates (see ROADMAP for full detail):
+- **Wandering pasture/saved-horses layout** — its own session `[sonnet · medium]`
 - **1.13.1** Trust score system `[sonnet · medium]`
 - **1.20** Cross-post queue `[sonnet · high]`
 
-Backlog added this session: **horse chip context menu in collection views** (send to drafts / remove from pasture / save-unsave). Prior new backlog: SVG chip art system; dark mode; featured page mixed section types; site root as real home/landing page.
+Backlog added this session: **horse chip context menu in collection views** (send to drafts / remove from pasture / save-unsave toggle, context-sensitive); **SVG coat pattern overlays** (post SVG-chip-art-system); **per-display-mode editor styles** (long-term opt-in). Prior backlog: SVG chip art system; dark mode; featured page mixed section types; site root as real home/landing page.
