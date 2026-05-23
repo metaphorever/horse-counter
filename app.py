@@ -547,6 +547,14 @@ def user_profile(slug):
         bio_poem = _get_poem_by_id(user['bio_poem_id'])
         if bio_poem and bio_poem.get('status') != 'published':
             bio_poem = None
+        if bio_poem:
+            for line in bio_poem.get('lines', []):
+                for h in line:
+                    name = h.get('name', '')
+                    app_ = horse_appearance(name)
+                    h['coat'] = app_['coat']
+                    h['rev']  = app_['rev']
+                    h['is_famous'] = bool(name) and famous_horses.lookup(name) is not None
     bio_picker_poems = []
     is_own_profile = (g.get('current_user') or {}).get('id') == user['id']
     if is_own_profile:
@@ -1050,6 +1058,12 @@ def me_pasture():
     """Phase 1.19 — pasture horse list."""
     user = g.get('current_user')
     horses = list_pasture_horses(user['id'])
+    for h in horses:
+        name = h.get('name', '')
+        app_ = horse_appearance(name)
+        h['coat'] = app_['coat']
+        h['rev']  = app_['rev']
+        h['is_famous'] = bool(name) and famous_horses.lookup(name) is not None
     return render_template('my_pasture.html', horses=horses)
 
 
@@ -1101,6 +1115,12 @@ def me_saved_horses():
     """Phase 1.19 — saved (ribbon) horse list."""
     user = g.get('current_user')
     horses = list_saved_horses(user['id'])
+    for h in horses:
+        name = h.get('name', '')
+        app_ = horse_appearance(name)
+        h['coat'] = app_['coat']
+        h['rev']  = app_['rev']
+        h['is_famous'] = bool(name) and famous_horses.lookup(name) is not None
     return render_template('saved_horses.html', horses=horses)
 
 

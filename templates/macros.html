@@ -1,0 +1,16 @@
+{% macro render_chip(h, linked=true) -%}
+{%- set chip_cls = 'poem-horse coat-' ~ h.coat -%}
+{%- if h.rev %}{% set chip_cls = chip_cls ~ ' rev' %}{% endif -%}
+{%- if h.is_famous %}{% set chip_cls = chip_cls ~ ' famous-horse' %}{% endif -%}
+{%- if linked and h.url -%}
+<a class="{{ chip_cls }}" data-name="{{ h.name }}" href="{{ h.url }}" rel="nofollow noopener" target="_blank">{{ h.display }}</a>
+{%- else -%}
+<span class="{{ chip_cls }}" data-name="{{ h.name }}">{{ h.display }}</span>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro render_poem(lines, line_class='poem-line-out', linked=true) %}
+{%- for line in lines -%}
+<p class="{{ line_class }}">{%- for h in line -%}{{ render_chip(h, linked=linked) }}{%- if not loop.last %} {% endif -%}{%- endfor -%}</p>
+{% endfor -%}
+{% endmacro %}
