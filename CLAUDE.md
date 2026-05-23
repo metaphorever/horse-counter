@@ -250,17 +250,16 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: 1.12 steps 4–6 built — ⚠ OPEN TESTING HOLD: Clover live-verification of Fancy/Reader/mobile skins before 1.12 closes (2026-05-23)**
+**PHASE: 1.12 ✅ CLOSED (2026-05-23) — next: Style pass / font pass session**
 
-1.12 steps 1–3 are live + verified. **Steps 4–6 (Fancy "field-is-surface" skin · Variant C ink-on-field, gold edge; Reader print-aesthetic-on-screen + W1 woodprint buttons; Fancy mobile minimal polish) are built + prototype-reviewed this session** (`sessions/2026-05-23-phase-1.12-skins.md`) and committed on branch `claude/phase-1.12-skins` — **PR open, awaiting squash-merge → auto-deploy → Clover live test.**
+All six 1.12 steps live + verified by Clover. Admin tag editor styles on the inverted Fancy note deferred to admin cleanup; Plain note background absence is expected.
 
-**Next session opens by confirming the testing holds in `sessions/2026-05-23-phase-1.12-skins.md` (Fancy across surfaces incl. admin tag editor legibility on the inverted note; Reader incl. saved-ribbon inked state + clickable names; mobile on a real phone; Plain no-regression).** If all clear → **close 1.12** (update this block + ROADMAP). If issues → fix-forward on the same branch/a follow-up.
+Phases 1.4, 1.12, 1.13, 1.14, 1.15, 1.19, 1.23, 1.29 fully shipped and verified. Also confirmed shipped: 1.16, 1.17, 1.21.
 
-Phases 1.4, 1.13, 1.14, 1.15, 1.19, 1.23, 1.29 fully shipped and verified. Also confirmed shipped: 1.16, 1.17, 1.21.
+**Next session: Style pass / font pass** `[sonnet · medium]` — pre-beta; final type for each mode + **enlarge Fancy chips & harmonise chip font** (deferred from 1.12 step 6) + restore decorated editor chips + wandering pasture layout. No testing holds to clear.
 
-After 1.12 closes, next candidates (see ROADMAP for full detail):
-- **Style pass / font pass session** — pre-beta; final type for each mode + **enlarge Fancy chips & harmonise chip font** (deferred from 1.12 step 6) + restore decorated editor chips + wandering pasture layout `[sonnet · medium]`
-- **1.13.1** Trust score system — pairs with 1.13 `[sonnet · medium]`
+Other next candidates (see ROADMAP for full detail):
+- **1.13.1** Trust score system `[sonnet · medium]`
 - **1.20** Cross-post queue `[sonnet · high]`
 
-Backlog added this session: **SVG chip art system** (Phase 2, pairs w/ walk-cycle); **dark mode** (reuses the inverted-note palette). Prior new backlog: featured page mixed section types; site root as a real home/landing page.
+Backlog added this session: **horse chip context menu in collection views** (send to drafts / remove from pasture / save-unsave). Prior new backlog: SVG chip art system; dark mode; featured page mixed section types; site root as real home/landing page.
