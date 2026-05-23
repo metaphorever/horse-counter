@@ -250,12 +250,12 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: choose next — 1.29 closed ✅**
+**PHASE: choose next — 1.12 spec locked ✅ (2026-05-23)**
 
 Phases 1.4, 1.13, 1.14, 1.15, 1.19, 1.23, 1.29 fully shipped and verified. Also confirmed shipped: 1.16, 1.17, 1.21.
 
 Next candidates (see ROADMAP for full detail):
+- **1.12** Three-mode display system (Fancy/Plain/Reader) — **spec locked, build-ready**; start with build step 1 (infrastructure) `[opus · high]` — see `sessions/2026-05-23-phase-1.12-spec.md`
 - **1.13.1** Trust score system — pairs with 1.13 `[sonnet · medium]`
-- **1.12** Three-mode display system — spec session required first `[opus · high]`
 - **1.20** Cross-post queue `[sonnet · high]`
 - **Style pass session** — pre-beta `[sonnet · medium]`
