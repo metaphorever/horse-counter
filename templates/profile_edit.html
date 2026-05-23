@@ -63,6 +63,18 @@
     <p class="collection-empty">Publish a poem first — it'll appear here as a candidate.</p>
     {% endif %}
   </div>
+
+  {# ── Display mode (Phase 1.12) ────────────────────────────────────────── #}
+  <div class="form-section profile-mode-section">
+    <h2 class="form-section-head">Display mode</h2>
+    <p class="form-hint">How poems and collections look across the site. Saved to your account and used on every device.</p>
+    <form class="mode-prefs-form" method="post" action="{{ url_for('set_view_mode') }}">
+      <input type="hidden" name="next" value="{{ url_for('me_profile') }}">
+      <button class="mode-opt{% if view_mode == 'fancy' %} mode-opt-current{% endif %}"  type="submit" name="mode" value="fancy">Fancy</button>
+      <button class="mode-opt{% if view_mode == 'plain' %} mode-opt-current{% endif %}"  type="submit" name="mode" value="plain">Plain</button>
+      <button class="mode-opt{% if view_mode == 'reader' %} mode-opt-current{% endif %}" type="submit" name="mode" value="reader">Reader</button>
+    </form>
+  </div>
 </div>
 
 {% if bio_picker_poems %}

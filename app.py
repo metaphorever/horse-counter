@@ -212,11 +212,51 @@ def _is_admin() -> bool:
     return user is not None and user.get('role') == 'admin'
 
 
+# ── Display mode (Phase 1.12) ───────────────────────────────────────────────────
+# Three site-wide skins, resolved server-side and emitted as a body class so the
+# skin applies on first paint with no JS dependency.
+VIEW_MODES        = ('fancy', 'plain', 'reader')
+DEFAULT_VIEW_MODE = 'fancy'
+
+
+def resolve_view_mode() -> tuple[str, bool]:
+    """Resolve the site-wide display mode for this request.
+
+    Precedence: signed-in user preference -> view_mode cookie -> default.
+    Returns (mode, is_set); is_set is False only when nothing was stored and we
+    fell back to the default — the fresh-visitor signal the first-run picker
+    keys off (absence of the cookie IS the signal).
+    """
+    user = g.get('current_user')
+    if user is not None:
+        pref = get_preferences(user['id']).get('poem_view_mode')
+        if pref in VIEW_MODES:
+            return pref, True
+    cookie = request.cookies.get('view_mode')
+    if cookie in VIEW_MODES:
+        return cookie, True
+    return DEFAULT_VIEW_MODE, False
+
+
+# Display / reading surfaces — where the skin is most dramatic, and the only
+# pages that show the first-run picker strip. Workhorse pages (editor, admin,
+# account forms, count, legal) just carry the collapsed nav control.
+DISPLAY_SURFACES = frozenset({
+    'poem_permalink', 'featured', 'browse', 'random_poem',
+    'user_profile', 'me_pasture', 'me_saved_poems', 'me_saved_horses',
+})
+
+
+def is_display_surface() -> bool:
+    return request.endpoint in DISPLAY_SURFACES
+
+
 # ── Template globals ──────────────────────────────────────────────────────────
 
 @app.context_processor
 def inject_globals():
     """Make is_admin, current_user, and Clerk key available in every template."""
+    view_mode, view_mode_set = resolve_view_mode()
     return {
         'is_admin':              _is_admin(),
         'is_pin_admin':          bool(session.get('logged_in')),
@@ -224,6 +264,10 @@ def inject_globals():
         'clerk_publishable_key': CLERK_PUBLISHABLE_KEY,
         'tumblr_auth':           tumblr.authenticated,
         'blog_name':             TUMBLR_BLOG_NAME,
+        'view_mode':             view_mode,
+        'view_mode_set':         view_mode_set,
+        'view_decorated':        view_mode in ('fancy', 'plain'),
+        'display_surface':       is_display_surface(),
     }
 
 
@@ -472,7 +516,7 @@ def me_sync():
 # value-validated below so the endpoint never becomes a free-form key/value
 # store on the user row.
 _USER_PREF_WRITES = {
-    'poem_view_mode':    lambda v: v if v in ('plain', 'pasture') else None,
+    'poem_view_mode':    lambda v: v if v in VIEW_MODES else None,
     'strip_empty_lines': lambda v: bool(v) if isinstance(v, bool) else None,
 }
 
@@ -502,6 +546,31 @@ def me_preferences():
 
     prefs = update_preferences(user['id'], updates) if updates else get_preferences(user['id'])
     return jsonify({'ok': True, 'preferences': prefs})
+
+
+@app.route('/set-view-mode', methods=['POST'])
+def set_view_mode():
+    """Set the site-wide display mode (Phase 1.12).
+
+    Works without JavaScript: a plain form post that writes the view_mode
+    cookie (and, for signed-in users, mirrors to the account preference so it
+    follows across devices), then redirects back to the originating page.
+    """
+    mode = request.form.get('mode', '')
+    if mode not in VIEW_MODES:
+        mode = DEFAULT_VIEW_MODE
+
+    user = g.get('current_user')
+    if user is not None:
+        update_preferences(user['id'], {'poem_view_mode': mode})
+
+    # Same-site redirect only — never bounce to an absolute or off-site URL.
+    nxt = request.form.get('next', '')
+    if not (nxt.startswith('/') and not nxt.startswith('//')):
+        nxt = '/'
+    resp = redirect(nxt)
+    resp.set_cookie('view_mode', mode, max_age=60 * 60 * 24 * 365, samesite='Lax')
+    return resp
 
 
 # ── Legal pages (Phase 0.6) ──────────────────────────────────────────────────
@@ -2172,10 +2241,10 @@ def poem_permalink(short_code):
         if poem.get('inspired_by_text') else base_title
     )
 
-    # Enrich each horse with pasture-mode appearance hooks (coat / rev / famous)
-    # so the template can render decorated chips without any client-side work.
-    # The hooks are inert in plain mode — CSS only acts on them under
-    # `[data-view-mode='pasture']`.
+    # Enrich each horse with appearance hooks (coat / rev / famous) so the
+    # template can render decorated chips without any client-side work. The
+    # hooks are inert except in Fancy mode — CSS only acts on them under the
+    # server-emitted `body.view-fancy` class.
     # Also cycle through dictionary registrations for repeated names so each
     # occurrence in the poem gets a distinct URL instead of all pointing at
     # the first registration.
@@ -2193,18 +2262,6 @@ def poem_permalink(short_code):
                 regs = dictionary.horses.get(name)
                 if regs and len(regs) > 1:
                     h['url'] = regs[idx % len(regs)]['url']
-
-    # Default view mode for permalinks is pasture (per ROADMAP 1.6). A
-    # logged-in user's stored preference overrides; otherwise the client
-    # JS may downgrade to plain based on `prefers-reduced-motion` or a
-    # localStorage choice. The server passes the chosen default + the
-    # known-explicit signal so the template doesn't have to guess.
-    server_mode      = None
-    if user is not None:
-        prefs = get_preferences(user['id'])
-        candidate = prefs.get('poem_view_mode')
-        if candidate in ('plain', 'pasture'):
-            server_mode = candidate
 
     cur_user = g.get('current_user')
     poem_saved = False
@@ -2224,7 +2281,6 @@ def poem_permalink(short_code):
         permalink_url     = f'https://poet.horse/p/{short_code}',
         published_iso     = published_iso,
         published_human   = published_human,
-        server_view_mode  = server_mode,
         poem_saved        = poem_saved,
     )
 

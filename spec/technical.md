@@ -58,7 +58,7 @@ Schema lives in `db/schema.sql`; migrations applied idempotently by `db/seed.py:
 
 ### JSON shapes
 
-- **`users.preferences_json`** — `{"poem_name": str, "poem_tumblr": str, "page_size": str, "poem_view_mode": "plain"|"pasture", ...}`. Keys are **allow-listed** in `_USER_PREF_WRITES` at `app.py:406` — server validates each key on write. Never a free-form k/v store.
+- **`users.preferences_json`** — `{"poem_name": str, "poem_tumblr": str, "page_size": str, "poem_view_mode": "fancy"|"plain"|"reader", ...}`. Keys are **allow-listed** in `_USER_PREF_WRITES` — server validates each key on write. Never a free-form k/v store. (`poem_view_mode` vocabulary became `fancy`/`plain`/`reader` in Phase 1.12; old `plain`/`pasture` values reset.)
 - **`users.flags_json`** — `{"ad_free": bool, ...}`
 - **`users.links_json`** — `[{"label": str, "url": str}, ...]` — used for profile external links (planned Phase 1.15)
 - **`poems.lines_json`** — runtime shape: `[[{"name": str, "display": str, "url": str, "coat": str, "rev": str, "is_famous": bool}, ...], ...]` (list of lines; each line is a list of horse dicts). The schema.sql comment describes a different shape (`[{"horses": [...], "break": "newline"}]`) — that comment is **outdated**; the code passes the raw JSON through without re-serialization, so the discrepancy is invisible at runtime but misleading on read. Flagged in `ROADMAP.md` open design questions.
@@ -189,8 +189,8 @@ DB admin happens via Python one-liners (no `sqlite3` CLI on the VPS). Patterns i
 - Per-page JS lives inline in `<script>` blocks within each template. No module bundler.
 - `static/style.css` (single stylesheet), `static/grass.svg` (background tile), `static/img/` (assets)
 - Coat-color palette: CSS variables on `:root` in `style.css`, shared between editor and pasture-mode renderer (added Phase 1.6 to avoid hex copy-paste)
-- localStorage usage: anonymous user state (`horse-stable`, `horse-poem-name`, `horse-poem-tumblr`, `horse-page-size`, `poem-view-mode`)
-- `prefers-reduced-motion` and `prefers-contrast` respected via CSS media queries; view-mode resolution chain reads it on the client (flagged — should be server-side; see open design questions)
+- localStorage usage: anonymous user state (`horse-stable`, `horse-poem-name`, `horse-poem-tumblr`, `horse-page-size`). (The old `poem-view-mode` localStorage key was retired in Phase 1.12 — display mode is now a server-resolved cookie + DB pref.)
+- Display mode (Phase 1.12) resolves **server-side** — signed-in DB pref → `view_mode` cookie → default `fancy` — and is emitted as a `body.view-<mode>` class so the skin applies on first paint with no JS. `prefers-reduced-motion` and `prefers-contrast` are respected via CSS media queries; reduced-motion now suppresses *animation within* the active mode rather than switching modes.
 
 ---
 
@@ -204,7 +204,7 @@ These are decisions or omissions made in code without being formally documented 
 | Schema migrations are unversioned, run every boot | db/seed.py | Open design question — revisit before Phase 2 |
 | Poem visibility via short-code obscurity (not perms) | app.py:1407 | Decisions log — explicit MVP choice |
 | Dual submission backends: legacy JSON + new SQLite | submissions.py, poem_submissions.py | Open design question — consolidate before 1.8 |
-| View-mode fallback chain runs client-side | poem.html JS | Open design question — server should be authoritative for accessibility |
+| ~~View-mode fallback chain runs client-side~~ | ~~poem.html JS~~ | **Resolved Phase 1.12** — resolution moved server-side (cookie + DB pref → `body` class), no JS dependency |
 | Datamuse calls have no graceful degradation | poetry.py | Open design question — handle API outage + rate limiting |
 | `poems.lines_json` schema comment is outdated vs code | db/schema.sql:36 | Bug — fix the comment in a follow-up |
 | Clerk role and PIN admin are independent | app.py:122 (`_is_admin`) | Open design question — needs role-management UI for self-serve admin |

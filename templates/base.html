@@ -17,7 +17,7 @@
   src="https://clerk.poet.horse/npm/@clerk/clerk-js@5/dist/clerk.browser.js"></script>
 {% endif %}
 </head>
-<body>
+<body class="view-{{ view_mode }}{% if view_decorated %} view-decorated{% endif %}">
 <div class="site-nav-bar">
   <nav class="site-nav" id="site-nav">
     <div class="nav-brand">
@@ -40,6 +40,15 @@
       </div>
 
       <div class="nav-right">
+        <details class="mode-menu">
+          <summary class="mode-menu-summary" title="Display mode">&#x2299; {{ view_mode|capitalize }} &#x25BE;</summary>
+          <form class="mode-menu-form" method="post" action="{{ url_for('set_view_mode') }}">
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button class="mode-opt{% if view_mode == 'fancy' %} mode-opt-current{% endif %}"  type="submit" name="mode" value="fancy">Fancy</button>
+            <button class="mode-opt{% if view_mode == 'plain' %} mode-opt-current{% endif %}"  type="submit" name="mode" value="plain">Plain</button>
+            <button class="mode-opt{% if view_mode == 'reader' %} mode-opt-current{% endif %}" type="submit" name="mode" value="reader">Reader</button>
+          </form>
+        </details>
         {% if current_user %}
           <div class="nav-group" data-nav-group>
             <button class="nav-item nav-item-btn nav-username"
@@ -65,6 +74,20 @@
     </div>
   </nav>
 </div>
+
+{% if not view_mode_set and display_surface %}
+<div class="mode-firstrun" role="region" aria-label="Choose a display mode">
+  <span class="mode-firstrun-label">New here? Pick how poet.horse looks &mdash; you can change it anytime.</span>
+  <form class="mode-firstrun-form" method="post" action="{{ url_for('set_view_mode') }}">
+    <input type="hidden" name="next" value="{{ request.path }}">
+    <button class="mode-opt mode-opt-current" type="submit" name="mode" value="fancy">Fancy</button>
+    <button class="mode-opt"                  type="submit" name="mode" value="plain">Plain</button>
+    <button class="mode-opt"                  type="submit" name="mode" value="reader">Reader</button>
+    <button class="mode-firstrun-dismiss" type="submit" name="mode" value="fancy"
+            aria-label="Dismiss &mdash; keep Fancy">&times;</button>
+  </form>
+</div>
+{% endif %}
 
 <div class="fence"></div>
 
@@ -163,18 +186,6 @@
     }
   });
 })();
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  try {
-    var mode = localStorage.getItem('poem-view-mode');
-    if (mode === 'plain' || mode === 'pasture') {
-      document.querySelectorAll('[data-view-mode]:not(.poem-view)').forEach(function(el) {
-        el.dataset.viewMode = mode;
-      });
-    }
-  } catch(e) {}
-});
 </script>
 </body>
 </html>
