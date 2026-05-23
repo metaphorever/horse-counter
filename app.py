@@ -1947,6 +1947,19 @@ def poetry_pasture_horses():
     return jsonify({'ok': True, 'results': horses})
 
 
+@app.route('/poetry/saved-horses', methods=['POST'])
+def poetry_saved_horses():
+    from flask import jsonify
+    user = g.get('current_user')
+    if user is None:
+        return jsonify({'error': 'Sign in to browse your saved horses'}), 401
+    horses = list_saved_horses(user['id'])
+    horses.sort(key=lambda h: (h.get('display') or h['name']).lower())
+    for h in horses:
+        h.setdefault('count', 1)
+    return jsonify({'ok': True, 'results': horses})
+
+
 @app.route('/poetry/short', methods=['POST'])
 def poetry_short():
     from flask import jsonify

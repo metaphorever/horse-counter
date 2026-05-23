@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chip font comparison — Playfair Display vs IM Fell English vs Courier Prime</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Playfair+Display:ital,wght@0,700;1,700&family=Abril+Fatface&family=IM+Fell+English:ital@0;1&family=Playfair+Display+SC:ital,wght@0,400;1,400&display=swap">
+<style>
+:root {
+  --coat-bay-bg: #7a3520;       --coat-bay-fg: #f5ecd7;
+  --coat-black-bg: #1c1c1c;     --coat-black-fg: #e8d5b0;
+  --coat-grey-bg: #7a7a7a;      --coat-grey-fg: #f0ead6;
+  --coat-chestnut-bg: #8b3a1f;  --coat-chestnut-fg: #fae8c8;
+  --coat-palomino-bg: #c8961a;  --coat-palomino-fg: #2a1800;
+  --coat-greywhite-bg: #c8bfaa; --coat-greywhite-fg: #1c1008;
+  --coat-liver-bg: #4a2812;     --coat-liver-fg: #ead8b8;
+  --coat-roan-bg: #8a6a5a;      --coat-roan-fg: #f0e4d0;
+  --grass: #4d7432 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M0 8 L8 0 M4 12 L12 4 M0 20 L4 16 M8 24 L16 16 M0 32 L8 24 M4 36 L12 28 M16 8 L24 0 M20 12 L28 4 M16 20 L20 16 M24 24 L32 16 M16 32 L24 24 M20 36 L28 28 M32 8 L40 0 M36 12 L40 8 M32 20 L36 16 M32 32 L40 24 M36 36 L40 32' stroke='rgba(0,0,0,.13)' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--grass);
+  background-size: 40px 40px;
+  font: 14px/1.6 Georgia, 'Times New Roman', serif;
+  color: #fdf8f0;
+  padding: 40px 24px 80px;
+}
+
+h2 {
+  font: 700 11px 'Courier Prime', monospace;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: rgba(253,248,240,.55);
+  margin: 0 0 6px;
+}
+
+.section-label {
+  font: italic 13px 'IM Fell English', Georgia, serif;
+  color: rgba(253,248,240,.65);
+  margin-bottom: 32px;
+}
+
+/* ── Poem container ──────────────────────────────────────────────────────────── */
+.poem {
+  max-width: 700px;
+  margin: 0 auto 60px;
+}
+
+.poem-title {
+  font: 700 1.9rem/1.15 'Playfair Display', Georgia, serif;
+  color: #fdf8f0;
+  margin-bottom: 8px;
+  text-shadow: 1px 2px 4px rgba(0,0,0,.45);
+}
+.poem-attr {
+  font: 0.9rem 'Playfair Display SC', Georgia, serif;
+  letter-spacing: .08em;
+  color: rgba(253,248,240,.72);
+  margin-bottom: 20px;
+}
+
+.poem-body { padding: 8px 0; }
+.poem-line { line-height: 2.5; margin: 0; }
+
+/* ── Base chip (shared decoration) ──────────────────────────────────────────── */
+.chip {
+  display: inline-block;
+  position: relative;
+  overflow: visible;
+  padding: 5px 10px;
+  margin: 24px 5px 10px;
+  font-weight: 700;
+  text-decoration: none;
+  border: none;
+  border-radius: 6px;
+  vertical-align: baseline;
+  background: var(--bg);
+  color: var(--fg);
+  box-shadow: 2px 2px 3px rgba(0,0,0,.22);
+  text-shadow: none;
+}
+
+/* Head (♞) + legs (gradient stubs) */
+.chip::before {
+  content: '♞';
+  position: absolute;
+  pointer-events: none;
+  left: 0; top: -22px;
+  width: 100%; height: calc(100% + 30px);
+  color: var(--bg);
+  font-size: 34px; line-height: 1;
+  background:
+    linear-gradient(var(--bg), var(--bg))  4px 100% / 2px 7px no-repeat,
+    linear-gradient(var(--bg), var(--bg)) 10px 100% / 2px 7px no-repeat,
+    linear-gradient(var(--bg), var(--bg)) calc(100% - 10px) 100% / 2px 7px no-repeat,
+    linear-gradient(var(--bg), var(--bg)) calc(100% -  4px) 100% / 2px 7px no-repeat;
+}
+/* Tail (∫) */
+.chip::after {
+  content: '∫';
+  position: absolute;
+  pointer-events: none;
+  right: -11px; top: 50%;
+  transform: translateY(-50%) scaleY(-1);
+  color: var(--bg);
+  font-size: 24px; line-height: 1;
+}
+
+/* Reversed — roughly half face the other way */
+.chip.rev::before { left: auto; right: 0; transform: scaleX(-1); }
+.chip.rev::after  { right: auto; left: -11px; transform: translateY(-50%) scaleY(-1) scaleX(-1); }
+
+/* Coat tilts */
+.coat-bay       { --bg: var(--coat-bay-bg);       --fg: var(--coat-bay-fg);       transform: rotate(-1.5deg); }
+.coat-black     { --bg: var(--coat-black-bg);     --fg: var(--coat-black-fg);     transform: rotate( 1.0deg); }
+.coat-grey      { --bg: var(--coat-grey-bg);      --fg: var(--coat-grey-fg);      transform: rotate(-0.7deg); }
+.coat-chestnut  { --bg: var(--coat-chestnut-bg);  --fg: var(--coat-chestnut-fg);  transform: rotate( 1.3deg); }
+.coat-palomino  { --bg: var(--coat-palomino-bg);  --fg: var(--coat-palomino-fg);  transform: rotate(-1.0deg); }
+.coat-greywhite { --bg: var(--coat-greywhite-bg); --fg: var(--coat-greywhite-fg); transform: rotate( 0.5deg); }
+.coat-liver     { --bg: var(--coat-liver-bg);     --fg: var(--coat-liver-fg);     transform: rotate(-1.3deg); }
+.coat-roan      { --bg: var(--coat-roan-bg);      --fg: var(--coat-roan-fg);      transform: rotate( 0.8deg); }
+
+.chip:hover { transform: scale(1.06) !important; box-shadow: 3px 3px 6px rgba(0,0,0,.28); }
+
+/* ── Font option A: Playfair Display SC (small-caps) — slim padding ─────────── */
+.font-playfair-sc-sc {
+  font-family: 'Playfair Display SC', Georgia, serif;
+  font-size: 1.0rem;
+  font-variant: small-caps;
+  letter-spacing: .04em;
+  padding: 3px 10px; /* slimmer than default 5px 10px */
+}
+
+/* ── Font option B: IM Fell English (old-style serif) ───────────────────────── */
+.font-imfell { font-family: 'IM Fell English', Georgia, serif; font-size: 1.0rem; }
+
+/* ── Font option C: Courier Prime (status quo, bigger) ──────────────────────── */
+.font-courier { font-family: 'Courier Prime', 'Courier New', monospace; font-size: 1.05rem; }
+
+/* ── Divider ─────────────────────────────────────────────────────────────────── */
+.divider {
+  border: none;
+  border-top: 1px solid rgba(253,248,240,.18);
+  max-width: 700px;
+  margin: 0 auto 60px;
+}
+
+/* ── Labels at top ───────────────────────────────────────────────────────────── */
+.compare-header {
+  max-width: 700px;
+  margin: 0 auto 48px;
+  font: 14px Georgia, serif;
+  color: rgba(253,248,240,.75);
+  line-height: 1.7;
+}
+.compare-header strong { color: #fdf8f0; }
+</style>
+</head>
+<body>
+
+<div class="compare-header">
+  <strong>Chip font comparison</strong> — same poem, same size (~1.05rem / 16–17px vs current ~13px). Three font options for the horse chips in Fancy mode. The surrounding serif type (title = Playfair Display, body context = Georgia) is shown for reference.
+</div>
+
+<!-- ── Option A: Playfair Display ─────────────────────────────────────────── -->
+<div class="poem">
+  <h2>Option A — Playfair Display SC (small-caps)</h2>
+  <p class="section-label">Small-caps serif — matches the print stylesheet attribution; slim height</p>
+  <div class="poem-title">The Race at the Edge of the World</div>
+  <div class="poem-attr">After Geoffrey Hill</div>
+  <div class="poem-body">
+    <p class="poem-line">
+      <span class="chip font-playfair-sc coat-bay">Northern Dancer</span>
+      <span class="chip font-playfair-sc coat-black rev">Secretariat</span>
+    </p>
+    <p class="poem-line">
+      <span class="chip font-playfair-sc coat-chestnut">Seabiscuit</span>
+      <span class="chip font-playfair-sc coat-palomino rev">Affirmed</span>
+      <span class="chip font-playfair-sc coat-grey">Ruffian</span>
+    </p>
+    <p class="poem-line">
+      <span class="chip font-playfair-sc coat-liver rev">Man o' War</span>
+      <span class="chip font-playfair-sc coat-roan">Citation</span>
+    </p>
+    <p class="poem-line">
+      <span class="chip font-playfair-sc coat-greywhite rev">Phar Lap</span>
+      <span class="chip font-playfair-sc coat-bay">Kelso</span>
+      <span class="chip font-playfair-sc coat-black rev">Forego</span>
+    </p>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ── Option B: IM Fell English ─────────────────────────────────────────── -->
+<div class="poem">
+  <h2>Option B — IM Fell English</h2>
+  <p class="section-label">Old-style serif — rustic, charming, same woodcut register as Reader mode</p>
+  <div class="poem-title">The Race at the Edge of the World</div>
+  <div class="poem-attr">After Geoffrey Hill</div>
+  <div class="poem-body">
+    <p class="poem-line">
+      <span class="chip font-imfell coat-bay">Northern Dancer</span>
+      <span class="chip font-imfell coat-black rev">Secretariat</span>
+    </p>
+    <p class="poem-line">
+      <span class="chip font-imfell coat-chestnut">Seabiscuit</span>
+      <span class="chip font-imfell coat-palomino rev">Affirmed</span>
+      <span class="chip font-imfell coat-grey">Ruffian</span>
+    </p>
+    <p class="poem-line">
+      <span class="chip font-imfell coat-liver rev">Man o' War</span>
+      <span class="chip font-imfell coat-roan">Citation</span>
+    </p>
+    <p class="poem-line">
+      <span class="chip font-imfell coat-greywhite rev">Phar Lap</span>
+      <span class="chip font-imfell coat-bay">Kelso</span>
+      <span class="chip font-imfell coat-black rev">Forego</span>
+    </p>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ── Option C: Courier Prime (bigger) ───────────────────────────────────── -->
+<div class="poem">
+  <h2>Option C — Courier Prime (current font, enlarged)</h2>
+  <p class="section-label">Deliberate contrast — monospace chips as a statement against the surrounding serifs</p>
+  <div class="poem-title">The Race at the Edge of the World</div>
+  <div class="poem-attr">After Geoffrey Hill</div>
+  <div class="poem-body">
+    <p class="poem-line">
+      <span class="chip font-courier coat-bay">Northern Dancer</span>
+      <span class="chip font-courier coat-black rev">Secretariat</span>
+    </p>
+    <p class="poem-line">
+      <span class="chip font-courier coat-chestnut">Seabiscuit</span>
+      <span class="chip font-courier coat-palomino rev">Affirmed</span>
+      <span class="chip font-courier coat-grey">Ruffian</span>
+    </p>
+    <p class="poem-line">
+      <span class="chip font-courier coat-liver rev">Man o' War</span>
+      <span class="chip font-courier coat-roan">Citation</span>
+    </p>
+    <p class="poem-line">
+      <span class="chip font-courier coat-greywhite rev">Phar Lap</span>
+      <span class="chip font-courier coat-bay">Kelso</span>
+      <span class="chip font-courier coat-black rev">Forego</span>
+    </p>
+  </div>
+</div>
+
+</body>
+</html>

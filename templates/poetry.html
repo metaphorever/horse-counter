@@ -45,6 +45,7 @@
           <button class="qp-btn" onclick="doShortNames()">Short names</button>
           <button class="qp-btn" id="random-btn" onclick="doRandom()">Random</button>
           {% if current_user %}<button class="qp-btn" id="pasture-btn" onclick="doPastureHorses()">My pasture</button>{% else %}<button class="qp-btn qp-btn-signin" disabled title="Sign in to load your pasture">My pasture</button>{% endif %}
+          {% if current_user %}<button class="qp-btn" id="saved-horses-btn" onclick="doSavedHorses()">Saved horses</button>{% endif %}
         </div>
         <div id="search-mode" class="search-mode"></div>
         <div id="search-meta" class="search-meta"></div>
@@ -92,15 +93,9 @@
 
     <div class="panel poem-panel">
       <div class="poem-head">
-        <h2>Poem</h2>
-        <div class="poem-actions">
-          <button class="btn-sec" onclick="clearPoem()">Clear Poem</button>
-          {% if current_user %}
-          <button class="btn-sec" id="edit-details-btn" onclick="openEditDetails()">Edit Details</button>
-          {% else %}
-          <button class="btn-sec btn-signin" disabled title="Sign in to name and save your draft">Edit Details</button>
-          {% endif %}
-          <button class="btn-primary" id="post-btn" onclick="openModal()" disabled>Post Poem</button>
+        <h3>Poem</h3>
+        <div class="stable-controls">
+          <button class="clear-btn" onclick="clearPoem()">Clear Poem</button>
         </div>
       </div>
 
@@ -117,6 +112,15 @@
         <span class="draft-strip-label"><a href="/sign-in" class="draft-strip-signin-link">Sign in</a> to save your work as a draft</span>
       </div>
       {% endif %}
+
+      <div class="poem-actions poem-actions-footer">
+        {% if current_user %}
+        <button class="btn-sec" id="edit-details-btn" onclick="openEditDetails()">Edit Details</button>
+        {% else %}
+        <button class="btn-sec btn-signin" disabled title="Sign in to name and save your draft">Edit Details</button>
+        {% endif %}
+        <button class="btn-primary" id="post-btn" onclick="openModal()" disabled>Post Poem</button>
+      </div>
 
       <div class="poem-footer">
         <span class="poem-stat"><strong id="stat-count">0</strong> horses</span>
@@ -322,8 +326,6 @@ const COATS = [
 function nameHash(name){ return name.split('').reduce((s,c)=>s+c.charCodeAt(0),0); }
 function tileStyle(name){
   const c = COATS[nameHash(name) % COATS.length];
-  // Editor chips are utilitarian — no head/tail/legs, so no `rev` mirroring.
-  // Pasture-mode renderers (1.6+) decorate chips and can compute their own rev.
   return { style:`--bg:${c.bg};--fg:${c.fg}`, cls: '' };
 }
 
@@ -948,6 +950,26 @@ async function doPastureHorses(){
   document.getElementById('search-mode').textContent = 'My pasture';
   const d = await apiPost('/poetry/pasture-horses');
   if(btn){ btn.disabled = false; btn.textContent = 'My pasture'; }
+  if(!d) return;
+  if(d.error){ document.getElementById('search-error').textContent = d.error; return; }
+  showVia        = false;
+  searchResults  = d.results;
+  searchCapped   = false;
+  searchPage     = 0;
+  expandedGroups = new Set();
+  renderSearchPage();
+}
+
+async function doSavedHorses(){
+  const btn = document.getElementById('saved-horses-btn');
+  if(btn){ btn.disabled = true; btn.textContent = '…'; }
+  document.getElementById('search-meta').textContent = 'Loading…';
+  document.getElementById('search-error').textContent = '';
+  document.getElementById('search-results').innerHTML = '';
+  document.getElementById('search-pager').style.display = 'none';
+  document.getElementById('search-mode').textContent = 'Saved horses';
+  const d = await apiPost('/poetry/saved-horses');
+  if(btn){ btn.disabled = false; btn.textContent = 'Saved horses'; }
   if(!d) return;
   if(d.error){ document.getElementById('search-error').textContent = d.error; return; }
   showVia        = false;
