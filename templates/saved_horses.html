@@ -8,7 +8,7 @@
   <p class="page-desc">Horses you've given the blue ribbon. Private — only you can see this.</p>
 
   {% if horses %}
-  <div class="collection-chips" id="saved-horses-chips" data-view-mode="pasture">
+  <div class="collection-chips" id="saved-horses-chips">
     {% for h in horses %}
     <div class="collection-chip-wrap" data-name="{{ h.name }}" data-display="{{ h.display }}" data-url="{{ h.url or '' }}">
       {{ render_chip(h) }}

@@ -31,7 +31,7 @@
   <section class="profile-bio-section">
     {% if bio_poem %}
       <h2 class="profile-section-head">Bio</h2>
-      <div class="profile-bio-poem" data-view-mode="pasture">
+      <div class="profile-bio-poem">
         {{ render_poem(bio_poem.lines) }}
         <p class="bio-poem-link"><a href="{{ url_for('poem_permalink', short_code=bio_poem.short_code) }}">View poem →</a></p>
       </div>

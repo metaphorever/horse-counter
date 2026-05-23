@@ -254,6 +254,67 @@ h2 {
 .nav-sub-item:hover, .nav-sub-item:focus-visible { background: #f0ead8; color: #2d4a10; outline: none; }
 .nav-sub-sep { border-top: 1px solid #e0d5b8; margin: 4px 0; }
 
+/* ───── Display-mode picker (Phase 1.12) ──────────────────────────────────────
+   Collapsed control is a native <details> in the nav (works with no JS); the
+   first-run strip sits under the nav on display surfaces until the visitor
+   picks or dismisses. Provisional styling — refined in the pre-beta style pass. */
+.mode-menu { position: relative; }
+.mode-menu-summary {
+  font: 12px 'Courier Prime','Courier New',monospace;
+  color: #5a7a2a; cursor: pointer; padding: 5px 7px; border-radius: 2px;
+  white-space: nowrap; list-style: none; user-select: none;
+}
+.mode-menu-summary::-webkit-details-marker { display: none; }
+.mode-menu-summary::marker { content: ''; }
+.mode-menu-summary:hover,
+.mode-menu[open] .mode-menu-summary { background: #f0ead8; color: #2d4a10; }
+.mode-menu-form {
+  position: absolute; top: calc(100% + 4px); right: 0; z-index: 300;
+  display: flex; flex-direction: column;
+  background: #faf5e9; border: 1px solid #c4a96b; border-radius: 2px;
+  box-shadow: 2px 4px 10px rgba(0,0,0,.13); min-width: 130px; padding: 4px 0;
+}
+.mode-opt {
+  display: block; width: 100%; text-align: left;
+  padding: 6px 14px; font: 12px 'Courier Prime','Courier New',monospace;
+  color: #5a7a2a; background: none; border: none; cursor: pointer; white-space: nowrap;
+}
+.mode-opt:hover, .mode-opt:focus-visible { background: #f0ead8; color: #2d4a10; outline: none; }
+.mode-opt-current { font-weight: 700; color: #2d4a10; }
+.mode-opt-current::before { content: '\2713\00A0'; }
+
+/* First-run strip */
+.mode-firstrun {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 6px 12px; padding: 8px 14px;
+  background: #f0ead8; border-bottom: 1px solid #c4a96b;
+  font: 12px 'Courier Prime','Courier New',monospace; color: #5a4a2a;
+}
+.mode-firstrun-label { font-weight: 700; }
+.mode-firstrun-form  { display: inline-flex; align-items: center; gap: 4px; }
+.mode-firstrun .mode-opt {
+  width: auto; border: 1px solid #c4a96b; border-radius: 2px; padding: 4px 11px;
+}
+.mode-firstrun .mode-opt-current {
+  background: #5a7a2a; color: #fdf8f0; border-color: #5a7a2a;
+}
+.mode-firstrun .mode-opt-current::before { content: none; }
+.mode-firstrun-dismiss {
+  background: none; border: none; cursor: pointer;
+  font-size: 16px; line-height: 1; color: #8a7050; padding: 2px 6px; margin-left: 4px;
+}
+.mode-firstrun-dismiss:hover { color: #2d2316; }
+
+/* Account-preferences mirror (profile edit) — inline row, not a dropdown */
+.mode-prefs-form { display: flex; flex-wrap: wrap; gap: 6px; }
+.mode-prefs-form .mode-opt {
+  width: auto; border: 1px solid #c4a96b; border-radius: 2px; padding: 5px 14px;
+}
+.mode-prefs-form .mode-opt-current {
+  background: #5a7a2a; color: #fdf8f0; border-color: #5a7a2a;
+}
+.mode-prefs-form .mode-opt-current::before { content: none; }
+
 /* Hamburger (hidden on desktop) */
 .nav-hamburger {
   display: none;
@@ -287,6 +348,8 @@ h2 {
   .nav-sub    { position: static; box-shadow: none; border: none; border-radius: 0; background: transparent; padding: 0 0 2px 12px; min-width: 0; }
   .nav-group.open .nav-sub { display: flex; flex-direction: column; }
   .nav-signin { padding: 5px 7px; border: none; }
+  .mode-menu  { width: 100%; }
+  .mode-menu-form { position: static; box-shadow: none; border: none; background: transparent; padding: 0 0 2px 12px; min-width: 0; }
 }
 
 /* ── Nav links (small, inside box — legacy, used on some inner pages) ── */
@@ -941,11 +1004,9 @@ body.dragging .drop-zones {
    who navigate to it with their AT). */
 .chip-menu:focus { outline: none; }
 
-/* ───── Poem permalink renderer (1.5) ─────────────────────────────────────── */
-/* Plain mode is the default and the only mode 1.5 styles. Pasture mode CSS
-   arrives in 1.6 (decorated chips, grass background, etc.). Selectors here
-   stay scoped to `.poem-view` so 1.6 can layer pasture-only overrides via
-   `[data-view-mode='pasture']`. */
+/* ───── Poem permalink renderer ───────────────────────────────────────────── */
+/* Base permalink styling — the Plain / Reader baseline. Fancy mode layers
+   decoration on top via the server-emitted `body.view-fancy` class (1.12). */
 .poem-view {
   max-width: 720px; margin: 24px auto; padding: 24px 28px;
   background: #fdf8f0; border: 2px solid #c4a96b; border-radius: 2px;
@@ -969,10 +1030,6 @@ body.dragging .drop-zones {
 }
 .poem-attr-link  { color: #5a3a18; text-decoration: underline; text-decoration-style: dotted; }
 .poem-after-link { color: #5a3a18; text-decoration: underline; text-decoration-style: dotted; }
-.poem-view-controls { margin-top: 10px; }
-.poem-view-toggle {
-  font: 12px 'Courier Prime','Courier New',monospace;
-}
 
 .poem-view-body { padding: 8px 0 4px; }
 .poem-line-out {
@@ -1026,11 +1083,11 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
   .poem-tag-cat { min-width: auto; }
 }
 
-/* ───── Poem permalink — pasture mode (1.6) ───────────────────────────────────
+/* ───── Fancy mode skin (decoration ported from 1.6 pasture mode) ─────────────
    Ported from tumblr-theme.html — same chip decoration (legs/tail via pseudo-
-   elements, coat colours via class, famous shimmer). The plain-mode rules
-   above are untouched; everything below is gated on
-   `[data-view-mode='pasture']` so toggling is a one-attribute flip.
+   elements, coat colours via class, famous shimmer). The base rules above are
+   the Plain / Reader baseline; everything below is gated on the server-emitted
+   site-wide `body.view-fancy` class (1.12).
 
    Coat-class variables live in :root so the editor and other surfaces can
    reuse them when they pick up the styling. */
@@ -1046,47 +1103,56 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
   --coat-roan-bg: #8a6a5a;      --coat-roan-fg: #f0e4d0;
 }
 
-[data-view-mode='pasture'] {
+/* Grass backdrop + cream note-box panels — shared by Fancy and Plain (the
+   `view-decorated` modes). Reader has no field. Fancy floats decorated chips on
+   the grass; Plain shows functional colour chips on the same backdrop. The
+   gated Fancy "text floats on grass" treatment (step 4) will diverge from here. */
+body.view-decorated .poem-view,
+body.view-decorated .collection-chips,
+body.view-decorated .profile-bio-poem,
+body.view-decorated .queue-poem {
   background-color: #4d7432;
   background-image: url('/static/grass.svg');
   background-size: 40px 40px;
   border-color: #6b4820;
   color: #fdf8f0;
 }
-[data-view-mode='pasture'] .poem-view-head,
-[data-view-mode='pasture'] .poem-view-tags,
-[data-view-mode='pasture'] .poem-view-footer {
+body.view-decorated .poem-view-head,
+body.view-decorated .poem-view-tags,
+body.view-decorated .poem-view-footer {
   background: rgba(253, 248, 240, 0.92);
   border-radius: 2px;
   padding: 14px 16px;
   border-color: transparent;
   color: #2d2316;
 }
-[data-view-mode='pasture'] .poem-view-head {
+body.view-decorated .poem-view-head {
   margin-bottom: 18px;
 }
-[data-view-mode='pasture'] .poem-view-tags { margin-top: 18px; }
-[data-view-mode='pasture'] .poem-view-footer { margin-top: 18px; }
-[data-view-mode='pasture'] .poem-view-title,
-[data-view-mode='pasture'] .poem-view-attribution,
-[data-view-mode='pasture'] .poem-view-footer,
-[data-view-mode='pasture'] .poem-view-footer code {
+body.view-decorated .poem-view-tags { margin-top: 18px; }
+body.view-decorated .poem-view-footer { margin-top: 18px; }
+body.view-decorated .poem-view-title,
+body.view-decorated .poem-view-attribution,
+body.view-decorated .poem-view-footer,
+body.view-decorated .poem-view-footer code {
   color: #2d2316;
 }
-[data-view-mode='pasture'] .poem-view-body {
+body.view-fancy .poem-view-body {
   /* Extra vertical room so chip heads + legs don't crash into the head/tag
      blocks. The decoration extends 20px above and 6px below each chip. */
   padding: 26px 0 14px;
 }
-[data-view-mode='pasture'] .poem-line-out {
-  line-height: 2.4;
+body.view-plain .poem-view-body { padding: 12px 0 8px; }
+body.view-decorated .poem-line-out {
   color: #fdf8f0;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
   padding-left: 0; text-indent: 0;
 }
+body.view-fancy .poem-line-out { line-height: 2.4; }
+body.view-plain .poem-line-out { line-height: 2.0; }
 
-/* ── Decorated chips — pasture mode only ─────────────────────────────────── */
-[data-view-mode='pasture'] .poem-horse {
+/* ── Decorated chips — Fancy mode (legs / tail / head, scattered tilt) ─────── */
+body.view-fancy .poem-horse {
   display: inline-block;
   position: relative;
   overflow: visible;
@@ -1103,19 +1169,28 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
   text-shadow: none;
   transition: transform .1s, box-shadow .1s;
 }
-/* Coat-class wiring — same hash buckets as matcher._tile_appearance */
-[data-view-mode='pasture'] .coat-bay       { --bg: var(--coat-bay-bg);       --fg: var(--coat-bay-fg);       transform: rotate(-1.5deg); }
-[data-view-mode='pasture'] .coat-black     { --bg: var(--coat-black-bg);     --fg: var(--coat-black-fg);     transform: rotate( 1.0deg); }
-[data-view-mode='pasture'] .coat-grey      { --bg: var(--coat-grey-bg);      --fg: var(--coat-grey-fg);      transform: rotate(-0.7deg); }
-[data-view-mode='pasture'] .coat-chestnut  { --bg: var(--coat-chestnut-bg);  --fg: var(--coat-chestnut-fg);  transform: rotate( 1.3deg); }
-[data-view-mode='pasture'] .coat-palomino  { --bg: var(--coat-palomino-bg);  --fg: var(--coat-palomino-fg);  transform: rotate(-1.0deg); }
-[data-view-mode='pasture'] .coat-greywhite { --bg: var(--coat-greywhite-bg); --fg: var(--coat-greywhite-fg); transform: rotate( 0.5deg); }
-[data-view-mode='pasture'] .coat-liver     { --bg: var(--coat-liver-bg);     --fg: var(--coat-liver-fg);     transform: rotate(-1.3deg); }
-[data-view-mode='pasture'] .coat-roan      { --bg: var(--coat-roan-bg);      --fg: var(--coat-roan-fg);      transform: rotate( 0.8deg); }
+/* Coat-class wiring — same hash buckets as matcher._tile_appearance. The
+   --bg/--fg pair is shared by both decorated modes; only Fancy adds the tilt. */
+body.view-decorated .coat-bay       { --bg: var(--coat-bay-bg);       --fg: var(--coat-bay-fg); }
+body.view-decorated .coat-black     { --bg: var(--coat-black-bg);     --fg: var(--coat-black-fg); }
+body.view-decorated .coat-grey      { --bg: var(--coat-grey-bg);      --fg: var(--coat-grey-fg); }
+body.view-decorated .coat-chestnut  { --bg: var(--coat-chestnut-bg);  --fg: var(--coat-chestnut-fg); }
+body.view-decorated .coat-palomino  { --bg: var(--coat-palomino-bg);  --fg: var(--coat-palomino-fg); }
+body.view-decorated .coat-greywhite { --bg: var(--coat-greywhite-bg); --fg: var(--coat-greywhite-fg); }
+body.view-decorated .coat-liver     { --bg: var(--coat-liver-bg);     --fg: var(--coat-liver-fg); }
+body.view-decorated .coat-roan      { --bg: var(--coat-roan-bg);      --fg: var(--coat-roan-fg); }
+body.view-fancy .coat-bay       { transform: rotate(-1.5deg); }
+body.view-fancy .coat-black     { transform: rotate( 1.0deg); }
+body.view-fancy .coat-grey      { transform: rotate(-0.7deg); }
+body.view-fancy .coat-chestnut  { transform: rotate( 1.3deg); }
+body.view-fancy .coat-palomino  { transform: rotate(-1.0deg); }
+body.view-fancy .coat-greywhite { transform: rotate( 0.5deg); }
+body.view-fancy .coat-liver     { transform: rotate(-1.3deg); }
+body.view-fancy .coat-roan      { transform: rotate( 0.8deg); }
 
 /* ::before draws the head glyph (top) plus four leg stubs (bottom) using
    background gradients. Single pseudo-element keeps the markup clean. */
-[data-view-mode='pasture'] .poem-horse::before {
+body.view-fancy .poem-horse::before {
   content: '♞';
   position: absolute;
   pointer-events: none;
@@ -1130,7 +1205,7 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
     linear-gradient(var(--bg), var(--bg)) calc(100% -  4px) 100% / 2px 6px no-repeat;
 }
 /* ::after draws the tail off the right side. */
-[data-view-mode='pasture'] .poem-horse::after {
+body.view-fancy .poem-horse::after {
   content: '∫';
   position: absolute;
   pointer-events: none;
@@ -1141,14 +1216,14 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
 }
 /* Reversed direction — name-hash parity puts roughly half of horses facing
    the other way so a line of them doesn't look like a conga line. */
-[data-view-mode='pasture'] .poem-horse.rev::before {
+body.view-fancy .poem-horse.rev::before {
   left: auto; right: 0; transform: scaleX(-1);
 }
-[data-view-mode='pasture'] .poem-horse.rev::after {
+body.view-fancy .poem-horse.rev::after {
   right: auto; left: -10px;
   transform: translateY(-50%) scaleY(-1) scaleX(-1);
 }
-[data-view-mode='pasture'] .poem-horse:hover {
+body.view-fancy .poem-horse:hover {
   transform: scale(1.06) !important;
   box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.28);
 }
@@ -1158,7 +1233,7 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
 }
-[data-view-mode='pasture'] .poem-horse.famous-horse {
+body.view-decorated .poem-horse.famous-horse {
   background-color: var(--bg);
   background-image: linear-gradient(
     105deg,
@@ -1173,24 +1248,41 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
     0 0 0 1.5px rgba(200, 160, 0, 0.55);
 }
 
-/* Reduced-motion: keep the gold-rim but drop the shimmer animation, and
-   stop the rotational tilt on each chip. The chip stays decorated — only
-   the motion is removed. */
+/* ── Functional colour chips — Plain mode (coat colours, no body parts, no tilt) */
+body.view-plain .poem-horse {
+  display: inline-block;
+  padding: 4px 10px;
+  margin: 3px 2px;
+  font: 700 0.98em 'Courier Prime','Courier New',monospace;
+  text-decoration: none;
+  border: none;
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: none;
+}
+body.view-plain a.poem-horse:hover { filter: brightness(1.08); }
+
+/* Reduced-motion: drop the shimmer animation everywhere it runs, and stop the
+   Fancy rotational tilt. Chips stay decorated — only the motion is removed.
+   (Motion is decoupled from mode: a reduced-motion visitor keeps their chosen
+   mode, just without movement.) */
 @media (prefers-reduced-motion: reduce) {
-  [data-view-mode='pasture'] .poem-horse {
+  body.view-fancy .poem-horse {
     transform: none;
     transition: none;
   }
-  [data-view-mode='pasture'] .poem-horse.famous-horse {
+  body.view-decorated .poem-horse.famous-horse {
     animation: none;
     background-image: none;
   }
 }
 
-/* Mobile tightening — pasture chips need a touch more line-height to keep
-   the head glyphs above the previous line's leg stubs. */
+/* Mobile tightening — Fancy chips need a touch more line-height to keep the
+   head glyphs above the previous line's leg stubs. */
 @media (max-width: 520px) {
-  [data-view-mode='pasture'] .poem-line-out { line-height: 2.6; }
+  body.view-fancy .poem-line-out { line-height: 2.6; }
 }
 
 /* Tag picker — inside the publish modal */
@@ -1308,52 +1400,6 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
 .modal-name-row   { display: flex; gap: 6px; margin-bottom: 4px; }
 .modal-name-row input { flex: 1; margin: 0; }
 .text-muted       { color: #aaa; }
-
-/* ── Poem permalink (pasture view) ── */
-.poem-permalink-box { margin-top: 32px; }
-.poem-permalink-title {
-  font: 700 1.5rem/1.25 'Playfair Display', Georgia, serif;
-  margin-bottom: 8px;
-}
-.poem-permalink-meta {
-  font: 12px 'Courier Prime', 'Courier New', monospace;
-  color: #8a7050;
-  margin-bottom: 20px;
-}
-.poem-permalink-meta a { color: #5a7a2a; }
-
-.poem-pasture-view {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 20px 10px 24px;
-  background: #f0ead8;
-  border-radius: 2px;
-  border: 1px solid #d9c88f;
-}
-.pasture-line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 16px;
-  align-items: flex-end;
-  padding-top: 10px;
-}
-/* Pasture chips are interactive — override cursor from horse-tile */
-.pasture-chip {
-  cursor: pointer;
-  border: none;
-  background: none;
-  outline-offset: 3px;
-}
-.pasture-chip:hover   { filter: brightness(1.08); }
-.pasture-chip:focus-visible { outline: 3px solid #5a7a2a; }
-/* Slight scattered angles for the fridge-magnet feel */
-.pasture-line:nth-child(5n+1) .pasture-chip:nth-child(3n+1) { transform: rotate(-1.6deg); }
-.pasture-line:nth-child(5n+1) .pasture-chip:nth-child(3n+2) { transform: rotate(0.9deg);  }
-.pasture-line:nth-child(5n+2) .pasture-chip:nth-child(3n+1) { transform: rotate(1.4deg);  }
-.pasture-line:nth-child(5n+2) .pasture-chip:nth-child(3n+2) { transform: rotate(-0.7deg); }
-.pasture-line:nth-child(5n+3) .pasture-chip:nth-child(3n+1) { transform: rotate(-1.2deg); }
-.pasture-line:nth-child(5n+3) .pasture-chip:nth-child(3n+2) { transform: rotate(1.8deg);  }
 
 /* ── Horse popover ── */
 .horse-popover {
