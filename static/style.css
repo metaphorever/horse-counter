@@ -1110,40 +1110,112 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
   --coat-roan-bg: #8a6a5a;      --coat-roan-fg: #f0e4d0;
 }
 
-/* Grass backdrop + cream note-box panels — shared by Fancy and Plain (the
-   `view-decorated` modes). Reader has no field. Fancy floats decorated chips on
-   the grass; Plain shows functional colour chips on the same backdrop. The
-   gated Fancy "text floats on grass" treatment (step 4) will diverge from here. */
-body.view-decorated .poem-view,
-body.view-decorated .collection-chips,
-body.view-decorated .profile-bio-poem,
-body.view-decorated .queue-poem {
+/* ── Plain: grass-backdrop container + cream note-box panels ──────────────────
+   Plain keeps the field as a decorative backdrop *on each container*, with the
+   header / tags / footer rendered as pinned cream note-boxes. Fancy diverges
+   below — there the body-level grass field becomes the surface and content
+   floats directly on it. (Coat colours, the famous shimmer, and the poem-body
+   line treatment stay shared via `view-decorated` further down.) */
+body.view-plain .poem-view,
+body.view-plain .collection-chips,
+body.view-plain .profile-bio-poem,
+body.view-plain .queue-poem {
   background-color: #4d7432;
   background-image: url('/static/grass.svg');
   background-size: 40px 40px;
   border-color: #6b4820;
   color: #fdf8f0;
 }
-body.view-decorated .poem-view-head,
-body.view-decorated .poem-view-tags,
-body.view-decorated .poem-view-footer {
+body.view-plain .poem-view-head,
+body.view-plain .poem-view-tags,
+body.view-plain .poem-view-footer {
   background: rgba(253, 248, 240, 0.92);
   border-radius: 2px;
   padding: 14px 16px;
   border-color: transparent;
   color: #2d2316;
 }
-body.view-decorated .poem-view-head {
-  margin-bottom: 18px;
-}
-body.view-decorated .poem-view-tags { margin-top: 18px; }
-body.view-decorated .poem-view-footer { margin-top: 18px; }
-body.view-decorated .poem-view-title,
-body.view-decorated .poem-view-attribution,
-body.view-decorated .poem-view-footer,
-body.view-decorated .poem-view-footer code {
+body.view-plain .poem-view-head { margin-bottom: 18px; }
+body.view-plain .poem-view-tags { margin-top: 18px; }
+body.view-plain .poem-view-footer { margin-top: 18px; }
+body.view-plain .poem-view-title,
+body.view-plain .poem-view-attribution,
+body.view-plain .poem-view-footer,
+body.view-plain .poem-view-footer code {
   color: #2d2316;
 }
+
+/* ── Fancy (1.12 step 4): the field IS the surface ───────────────────────────
+   The site already paints the grass field on <body> (the .container is
+   transparent), so in Fancy the display containers simply go transparent and
+   the poem floats directly on that field — this is also the bio-poem
+   "transparent-to-grass" fix. Variant C "ink-on-field": the title + poem float
+   BARE (cream, dark halo for legibility, the stars of the page); the
+   utilitarian clusters (tags, footer) become INVERTED NOTES — dark fill, warm
+   tan text, framed by a gold hairline. Non-horse text is de-emphasised. */
+body.view-fancy .poem-view,
+body.view-fancy .collection-chips,
+body.view-fancy .profile-bio-poem,
+body.view-fancy .queue-poem {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: #fdf8f0;
+}
+/* header floats bare — no panel */
+body.view-fancy .poem-view-head {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-bottom: 18px;
+}
+body.view-fancy .poem-view-title {
+  color: #fdf8f0;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .55), 0 2px 6px rgba(0, 0, 0, .5);
+}
+body.view-fancy .poem-view-title-after { color: rgba(253, 248, 240, .78); }
+/* attribution de-emphasised: warm tan, letter-spaced, haloed for legibility */
+body.view-fancy .poem-view-attribution {
+  color: #e8d5b0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
+  letter-spacing: .03em;
+}
+body.view-fancy .poem-attr-link,
+body.view-fancy .poem-after-link { color: #f0e0b8; }
+/* tags + footer: inverted notes with a gold hairline (the contrasting edge) */
+body.view-fancy .poem-view-tags,
+body.view-fancy .poem-view-footer {
+  background: rgba(38, 29, 18, 0.86);
+  border: 1px solid rgba(196, 169, 107, 0.95);
+  border-radius: 3px;
+  color: #e8d5b0;
+}
+body.view-fancy .poem-view-tags   { margin-top: 18px; padding: 12px 16px; }
+body.view-fancy .poem-view-footer { margin-top: 18px; padding: 9px 14px; }
+body.view-fancy .poem-tag-cat { color: rgba(232, 213, 176, .72); }
+body.view-fancy .poem-tag {
+  color: #e8d5b0;
+  background: transparent;
+  border-color: rgba(196, 169, 107, .6);
+}
+body.view-fancy .poem-tag:hover {
+  background: rgba(196, 169, 107, .18);
+  border-color: rgba(196, 169, 107, .95);
+  color: #fdf8f0;
+}
+body.view-fancy .poem-view-footer code { color: #e8d5b0; }
+body.view-fancy .poem-export-btn {
+  color: #e8d5b0;
+  border-color: rgba(196, 169, 107, .55);
+}
+body.view-fancy .poem-export-btn:hover:not(:disabled) {
+  color: #fdf8f0;
+  border-color: rgba(196, 169, 107, .95);
+}
+/* admin tag editing carries its own light surfaces, so it stays legible on the
+   dark note (admin guts stay utilitarian even in Fancy); only the bare hint text
+   needs lightening so "none applied" reads against the dark fill. */
+body.view-fancy .admin-hint { color: #cbb98a; }
 body.view-fancy .poem-view-body {
   /* Extra vertical room so chip heads + legs don't crash into the head/tag
      blocks. The decoration extends 20px above and 6px below each chip. */
@@ -1767,9 +1839,8 @@ body.view-plain a.poem-horse:hover { filter: brightness(1.08); }
 .profile-section-head { font: 700 12px 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .05em; color: #6b5430; margin: 0 0 10px; }
 .profile-bio-section  { margin-bottom: 28px; }
 .profile-bio-poem     { background: #f5eedc; border: 1px solid #c4a96b; border-radius: 3px; padding: 14px 18px; margin-bottom: 8px; }
-.bio-line             { font: 15px/1.8 Georgia,serif; margin: 0; }
-.bio-line .horse-chip { font: inherit; color: #2d2316; text-decoration: none; }
-.bio-line .horse-chip:hover { text-decoration: underline; }
+/* (.bio-line / .horse-chip rules removed 1.12 step 4 — the bio poem renders via
+   the render_poem macro now (.poem-line-out / .poem-horse), so those were dead.) */
 .bio-poem-link        { font: 12px 'Courier Prime','Courier New',monospace; margin: 8px 0 0; }
 .bio-poem-link a      { color: #3a6b1a; }
 .profile-no-bio       { font: 14px Georgia,serif; color: #a08060; }
