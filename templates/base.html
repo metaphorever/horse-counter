@@ -164,5 +164,17 @@
   });
 })();
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    var mode = localStorage.getItem('poem-view-mode');
+    if (mode === 'plain' || mode === 'pasture') {
+      document.querySelectorAll('[data-view-mode]:not(.poem-view)').forEach(function(el) {
+        el.dataset.viewMode = mode;
+      });
+    }
+  } catch(e) {}
+});
+</script>
 </body>
 </html>
