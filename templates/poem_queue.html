@@ -10,8 +10,8 @@
 .queue-stat  { font-size: 13px; color: #7a6a3a; }
 .queue-date  { font-size: 12px; color: #9a8a5a; }
 .queue-preview-link { font-size: 13px; color: #5a7a2a; white-space: nowrap; }
-.queue-poem  { margin: 10px 0 14px; padding: 10px 14px; background: #fff8e8; border-left: 3px solid #d4c490; border-radius: 3px; }
-.queue-poem-line { margin: 2px 0; line-height: 1.9; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.queue-poem  { margin: 10px 0 14px; padding: 26px 14px 14px; background: #fff8e8; border-left: 3px solid #d4c490; border-radius: 3px; }
+.queue-poem-line { margin: 2px 0; line-height: 2.4; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .queue-tag-chips { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; min-height: 28px; }
 .queue-chips-list { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .queue-tag-chip { display: inline-flex; align-items: center; gap: 3px; background: #eef5e0; border: 1px solid #b0cc80; border-radius: 12px; padding: 2px 8px 2px 10px; font-size: 13px; color: #3a5a1a; }
@@ -67,7 +67,7 @@
       <a class="queue-preview-link" href="/p/{{ sub.short_code }}" target="_blank">Full preview →</a>
     </div>
 
-    <div class="queue-poem">
+    <div class="queue-poem" data-view-mode="pasture">
       {{ render_poem(sub.lines, line_class='queue-poem-line', linked=false) }}
     </div>
 
