@@ -299,11 +299,18 @@ h2 {
   background: #5a7a2a; color: #fdf8f0; border-color: #5a7a2a;
 }
 .mode-firstrun .mode-opt-current::before { content: none; }
+.mode-firstrun-save {
+  font: 700 12px 'Courier Prime','Courier New',monospace;
+  color: #fdf8f0; background: #5a7a2a; border: 1px solid #5a7a2a; border-radius: 2px;
+  padding: 4px 12px; cursor: pointer; margin-left: 6px;
+}
+.mode-firstrun-save:hover { background: #2d4a10; }
 .mode-firstrun-dismiss {
   background: none; border: none; cursor: pointer;
-  font-size: 16px; line-height: 1; color: #8a7050; padding: 2px 6px; margin-left: 4px;
+  font-size: 16px; line-height: 1; color: #8a7050; padding: 2px 6px; margin-left: 2px;
 }
 .mode-firstrun-dismiss:hover { color: #2d2316; }
+.mode-firstrun-msg { justify-content: center; font-weight: 400; color: #5a4a2a; }
 
 /* Account-preferences mirror (profile edit) — inline row, not a dropdown */
 .mode-prefs-form { display: flex; flex-wrap: wrap; gap: 6px; }

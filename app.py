@@ -219,23 +219,35 @@ VIEW_MODES        = ('fancy', 'plain', 'reader')
 DEFAULT_VIEW_MODE = 'fancy'
 
 
-def resolve_view_mode() -> tuple[str, bool]:
-    """Resolve the site-wide display mode for this request.
+def resolve_view() -> tuple[str, bool]:
+    """Resolve (display_mode, picker_decided) for this request.
 
-    Precedence: signed-in user preference -> view_mode cookie -> default.
-    Returns (mode, is_set); is_set is False only when nothing was stored and we
-    fell back to the default — the fresh-visitor signal the first-run picker
-    keys off (absence of the cookie IS the signal).
+    Mode precedence: signed-in pref -> view_mode cookie -> default fancy.
+
+    `decided` is a *separate* signal from the active mode: whether the visitor
+    has saved or dismissed the first-run picker. Keeping them separate lets a
+    visitor try modes on (each click sets the active mode) while the picker
+    stays open until they explicitly save or dismiss it. Tracked in the
+    `view_decided` cookie and mirrored to the account for signed-in users.
     """
-    user = g.get('current_user')
-    if user is not None:
-        pref = get_preferences(user['id']).get('poem_view_mode')
-        if pref in VIEW_MODES:
-            return pref, True
-    cookie = request.cookies.get('view_mode')
-    if cookie in VIEW_MODES:
-        return cookie, True
-    return DEFAULT_VIEW_MODE, False
+    mode    = DEFAULT_VIEW_MODE
+    decided = request.cookies.get('view_decided') == '1'
+
+    user  = g.get('current_user')
+    prefs = get_preferences(user['id']) if user is not None else {}
+
+    pref_mode = prefs.get('poem_view_mode')
+    if pref_mode in VIEW_MODES:
+        mode = pref_mode
+    else:
+        cookie_mode = request.cookies.get('view_mode')
+        if cookie_mode in VIEW_MODES:
+            mode = cookie_mode
+
+    if prefs.get('view_decided') is True:
+        decided = True
+
+    return mode, decided
 
 
 # Display / reading surfaces — where the skin is most dramatic, and the only
@@ -256,7 +268,7 @@ def is_display_surface() -> bool:
 @app.context_processor
 def inject_globals():
     """Make is_admin, current_user, and Clerk key available in every template."""
-    view_mode, view_mode_set = resolve_view_mode()
+    view_mode, picker_decided = resolve_view()
     return {
         'is_admin':              _is_admin(),
         'is_pin_admin':          bool(session.get('logged_in')),
@@ -265,9 +277,12 @@ def inject_globals():
         'tumblr_auth':           tumblr.authenticated,
         'blog_name':             TUMBLR_BLOG_NAME,
         'view_mode':             view_mode,
-        'view_mode_set':         view_mode_set,
         'view_decorated':        view_mode in ('fancy', 'plain'),
+        'picker_decided':        picker_decided,
         'display_surface':       is_display_surface(),
+        # One-shot confirmation shown in place of the strip right after the
+        # visitor saves/dismisses the first-run picker.
+        'view_picker_saved':     session.pop('view_picker_saved', False),
     }
 
 
@@ -517,6 +532,7 @@ def me_sync():
 # store on the user row.
 _USER_PREF_WRITES = {
     'poem_view_mode':    lambda v: v if v in VIEW_MODES else None,
+    'view_decided':      lambda v: True if v is True else None,
     'strip_empty_lines': lambda v: bool(v) if isinstance(v, bool) else None,
 }
 
@@ -550,26 +566,37 @@ def me_preferences():
 
 @app.route('/set-view-mode', methods=['POST'])
 def set_view_mode():
-    """Set the site-wide display mode (Phase 1.12).
+    """Set / try the site-wide display mode, and/or decide the first-run picker.
 
-    Works without JavaScript: a plain form post that writes the view_mode
-    cookie (and, for signed-in users, mirrors to the account preference so it
-    follows across devices), then redirects back to the originating page.
+    Works without JavaScript. Two independent form inputs:
+      - `mode`   — set the active display mode (a "try it on" click; leaves the
+                   first-run picker open so the visitor can keep sampling).
+      - `decide` — '1' puts the first-run picker away for good (Save or dismiss);
+                   the active mode is whatever was last set.
+
+    Signed-in choices mirror to the account so they follow across devices.
+    Redirects back to the originating page (same-site only).
     """
-    mode = request.form.get('mode', '')
-    if mode not in VIEW_MODES:
-        mode = DEFAULT_VIEW_MODE
-
-    user = g.get('current_user')
-    if user is not None:
-        update_preferences(user['id'], {'poem_view_mode': mode})
+    mode   = request.form.get('mode', '')
+    decide = request.form.get('decide') == '1'
+    user   = g.get('current_user')
 
     # Same-site redirect only — never bounce to an absolute or off-site URL.
     nxt = request.form.get('next', '')
     if not (nxt.startswith('/') and not nxt.startswith('//')):
         nxt = '/'
     resp = redirect(nxt)
-    resp.set_cookie('view_mode', mode, max_age=60 * 60 * 24 * 365, samesite='Lax')
+
+    one_year = 60 * 60 * 24 * 365
+    if mode in VIEW_MODES:
+        resp.set_cookie('view_mode', mode, max_age=one_year, samesite='Lax')
+        if user is not None:
+            update_preferences(user['id'], {'poem_view_mode': mode})
+    if decide:
+        resp.set_cookie('view_decided', '1', max_age=one_year, samesite='Lax')
+        if user is not None:
+            update_preferences(user['id'], {'view_decided': True})
+        session['view_picker_saved'] = True
     return resp
 
 
