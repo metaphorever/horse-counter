@@ -1358,10 +1358,17 @@ body.view-plain a.poem-horse:hover { filter: brightness(1.08); }
   }
 }
 
-/* Mobile tightening — Fancy chips need a touch more line-height to keep the
-   head glyphs above the previous line's leg stubs. */
+/* Mobile tightening (1.12 step 6) — Fancy holds up on a narrow viewport at the
+   current chip scale: registered names cap at 18 chars, so even the longest
+   single token fits one chip-line on a phone (verified). No chip shrink needed.
+   We only keep the extra line-height (head glyphs clear the previous line's leg
+   stubs) and nudge the floating title down so it doesn't dominate a phone.
+   (Enlarging chips + harmonising the chip font with the display type is routed
+   to the style/font pass, where chip size + font are decided together.) */
 @media (max-width: 520px) {
   body.view-fancy .poem-line-out { line-height: 2.6; }
+  body.view-fancy .poem-view-title { font-size: 1.45rem; }
+  body.view-fancy .poem-view-body { padding-top: 20px; }
 }
 
 /* ───── Reader skin (1.12 step 5) ─────────────────────────────────────────────
