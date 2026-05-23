@@ -181,11 +181,16 @@ h2 {
   margin-right: 12px;
 }
 .nav-logo {
-  font: 700 15px 'Playfair Display', Georgia, serif;
+  font: normal 15px 'Abril Fatface', Georgia, serif;
   color: #2d2316;
   text-decoration: none;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
 }
+.nav-logo-svg  { height: 22px; width: auto; display: block; }
+.nav-logo-text { display: none; }
 .nav-logo:hover { color: #3a6b1a; }
 .nav-body {
   display: flex;
@@ -909,7 +914,8 @@ body.dragging { touch-action: none; }
 /* Poem canvas */
 .poem-panel   { display: flex; flex-direction: column; }
 .poem-head    { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.poem-head h2 { margin: 0; font: 700 1.05rem 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .06em; color: #6b5430; }
+.poem-head h2, .poem-head h3 { margin: 0; font: 700 1.05rem 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .06em; color: #6b5430; }
+.poem-actions-footer { display: flex; gap: 6px; padding: 10px 0 4px; }
 .poem-actions { display: flex; gap: 6px; }
 .poem-canvas  {
   display: flex; flex-direction: column;
@@ -1032,7 +1038,10 @@ body.dragging .drop-zones {
 }
 .poem-view-title-after cite { font-style: italic; }
 .poem-view-attribution {
-  font: 13px 'Courier Prime','Courier New',monospace; color: #6b5430;
+  font: 0.85rem 'Playfair Display SC', Georgia, serif;
+  font-variant: small-caps;
+  letter-spacing: .08em;
+  color: #6b5430;
   margin: 0;
 }
 .poem-attr-link  { color: #5a3a18; text-decoration: underline; text-decoration-style: dotted; }
@@ -1176,9 +1185,11 @@ body.view-fancy .poem-view-title {
 body.view-fancy .poem-view-title-after { color: rgba(253, 248, 240, .78); }
 /* attribution de-emphasised: warm tan, letter-spaced, haloed for legibility */
 body.view-fancy .poem-view-attribution {
+  font: 0.95rem 'Playfair Display SC', Georgia, serif;
+  font-variant: small-caps;
   color: #e8d5b0;
   text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
-  letter-spacing: .03em;
+  letter-spacing: .1em;
 }
 body.view-fancy .poem-attr-link,
 body.view-fancy .poem-after-link { color: #f0e0b8; }
@@ -1222,22 +1233,31 @@ body.view-fancy .poem-view-body {
   padding: 26px 0 14px;
 }
 body.view-plain .poem-view-body { padding: 12px 0 8px; }
+body.view-plain .poem-view-attribution {
+  font: 0.9rem 'Playfair Display SC', Georgia, serif;
+  font-variant: small-caps;
+  letter-spacing: .08em;
+}
 body.view-decorated .poem-line-out {
   color: #fdf8f0;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
   padding-left: 0; text-indent: 0;
 }
 body.view-fancy .poem-line-out { line-height: 2.4; }
-body.view-plain .poem-line-out { line-height: 2.0; }
+body.view-plain .poem-line-out { font: 1.05rem/2.0 'IM Fell English', Georgia, serif; }
 
 /* ── Decorated chips — Fancy mode (legs / tail / head, scattered tilt) ─────── */
 body.view-fancy .poem-horse {
   display: inline-block;
   position: relative;
   overflow: visible;
-  padding: 4px 8px;
-  margin: 22px 4px 8px;
-  font: 700 0.92em 'Courier Prime','Courier New',monospace;
+  padding: 3px 11px;
+  margin: 22px 5px 9px;
+  font-family: 'Playfair Display SC', Georgia, serif;
+  font-size: 1.0rem;
+  font-weight: normal;
+  font-variant: small-caps;
+  letter-spacing: .04em;
   text-decoration: none;
   border: none;
   border-radius: 6px;
@@ -1985,7 +2005,7 @@ body.view-reader .poem-ribbon-btn[aria-pressed="true"] {
 .admin-cat-delete-form { display: inline; margin-left: 8px; }
 
 /* ── Phase 1.14 + 1.15 + 1.19 shared: page-level elements ───────────────── */
-.page-title { font: 700 26px/1.2 'Playfair Display',Georgia,serif; margin-bottom: 6px; }
+.page-title { font: normal 26px/1.2 'Abril Fatface',Georgia,serif; margin-bottom: 6px; }
 .page-desc  { font: 14px/1.6 Georgia,'Times New Roman',serif; color: #6b5430; margin-bottom: 20px; }
 .btn-pri    { font: 13px 'Courier Prime','Courier New',monospace; background: #3a6b1a; border: 1px solid #2a5010; border-radius: 2px; padding: 5px 14px; cursor: pointer; color: #fdf8ed; box-shadow: 1px 1px 0 #1a3a08; }
 .btn-pri:hover  { background: #4a7f22; }
@@ -2085,6 +2105,8 @@ a.collection-poem-title:hover { text-decoration: underline; }
 
 /* Horse-chip grid layout for pasture + saved-horses pages */
 .collection-chips     { display: flex; flex-wrap: wrap; gap: 10px; padding: 24px 0 8px; }
+/* Ensure coat color wins over .text-page a's link color on collection pages */
+.collection-chips a.poem-horse { color: var(--fg); }
 .collection-chip-wrap { position: relative; }
 .collection-chip-remove {
   position: absolute; top: -10px; right: -10px;
