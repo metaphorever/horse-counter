@@ -60,6 +60,7 @@ from db.users import (
     update_profile, set_bio_poem,
     get_user_published_poems, get_user_poems_for_bio_picker,
     update_trust_score, set_trust_score, get_all_users,
+    suspend_user, unsuspend_user, delete_user,
 )
 from db.admin_settings import get_auto_post_threshold, get_setting, set_setting
 from db.pasture import add_to_pasture, list_pasture_horses
@@ -79,6 +80,8 @@ from db.conn import init_db, get_db
 from poem_db import (
     save_poem as save_poem_db,
     get_poem_by_short_code,
+    update_poem_status,
+    delete_poem,
     list_published as list_published_poems,
     get_poems_featuring_horse,
     browse_poems,
@@ -439,6 +442,8 @@ def clerk_verify():
 
     user = get_user_by_clerk_id(clerk_user_id)
     if user:
+        if user.get('suspended_at'):
+            return jsonify({'error': 'This account has been suspended.'}), 403
         session.permanent = True
         session['user_id'] = user['id']
         return jsonify({'redirect': url_for('featured')})
@@ -1662,6 +1667,7 @@ def submit_poem_public():
     bypass_queue = (
         post_as == 'account'
         and current_user is not None
+        and not current_user.get('suspended_at')
         and threshold is not None
         and current_user.get('trust_score', 0) >= threshold
     )
@@ -2563,6 +2569,87 @@ def admin_set_user_trust(user_id):
     set_trust_score(user_id, score)
     flash(f'Trust score set to {score}.', 'ok')
     return redirect(url_for('admin_user_detail', user_id=user_id))
+
+
+@app.route('/admin/user/<int:user_id>/suspend', methods=['POST'])
+@login_required
+def admin_user_suspend(user_id):
+    user = get_user_by_id(user_id)
+    if not user:
+        flash('User not found.', 'err')
+        return redirect(url_for('admin_users'))
+    if user.get('role') == 'admin':
+        flash('Cannot suspend an admin account.', 'err')
+        return redirect(url_for('admin_user_detail', user_id=user_id))
+    suspend_user(user_id)
+    flash('Account suspended.', 'ok')
+    return redirect(url_for('admin_user_detail', user_id=user_id))
+
+
+@app.route('/admin/user/<int:user_id>/unsuspend', methods=['POST'])
+@login_required
+def admin_user_unsuspend(user_id):
+    user = get_user_by_id(user_id)
+    if not user:
+        flash('User not found.', 'err')
+        return redirect(url_for('admin_users'))
+    unsuspend_user(user_id)
+    flash('Account reinstated.', 'ok')
+    return redirect(url_for('admin_user_detail', user_id=user_id))
+
+
+@app.route('/admin/user/<int:user_id>/delete', methods=['POST'])
+@login_required
+def admin_user_delete(user_id):
+    user = get_user_by_id(user_id)
+    if not user:
+        flash('User not found.', 'err')
+        return redirect(url_for('admin_users'))
+    if user.get('role') == 'admin':
+        flash('Cannot delete an admin account.', 'err')
+        return redirect(url_for('admin_user_detail', user_id=user_id))
+    delete_user(user_id)
+    flash('Account deleted. Their poems are now anonymous.', 'ok')
+    return redirect(url_for('admin_users'))
+
+
+# ── Admin poem actions ───────────────────────────────────────────────────────
+
+@app.route('/admin/poem/<short_code>/hide', methods=['POST'])
+@login_required
+def admin_poem_hide(short_code):
+    poem = get_poem_by_short_code(short_code)
+    if not poem:
+        flash('Poem not found.', 'err')
+        return redirect(url_for('admin_poem_queue'))
+    update_poem_status(poem['id'], 'hidden')
+    flash('Poem hidden.', 'ok')
+    return redirect(url_for('poem_permalink', short_code=short_code))
+
+
+@app.route('/admin/poem/<short_code>/unhide', methods=['POST'])
+@login_required
+def admin_poem_unhide(short_code):
+    poem = get_poem_by_short_code(short_code)
+    if not poem:
+        flash('Poem not found.', 'err')
+        return redirect(url_for('admin_poem_queue'))
+    update_poem_status(poem['id'], 'published')
+    flash('Poem restored to published.', 'ok')
+    return redirect(url_for('poem_permalink', short_code=short_code))
+
+
+@app.route('/admin/poem/<short_code>/delete', methods=['POST'])
+@login_required
+def admin_poem_delete(short_code):
+    poem = get_poem_by_short_code(short_code)
+    if not poem:
+        flash('Poem not found.', 'err')
+        return redirect(url_for('admin_poem_queue'))
+    poem_id = poem['id']
+    delete_poem(poem_id)
+    flash('Poem permanently deleted.', 'ok')
+    return redirect(url_for('admin_poem_queue'))
 
 
 # ── Horse collection API ──────────────────────────────────────────────────────

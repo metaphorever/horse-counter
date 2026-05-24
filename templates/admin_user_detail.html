@@ -21,10 +21,7 @@
 </style>
 
 <div class="box">
-  <div class="nav-links">
-    <a href="/admin/users">← All users</a>
-    <a href="/admin/poem-queue">Queue →</a>
-  </div>
+  {% include 'admin_nav.html' %}
 
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, message in messages %}
@@ -58,6 +55,38 @@
           <button type="submit" class="btn">Override</button>
         </form>
       </div>
+    </div>
+  </div>
+
+  <div class="user-detail-card" style="margin-bottom: 24px;">
+    <div class="user-detail-row" style="margin-bottom: 4px;">
+      <span class="user-detail-label">Account</span>
+      <span>
+        {% if user.suspended_at %}
+          <span class="admin-suspended-badge">SUSPENDED</span>
+        {% else %}
+          <span style="color: #3a6a1a; font-size: 13px;">Active</span>
+        {% endif %}
+      </span>
+    </div>
+    <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+      {% if user.role != 'admin' %}
+        {% if user.suspended_at %}
+          <form method="post" action="/admin/user/{{ user.id }}/unsuspend" style="display:inline">
+            <button class="btn-sec" type="submit">Reinstate account</button>
+          </form>
+        {% else %}
+          <form method="post" action="/admin/user/{{ user.id }}/suspend" style="display:inline">
+            <button class="btn-sec" type="submit">Suspend account</button>
+          </form>
+        {% endif %}
+        <form method="post" action="/admin/user/{{ user.id }}/delete" style="display:inline"
+              onsubmit="return confirm('Permanently delete {{ user.display_name or user.slug }}? Their poems will become anonymous. This cannot be undone.')">
+          <button class="btn-danger" type="submit">Delete account</button>
+        </form>
+      {% else %}
+        <span class="admin-hint" style="font-size: 13px;">Admin accounts cannot be suspended or deleted here.</span>
+      {% endif %}
     </div>
   </div>
 

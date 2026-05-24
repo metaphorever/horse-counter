@@ -5,6 +5,7 @@
 <h1 class="page-title">sign in to poet.horse</h1>
 
 <div id="clerk-sign-in" class="clerk-widget-wrap"></div>
+<p id="sign-in-error" class="msg err" hidden></p>
 
 <p class="sign-in-note">
   No account yet? Signing in for the first time creates one.
@@ -49,7 +50,9 @@
       if (data.redirect) {
         window.location.href = data.redirect;
       } else {
-        console.error('Clerk verify error:', data.error);
+        const el = document.getElementById('sign-in-error');
+        el.textContent = data.error || 'Sign-in failed — please try again.';
+        el.hidden = false;
       }
     } catch (err) {
       console.error('Clerk verify fetch failed:', err);

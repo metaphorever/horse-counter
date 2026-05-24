@@ -134,6 +134,26 @@
   </section>
   {% endif %}
 
+  {% if is_admin %}
+  <div class="admin-poem-toolbar">
+    <span class="admin-poem-toolbar-label">Admin:</span>
+    {% if poem.status == 'hidden' %}
+      <span class="admin-poem-status-badge">HIDDEN</span>
+      <form method="post" action="/admin/poem/{{ poem.short_code }}/unhide" style="display:inline">
+        <button class="btn-sec admin-poem-toolbar-btn" type="submit">Unhide</button>
+      </form>
+    {% else %}
+      <form method="post" action="/admin/poem/{{ poem.short_code }}/hide" style="display:inline">
+        <button class="btn-sec admin-poem-toolbar-btn" type="submit">Hide</button>
+      </form>
+    {% endif %}
+    <form method="post" action="/admin/poem/{{ poem.short_code }}/delete" style="display:inline"
+          onsubmit="return confirm('Permanently delete this poem? This cannot be undone.')">
+      <button class="btn-danger admin-poem-toolbar-btn" type="submit">Delete</button>
+    </form>
+  </div>
+  {% endif %}
+
   <div class="print-colophon" aria-hidden="true">
     Composed entirely from the names of real, registered horses.
     <span class="print-permalink-url">{{ permalink_url }}</span>

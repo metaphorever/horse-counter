@@ -269,6 +269,21 @@ def get_random_published() -> Optional[str]:
     return row['short_code'] if row else None
 
 
+def delete_poem(poem_id: int) -> None:
+    """Hard-delete a poem and all its dependent rows.
+
+    Cascades via FK handle: poem_tags, submissions, horse_occurrences, saved_poems.
+    Reports are not FK-constrained on target_id, so they are deleted explicitly.
+    users.bio_poem_id is FK ON DELETE SET NULL, handled automatically.
+    """
+    with get_db() as conn:
+        conn.execute(
+            "DELETE FROM reports WHERE target_type = 'poem' AND target_id = ?",
+            (poem_id,),
+        )
+        conn.execute("DELETE FROM poems WHERE id = ?", (poem_id,))
+
+
 def get_published_poems_by_user(user_id: int) -> List[Dict]:
     """All published poems by a user, newest first (for profile page)."""
     with get_db() as conn:
