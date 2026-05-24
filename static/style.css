@@ -769,8 +769,10 @@ button[type="submit"]:active { transform: translate(2px, 2px); box-shadow: none;
   gap: 14px;
   align-items: start;
 }
-.left-col  { display: flex; flex-direction: column; gap: 14px; }
-.right-col { display: flex; flex-direction: column; gap: 14px; }
+/* min-width:0 lets the 1fr grid track shrink below its content's intrinsic
+   width — without it, a nowrap label or wide tile row blows the page out. */
+.left-col  { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.right-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .panel {
   background: #faf5e9;
   border-radius: 2px;
@@ -1224,8 +1226,8 @@ body.view-fancy .poem-export-btn:hover:not(:disabled) {
 body.view-fancy .admin-hint { color: #cbb98a; }
 body.view-fancy .poem-view-body {
   /* Extra vertical room so chip heads + legs don't crash into the head/tag
-     blocks. Head extends 24px above chip top, legs 6px below chip bottom. */
-  padding: 22px 0 10px;
+     blocks. Head extends 30px above chip top, legs 8px below chip bottom. */
+  padding: 28px 0 12px;
 }
 body.view-plain .poem-view-body { padding: 12px 0 8px; }
 body.view-plain .poem-view-attribution {
@@ -1238,7 +1240,7 @@ body.view-decorated .poem-line-out {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
   padding-left: 0; text-indent: 0;
 }
-body.view-fancy .poem-line-out { line-height: 2.2; }
+body.view-fancy .poem-line-out { line-height: 2.75; }
 body.view-plain .poem-line-out { font: 1.05rem/2.0 'IM Fell English', Georgia, serif; }
 
 /* ── Decorated chips — Fancy mode (legs / tail / head, scattered tilt) ─────── */
@@ -1246,17 +1248,17 @@ body.view-fancy .poem-horse {
   display: inline-block;
   position: relative;
   overflow: visible;
-  padding: 1px 6px;
-  margin: 4px 3px;
+  padding: 1px 8px;
+  margin: 5px 4px;
   font-family: 'Playfair Display SC', Georgia, serif;
-  font-size: 1.0rem;
+  font-size: 1.25rem;
   font-weight: 700;
   font-variant: small-caps;
   line-height: 1;
   letter-spacing: .04em;
   text-decoration: none;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   vertical-align: baseline;
   background: var(--bg);
   color: var(--fg);
@@ -1289,25 +1291,25 @@ body.view-fancy .poem-horse::before {
   content: '♞';
   position: absolute;
   pointer-events: none;
-  left: 0; top: -24px;
-  width: 100%; height: calc(100% + 30px);
+  left: 0; top: -30px;
+  width: 100%; height: calc(100% + 38px);
   color: var(--bg);
-  font-size: 26px; line-height: 1;
+  font-size: 32px; line-height: 1;
   background:
-    linear-gradient(var(--bg), var(--bg))  4px 100% / 2px 6px no-repeat,
-    linear-gradient(var(--bg), var(--bg)) 10px 100% / 2px 6px no-repeat,
-    linear-gradient(var(--bg), var(--bg)) calc(100% - 10px) 100% / 2px 6px no-repeat,
-    linear-gradient(var(--bg), var(--bg)) calc(100% -  4px) 100% / 2px 6px no-repeat;
+    linear-gradient(var(--bg), var(--bg))  5px 100% / 2px 8px no-repeat,
+    linear-gradient(var(--bg), var(--bg)) 13px 100% / 2px 8px no-repeat,
+    linear-gradient(var(--bg), var(--bg)) calc(100% - 13px) 100% / 2px 8px no-repeat,
+    linear-gradient(var(--bg), var(--bg)) calc(100% -  5px) 100% / 2px 8px no-repeat;
 }
 /* ::after draws the tail off the right side. */
 body.view-fancy .poem-horse::after {
   content: '∫';
   position: absolute;
   pointer-events: none;
-  right: -10px; top: 50%;
+  right: -13px; top: 60%;
   transform: translateY(-50%) scaleY(-1);
   color: var(--bg);
-  font-size: 22px; line-height: 1;
+  font-size: 28px; line-height: 1;
 }
 /* Reversed direction — name-hash parity puts roughly half of horses facing
    the other way so a line of them doesn't look like a conga line. */
@@ -1315,7 +1317,7 @@ body.view-fancy .poem-horse.rev::before {
   left: auto; right: 0; transform: scaleX(-1);
 }
 body.view-fancy .poem-horse.rev::after {
-  right: auto; left: -10px;
+  right: auto; left: -13px;
   transform: translateY(-50%) scaleY(-1) scaleX(-1);
 }
 body.view-fancy .poem-horse:hover {
@@ -1382,9 +1384,9 @@ body.view-plain a.poem-horse:hover { filter: brightness(1.08); }
    (Enlarging chips + harmonising the chip font with the display type is routed
    to the style/font pass, where chip size + font are decided together.) */
 @media (max-width: 520px) {
-  body.view-fancy .poem-line-out { line-height: 2.4; }
+  body.view-fancy .poem-line-out { line-height: 3.0; }
   body.view-fancy .poem-view-title { font-size: 1.45rem; }
-  body.view-fancy .poem-view-body { padding-top: 18px; }
+  body.view-fancy .poem-view-body { padding-top: 22px; }
 }
 
 /* ───── Reader skin (1.12 step 5) ─────────────────────────────────────────────
