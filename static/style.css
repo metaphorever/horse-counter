@@ -1224,8 +1224,8 @@ body.view-fancy .poem-export-btn:hover:not(:disabled) {
 body.view-fancy .admin-hint { color: #cbb98a; }
 body.view-fancy .poem-view-body {
   /* Extra vertical room so chip heads + legs don't crash into the head/tag
-     blocks. The decoration extends 20px above and 6px below each chip. */
-  padding: 26px 0 14px;
+     blocks. Head extends 24px above chip top, legs 6px below chip bottom. */
+  padding: 22px 0 10px;
 }
 body.view-plain .poem-view-body { padding: 12px 0 8px; }
 body.view-plain .poem-view-attribution {
@@ -1246,8 +1246,8 @@ body.view-fancy .poem-horse {
   display: inline-block;
   position: relative;
   overflow: visible;
-  padding: 3px 11px;
-  margin: 8px 5px 6px;
+  padding: 2px 8px;
+  margin: 5px 4px 4px;
   font-family: 'Playfair Display SC', Georgia, serif;
   font-size: 1.0rem;
   font-weight: normal;
@@ -1288,10 +1288,10 @@ body.view-fancy .poem-horse::before {
   content: '♞';
   position: absolute;
   pointer-events: none;
-  left: 0; top: -20px;
-  width: 100%; height: calc(100% + 26px);
+  left: 0; top: -24px;
+  width: 100%; height: calc(100% + 30px);
   color: var(--bg);
-  font-size: 32px; line-height: 1;
+  font-size: 26px; line-height: 1;
   background:
     linear-gradient(var(--bg), var(--bg))  4px 100% / 2px 6px no-repeat,
     linear-gradient(var(--bg), var(--bg)) 10px 100% / 2px 6px no-repeat,
@@ -1383,7 +1383,7 @@ body.view-plain a.poem-horse:hover { filter: brightness(1.08); }
 @media (max-width: 520px) {
   body.view-fancy .poem-line-out { line-height: 2.0; }
   body.view-fancy .poem-view-title { font-size: 1.45rem; }
-  body.view-fancy .poem-view-body { padding-top: 20px; }
+  body.view-fancy .poem-view-body { padding-top: 18px; }
 }
 
 /* ───── Reader skin (1.12 step 5) ─────────────────────────────────────────────
@@ -1562,6 +1562,16 @@ body.view-reader h1.page-title { color: #0f0c06; text-shadow: none; }
 body.view-reader .page-desc { color: #3a2e18; text-shadow: none; }
 body.view-reader .collection-empty,
 body.view-reader .collection-count { color: #6b5430; text-shadow: none; }
+
+/* Fancy mode: featured page + poem-index sit on grass field — needs cream text */
+body.view-fancy .text-page h2 { color: #e8d5b0; }
+body.view-fancy .poem-index-title { color: #fdf8f0; }
+body.view-fancy .poem-index-title:hover { color: #fdf8f0; }
+body.view-fancy .poem-index-meta { color: #c8b888; }
+body.view-fancy .poem-index-item { border-color: rgba(196, 169, 107, 0.35); }
+body.view-fancy .featured-empty,
+body.view-fancy .featured-browse-link a,
+body.view-fancy .text-page-updated { color: #c8b888; }
 
 /* Tag picker — inside the publish modal */
 .modal-tag-sections { margin-top: 14px; display: flex; flex-direction: column; gap: 14px; }
