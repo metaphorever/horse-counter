@@ -250,23 +250,22 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: Admin QoL + Tag Taxonomy — closed (2026-05-24)**
+**PHASE: Fancy chip refinement + editor/modal fixes — closed (2026-05-24)**
 
-PRs #63–#68 merged. All major testing holds cleared live by Clover.
+Commits `bbd4296`, `d2baa1c`, `8a6a0d9` on master, all verified live by Clover. Fancy chip style is dialed in (bold Playfair SC, compressed via `line-height:1`, scaled +25%, tail lowered, taller lower half, head lowered). Also fixed: iOS input-zoom on the wrangle page, post-modal draft prefill, poem-editor grid overflow (`min-width:0`).
 
 Deferred holds (needs test accounts — nag before go-live):
 - Suspend → blocked sign-in with visible error message; Reinstate clears it
 - Delete account → poems persist as anonymous
 - Admin accounts blocked from suspend/delete actions
 
-**Next session candidates (see ROADMAP for full detail):**
-- **Wandering pasture/saved-horses layout** — its own session `[sonnet · medium]`
-- **1.20** Cross-post queue `[sonnet · high]`
-- **Style pass** — pre-beta styling session (chips, typography, layout) `[sonnet · high]`
+**Remaining before beta / soft launch:**
+- **Collection pages render & behave as poems** — rolled-up effort (ROADMAP backlog): unified chip tap menu (reuse editor `openChipMenu`) + full view-mode parity (incl. Plain-mode cream-note bg missing on pasture/saved-horses) + wandering layout + green-font fix + bio-poem full styling. Absorbs the old "wandering pasture layout" and "style pass leftovers" candidates. `[sonnet · medium/high]`
+- **1.20 Cross-post queue** — shipped (PR #69); needs Clover live verification
+- **1.24 DNS cutover + PA shutdown** — owner action, the go-live step `[haiku · low]`
 
 **Open rough edges (not blocking):**
-- Fancy chip height/spacing — functional but Clover wants a second pass
 - Plain/Default mode text readability on featured/collection pages (only Fancy mode fixed)
 - Admin featured sections table still squashed on mobile — low priority
 
-Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.19, 1.23, 1.29. Also confirmed: 1.16, 1.17, 1.21.
+Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.19, 1.23, 1.29. Also confirmed: 1.16, 1.17, 1.21. Shipped, verification pending: 1.20.
