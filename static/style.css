@@ -1226,8 +1226,8 @@ body.view-fancy .poem-export-btn:hover:not(:disabled) {
 body.view-fancy .admin-hint { color: #cbb98a; }
 body.view-fancy .poem-view-body {
   /* Extra vertical room so chip heads + legs don't crash into the head/tag
-     blocks. Head extends 30px above chip top, legs 8px below chip bottom. */
-  padding: 28px 0 12px;
+     blocks. Head extends 26px above chip top, legs 8px below chip bottom. */
+  padding: 26px 0 12px;
 }
 body.view-plain .poem-view-body { padding: 12px 0 8px; }
 body.view-plain .poem-view-attribution {
@@ -1248,7 +1248,7 @@ body.view-fancy .poem-horse {
   display: inline-block;
   position: relative;
   overflow: visible;
-  padding: 1px 8px;
+  padding: 1px 8px 4px;
   margin: 5px 4px;
   font-family: 'Playfair Display SC', Georgia, serif;
   font-size: 1.25rem;
@@ -1291,8 +1291,8 @@ body.view-fancy .poem-horse::before {
   content: '♞';
   position: absolute;
   pointer-events: none;
-  left: 0; top: -30px;
-  width: 100%; height: calc(100% + 38px);
+  left: 0; top: -26px;
+  width: 100%; height: calc(100% + 34px);
   color: var(--bg);
   font-size: 32px; line-height: 1;
   background:
