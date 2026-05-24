@@ -1246,12 +1246,13 @@ body.view-fancy .poem-horse {
   display: inline-block;
   position: relative;
   overflow: visible;
-  padding: 2px 8px;
-  margin: 5px 4px 4px;
+  padding: 1px 6px;
+  margin: 4px 3px;
   font-family: 'Playfair Display SC', Georgia, serif;
   font-size: 1.0rem;
-  font-weight: normal;
+  font-weight: 700;
   font-variant: small-caps;
+  line-height: 1;
   letter-spacing: .04em;
   text-decoration: none;
   border: none;
@@ -1923,6 +1924,9 @@ body.view-fancy .text-page-updated { color: #c8b888; }
 }
 @media (max-width: 640px) {
   .poetry-wrap { grid-template-columns: 1fr; }
+  /* Prevent iOS auto-zoom: Safari zooms in when a focused input has font-size < 16px,
+     then leaves the page at a broken zoom level after the keyboard dismisses. */
+  input, select, textarea { font-size: 16px !important; }
 }
 
 /* ── Phase 1.8: Browse ───────────────────────────────────────────────────── */

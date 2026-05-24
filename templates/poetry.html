@@ -1733,15 +1733,24 @@ function openModal(){
   document.getElementById('empty-line-warning').style.display='none';
   document.getElementById('modal-actions').style.display='';
 
+  const itext   = document.getElementById('modal-inspired-text');
+  const iurl    = document.getElementById('modal-inspired-url');
+
   if(isLoggedIn){
     // Update the "Posting as" summary label from current draft state
     const display = document.getElementById('modal-post-as-display');
     if(display){
       const postAs = currentDraftMeta?.postAs || 'account';
-      if(postAs === 'anonymous')       display.textContent = 'Anonymous';
+      if(postAs === 'anonymous')         display.textContent = 'Anonymous';
       else if(postAs === 'pseudonymous') display.textContent = currentDraftMeta?.submitterName || 'Pseudonymous';
-      else                              display.textContent = CURRENT_USER_DISPLAY_NAME || 'you';
+      else                               display.textContent = CURRENT_USER_DISPLAY_NAME || 'you';
     }
+    // Pre-populate from saved draft metadata
+    const titleEl = document.getElementById('modal-title');
+    if(titleEl) titleEl.value = currentDraftMeta?.title        || '';
+    if(itext)   itext.value   = currentDraftMeta?.inspiredText || '';
+    if(iurl)    iurl.value    = currentDraftMeta?.inspiredUrl  || '';
+    selectedTagIds = new Set(currentDraftMeta?.tagIds || []);
   } else {
     // Restore anon prefs from localStorage
     const saved      = loadDraftLocal() || {};
@@ -1761,11 +1770,11 @@ function openModal(){
         if(pseudoRow) pseudoRow.style.display = this.value === 'pseudonymous' ? '' : 'none';
       };
     });
+    if(itext) itext.value = '';
+    if(iurl)  iurl.value  = '';
+    selectedTagIds = new Set();
   }
 
-  const itext = document.getElementById('modal-inspired-text'); if (itext) itext.value = '';
-  const iurl  = document.getElementById('modal-inspired-url');  if (iurl)  iurl.value  = '';
-  selectedTagIds = new Set();
   renderTagSections();
   document.getElementById('post-modal').classList.add('open');
 }
