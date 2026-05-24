@@ -281,6 +281,8 @@ def delete_poem(poem_id: int) -> None:
             "DELETE FROM reports WHERE target_type = 'poem' AND target_id = ?",
             (poem_id,),
         )
+        # crosspost_queue FK is not ON DELETE CASCADE — must delete explicitly.
+        conn.execute("DELETE FROM crosspost_queue WHERE poem_id = ?", (poem_id,))
         conn.execute("DELETE FROM poems WHERE id = ?", (poem_id,))
 
 
