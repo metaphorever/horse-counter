@@ -189,7 +189,7 @@ h2 {
   align-items: center;
   gap: 0;
 }
-.nav-logo-svg  { height: 22px; width: auto; display: block; }
+.nav-logo-svg  { height: 28px; width: auto; display: block; }
 .nav-logo-text { display: none; }
 .nav-logo:hover { color: #3a6b1a; }
 .nav-body {
@@ -1125,7 +1125,6 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
    below — there the body-level grass field becomes the surface and content
    floats directly on it. (Coat colours, the famous shimmer, and the poem-body
    line treatment stay shared via `view-decorated` further down.) */
-body.view-plain .poem-view,
 body.view-plain .collection-chips,
 body.view-plain .profile-bio-poem,
 body.view-plain .queue-poem {
@@ -1138,10 +1137,6 @@ body.view-plain .queue-poem {
 body.view-plain .poem-view-head,
 body.view-plain .poem-view-tags,
 body.view-plain .poem-view-footer {
-  background: rgba(253, 248, 240, 0.92);
-  border-radius: 2px;
-  padding: 14px 16px;
-  border-color: transparent;
   color: #2d2316;
 }
 body.view-plain .poem-view-head { margin-bottom: 18px; }
@@ -1252,7 +1247,7 @@ body.view-fancy .poem-horse {
   position: relative;
   overflow: visible;
   padding: 3px 11px;
-  margin: 22px 5px 9px;
+  margin: 14px 5px 9px;
   font-family: 'Playfair Display SC', Georgia, serif;
   font-size: 1.0rem;
   font-weight: normal;
@@ -2005,7 +2000,7 @@ body.view-reader .poem-ribbon-btn[aria-pressed="true"] {
 .admin-cat-delete-form { display: inline; margin-left: 8px; }
 
 /* ── Phase 1.14 + 1.15 + 1.19 shared: page-level elements ───────────────── */
-.page-title { font: normal 26px/1.2 'Abril Fatface',Georgia,serif; margin-bottom: 6px; }
+h1.page-title { font: normal 26px/1.2 'Abril Fatface',Georgia,serif; margin-bottom: 6px; }
 .page-desc  { font: 14px/1.6 Georgia,'Times New Roman',serif; color: #6b5430; margin-bottom: 20px; }
 .btn-pri    { font: 13px 'Courier Prime','Courier New',monospace; background: #3a6b1a; border: 1px solid #2a5010; border-radius: 2px; padding: 5px 14px; cursor: pointer; color: #fdf8ed; box-shadow: 1px 1px 0 #1a3a08; }
 .btn-pri:hover  { background: #4a7f22; }
