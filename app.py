@@ -59,7 +59,9 @@ from db.users import (
     get_preferences, update_preferences,
     update_profile, set_bio_poem,
     get_user_published_poems, get_user_poems_for_bio_picker,
+    update_trust_score, set_trust_score, get_all_users,
 )
+from db.admin_settings import get_auto_post_threshold, get_setting, set_setting
 from db.pasture import add_to_pasture, list_pasture_horses
 from db.drafts import (
     list_user_drafts, get_user_draft, save_user_draft,
@@ -1655,6 +1657,16 @@ def submit_poem_public():
             except (TypeError, ValueError):
                 continue
 
+    # Check if this user qualifies to bypass the submission queue.
+    threshold = get_auto_post_threshold()
+    bypass_queue = (
+        post_as == 'account'
+        and current_user is not None
+        and threshold is not None
+        and current_user.get('trust_score', 0) >= threshold
+    )
+
+    poem_status = 'published' if bypass_queue else 'submitted'
     poem = save_poem_db(
         lines               = lines,
         title               = poem_title,
@@ -1663,8 +1675,20 @@ def submit_poem_public():
         author_link_url     = author_link_url,
         inspired_by_text    = inspired_text,
         inspired_by_url     = inspired_url,
-        status              = 'submitted',
+        status              = poem_status,
     )
+
+    if bypass_queue:
+        # Publish directly — apply tags as approved, no submission row needed.
+        if tag_ids:
+            apply_tags_to_poem(poem['id'], tag_ids, applied_by=author_user_id, status='approved')
+        return jsonify({
+            'ok':         True,
+            'message':    'Poem published!',
+            'short_code': poem['short_code'],
+            'published':  True,
+        })
+
     if tag_ids:
         # Submitter-applied tags land as 'pending' on the poem_tags row so the
         # admin queue (1.13) can approve / strip / add per-poem.
@@ -2441,6 +2465,15 @@ def admin_poem_publish():
     current_user = g.get('current_user')
     reviewer_id  = current_user['id'] if current_user else None
 
+    # Capture original pending tags before we replace them, to detect edits.
+    with get_db() as conn:
+        orig_rows = conn.execute(
+            "SELECT tag_id FROM poem_tags WHERE poem_id = ? AND status = 'pending'",
+            (sub['id'],),
+        ).fetchall()
+    original_tag_ids = {r['tag_id'] for r in orig_rows}
+    tags_edited = set(tag_ids) != original_tag_ids
+
     # Replace all tags (pending + approved) with admin's explicit selection
     with get_db() as conn:
         conn.execute("DELETE FROM poem_tags WHERE poem_id = ?", (sub['id'],))
@@ -2449,6 +2482,11 @@ def admin_poem_publish():
 
     poem = approve_poem_submission(sub_id, reviewer_user_id=reviewer_id, review_notes=notes)
     if poem:
+        # Update author's trust score: +1 if tags were untouched, -1 if admin edited them.
+        author_id = sub.get('author_user_id')
+        if author_id:
+            delta = -1 if tags_edited else 1
+            update_trust_score(author_id, delta)
         flash(f'Published: /p/{poem["short_code"]}', 'ok')
     else:
         flash('Submission not found.', 'err')
@@ -2465,6 +2503,66 @@ def admin_poem_reject():
     reject_poem_submission(sub_id, reviewer_user_id=reviewer_id, review_notes=notes)
     flash('Rejected.', 'ok')
     return redirect(url_for('admin_poem_queue'))
+
+
+# ── Admin user management ─────────────────────────────────────────────────────
+
+@app.route('/admin/users')
+@login_required
+def admin_users():
+    users = get_all_users()
+    threshold = get_setting('auto_post_threshold', '0')
+    return render_template('admin_users.html', users=users, threshold=threshold)
+
+
+@app.route('/admin/users/threshold', methods=['POST'])
+@login_required
+def admin_set_threshold():
+    raw = request.form.get('threshold', '').strip()
+    # Allow '' (disabled) or a non-negative integer.
+    if raw == '':
+        set_setting('auto_post_threshold', '')
+        flash('Auto-post disabled — all submissions go to the queue.', 'ok')
+    else:
+        try:
+            val = int(raw)
+            if val < 0:
+                raise ValueError
+        except ValueError:
+            flash('Threshold must be a non-negative integer or blank (disabled).', 'err')
+            return redirect(url_for('admin_users'))
+        set_setting('auto_post_threshold', str(val))
+        flash(f'Auto-post threshold set to {val}.', 'ok')
+    return redirect(url_for('admin_users'))
+
+
+@app.route('/admin/user/<int:user_id>')
+@login_required
+def admin_user_detail(user_id):
+    user = get_user_by_id(user_id)
+    if not user:
+        flash('User not found.', 'err')
+        return redirect(url_for('admin_users'))
+    poems = get_user_published_poems(user_id)
+    return render_template('admin_user_detail.html', user=user, poems=poems)
+
+
+@app.route('/admin/user/<int:user_id>/trust', methods=['POST'])
+@login_required
+def admin_set_user_trust(user_id):
+    user = get_user_by_id(user_id)
+    if not user:
+        flash('User not found.', 'err')
+        return redirect(url_for('admin_users'))
+    raw = request.form.get('trust_score', '').strip()
+    try:
+        score = int(raw)
+    except ValueError:
+        flash('Trust score must be an integer.', 'err')
+        return redirect(url_for('admin_user_detail', user_id=user_id))
+    set_trust_score(user_id, score)
+    flash(f'Trust score set to {score}.', 'ok')
+    return redirect(url_for('admin_user_detail', user_id=user_id))
 
 
 # ── Horse collection API ──────────────────────────────────────────────────────

@@ -39,6 +39,8 @@ _COLUMN_MIGRATIONS = [
     ('users', 'bio_poem_id', "INTEGER"),
     # Pre-1.13 polish — attribution mode stored on draft
     ('drafts', 'post_as', "TEXT NOT NULL DEFAULT 'account'"),
+    # Phase 1.13.1 — integer trust score per user
+    ('users', 'trust_score', "INTEGER NOT NULL DEFAULT 0"),
 ]
 
 
@@ -260,8 +262,28 @@ def cleanup_obsolete_tags() -> None:
                 raise
 
 
+def ensure_admin_settings() -> None:
+    """Create admin_settings table and seed defaults if missing."""
+    now = time.time()
+    with get_db() as conn:
+        conn.execute(
+            """CREATE TABLE IF NOT EXISTS admin_settings (
+               key        TEXT PRIMARY KEY,
+               value      TEXT NOT NULL DEFAULT '',
+               updated_at REAL NOT NULL
+            )"""
+        )
+        # auto_post_threshold: trust_score required to bypass the queue.
+        # 0 = open posting (any logged-in user bypasses).
+        conn.execute(
+            "INSERT OR IGNORE INTO admin_settings (key, value, updated_at) VALUES (?, ?, ?)",
+            ('auto_post_threshold', '0', now),
+        )
+
+
 def run_all() -> None:
     apply_migrations()
     dedup_tag_taxonomy()   # must run before seed — cleans up pre-constraint duplicates
     seed_tag_taxonomy()
     cleanup_obsolete_tags()
+    ensure_admin_settings()

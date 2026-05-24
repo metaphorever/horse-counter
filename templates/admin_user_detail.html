@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Admin: {{ user.display_name or user.slug }} — poet.horse{% endblock %}
+{% block content %}
+
+<style>
+.user-detail-card { background: #fdfaf2; border: 1px solid #d4c490; border-radius: 6px; padding: 20px 24px; margin-bottom: 24px; }
+.user-detail-row { display: flex; gap: 16px; align-items: baseline; margin-bottom: 8px; font-size: 14px; }
+.user-detail-label { width: 120px; flex-shrink: 0; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; color: #7a6a3a; }
+.trust-score { font-size: 28px; font-weight: bold; font-variant-numeric: tabular-nums; line-height: 1; }
+.trust-score.positive { color: #3a6a1a; }
+.trust-score.negative { color: #c04040; }
+.trust-score.zero     { color: #9a8a5a; }
+.trust-override-form { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+.trust-override-form input[type=text] { width: 80px; font-size: 14px; padding: 4px 8px; border: 1px solid #c4b070; border-radius: 4px; }
+.admin-role-badge { background: #5a2a8a; color: #fff; border-radius: 10px; padding: 2px 8px; font-size: 12px; font-weight: bold; }
+.poem-list { margin: 0; padding: 0; list-style: none; }
+.poem-list li { padding: 8px 0; border-bottom: 1px solid #eee8d0; font-size: 14px; display: flex; gap: 12px; align-items: baseline; }
+.poem-list li:last-child { border-bottom: none; }
+.poem-list-date { font-size: 12px; color: #9a8a5a; white-space: nowrap; }
+.poem-list-horses { font-size: 12px; color: #7a6a3a; }
+</style>
+
+<div class="box">
+  <div class="nav-links">
+    <a href="/admin/users">← All users</a>
+    <a href="/admin/poem-queue">Queue →</a>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    <div class="msg {{ 'ok' if category == 'ok' else 'err' }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="user-detail-card">
+    <div class="user-detail-row">
+      <span class="user-detail-label">Name</span>
+      <span>
+        <strong>{{ user.display_name or user.slug }}</strong>
+        {% if user.role == 'admin' %}<span class="admin-role-badge">admin</span>{% endif %}
+      </span>
+    </div>
+    <div class="user-detail-row">
+      <span class="user-detail-label">Profile</span>
+      <a href="/u/{{ user.slug }}" target="_blank">/u/{{ user.slug }}</a>
+    </div>
+    <div class="user-detail-row">
+      <span class="user-detail-label">Joined</span>
+      <span>{{ user.joined_at | datefmt }}</span>
+    </div>
+    <div class="user-detail-row" style="margin-top: 16px; align-items: flex-start;">
+      <span class="user-detail-label" style="padding-top: 4px;">Trust score</span>
+      <div>
+        {% set s = user.trust_score %}
+        <div class="trust-score {% if s > 0 %}positive{% elif s < 0 %}negative{% else %}zero{% endif %}">{{ s }}</div>
+        <form class="trust-override-form" method="post" action="/admin/user/{{ user.id }}/trust">
+          <input type="text" name="trust_score" value="{{ user.trust_score }}" placeholder="integer">
+          <button type="submit" class="btn">Override</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <h2>Published poems <span class="admin-badge-count">{{ poems | length }}</span></h2>
+  {% if not poems %}
+  <p><em>No published poems.</em></p>
+  {% else %}
+  <ul class="poem-list">
+    {% for p in poems %}
+    <li>
+      <a href="/p/{{ p.short_code }}" target="_blank">{% if p.title %}<em>{{ p.title }}</em>{% else %}(untitled){% endif %}</a>
+      <span class="poem-list-horses">{{ p.horse_count }} horse{{ 's' if p.horse_count != 1 else '' }}</span>
+      <span class="poem-list-date">{{ p.published_at | datefmt }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+{% endblock %}
