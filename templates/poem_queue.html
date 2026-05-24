@@ -34,6 +34,7 @@
     <a href="/">← Home</a>
     <a href="/admin/featured">Featured →</a>
     <a href="/admin/reports">Reports →</a>
+    <a href="/admin/users">Users →</a>
   </div>
 
   <h1>Poem Queue</h1>
@@ -58,7 +59,13 @@
         <span class="queue-stat">{{ sub.horse_count }} horse{{ 's' if sub.horse_count != 1 else '' }}</span>
         · <span class="queue-date">{{ sub.submitted_at | datefmt }}</span>
         · {% if sub.author_display_name %}
-            {% if sub.author_link_url %}<a href="{{ sub.author_link_url }}" target="_blank">{{ sub.author_display_name }}</a>{% else %}{{ sub.author_display_name }}{% endif %}
+            {% if sub.author_user_id %}
+              <a href="/admin/user/{{ sub.author_user_id }}">{{ sub.author_display_name }}</a>
+            {% elif sub.author_link_url %}
+              <a href="{{ sub.author_link_url }}" target="_blank">{{ sub.author_display_name }}</a>
+            {% else %}
+              {{ sub.author_display_name }}
+            {% endif %}
           {% else %}<em>anonymous</em>{% endif %}
         {% if sub.inspired_by_text %}
           · <em>After {% if sub.inspired_by_url %}<a href="{{ sub.inspired_by_url }}" rel="nofollow noopener" target="_blank">{{ sub.inspired_by_text }}</a>{% else %}{{ sub.inspired_by_text }}{% endif %}</em>

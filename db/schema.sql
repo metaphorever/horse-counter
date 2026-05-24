@@ -30,6 +30,9 @@ CREATE TABLE IF NOT EXISTS users (
     -- Phase 1.15: poem chosen as profile bio. NULL = no bio set.
     -- Applied via ALTER TABLE migration on existing DBs (seed.py).
     bio_poem_id         INTEGER REFERENCES poems(id) ON DELETE SET NULL,
+    -- Phase 1.13.1: integer trust score. +1 per admin-approved poem with no tag edits;
+    -- -1 where admin edited tags. Admin can manually override. Default 0.
+    trust_score         INTEGER NOT NULL DEFAULT 0,
     joined_at           REAL    NOT NULL
 );
 
@@ -252,3 +255,12 @@ CREATE TABLE IF NOT EXISTS saved_poems (
 );
 
 CREATE INDEX IF NOT EXISTS idx_saved_poems_user ON saved_poems(user_id, saved_at DESC);
+
+-- ── Admin settings ────────────────────────────────────────────────────────────
+-- Key/value store for configurable admin-only thresholds and flags.
+-- Phase 1.13.1: auto_post_threshold — trust_score required to bypass the queue.
+CREATE TABLE IF NOT EXISTS admin_settings (
+    key        TEXT PRIMARY KEY,
+    value      TEXT NOT NULL DEFAULT '',
+    updated_at REAL NOT NULL
+);

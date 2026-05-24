@@ -138,6 +138,35 @@ def set_bio_poem(user_id: int, poem_id) -> None:
         )
 
 
+def update_trust_score(user_id: int, delta: int) -> int:
+    """Add delta (+1 or -1) to user's trust_score. Returns the new score."""
+    with get_db() as conn:
+        conn.execute(
+            'UPDATE users SET trust_score = trust_score + ? WHERE id = ?',
+            (delta, user_id),
+        )
+        row = conn.execute('SELECT trust_score FROM users WHERE id = ?', (user_id,)).fetchone()
+    return row['trust_score'] if row else 0
+
+
+def set_trust_score(user_id: int, score: int) -> None:
+    """Manually override a user's trust_score."""
+    with get_db() as conn:
+        conn.execute(
+            'UPDATE users SET trust_score = ? WHERE id = ?',
+            (score, user_id),
+        )
+
+
+def get_all_users(limit: int = 200) -> list:
+    """Return all users ordered by join date, newest first."""
+    with get_db() as conn:
+        rows = conn.execute(
+            'SELECT * FROM users ORDER BY joined_at DESC LIMIT ?', (limit,)
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
 def get_user_published_poems(user_id: int) -> list:
     """Return all published poems by this user, newest first."""
     with get_db() as conn:
