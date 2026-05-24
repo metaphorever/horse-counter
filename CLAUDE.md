@@ -250,21 +250,23 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: Style pass ✅ closed (2026-05-24) — next session is open**
+**PHASE: 1.13.1 Trust score system — merged (2026-05-24), pending live verification**
 
-Style pass shipped and verified live. PRs #57–#61 merged. All 7 testing holds cleared; chip height/spacing is functional with a known rough edge deferred to a later session (not blocking).
-
-What shipped across the style pass: SVG wordmark in nav; Fancy chips → Playfair Display SC small-caps; attributions → Playfair SC across all modes; Plain poem body → IM Fell English; page titles → Abril Fatface with cream+shadow (grass-readable); Plain mode poem card → cream BG; nav logo → 34px; Featured page Fancy mode text → cream/tan palette; Saved Horses quick-pick in editor search; editor layout restructure.
-
-Phases 1.4, 1.12, 1.13, 1.14, 1.15, 1.19, 1.23, 1.29 fully shipped and verified. Also confirmed shipped: 1.16, 1.17, 1.21.
+PR #62 merged to master. Testing holds must clear before this phase closes:
+1. Deploy to VPS — confirm boot migration runs clean
+2. Submit as logged-in user → publishes directly (threshold=0)
+3. Raise threshold to 5 → submission goes to queue
+4. Approve without tag edits → author +1; approve with edits → author -1
+5. `/admin/users` threshold form works; `/admin/user/<id>` override works
+6. Queue card author links to `/admin/user/<id>`
 
 **Next session candidates (see ROADMAP for full detail):**
+- **Admin QoL session** — quick-access admin nav, poem hide/delete, account actions `[sonnet · medium]`
 - **Wandering pasture/saved-horses layout** — its own session `[sonnet · medium]`
-- **1.13.1** Trust score system `[sonnet · medium]`
 - **1.20** Cross-post queue `[sonnet · high]`
 
-**Open rough edges (not blocking, revisit later):**
+**Open rough edges (not blocking):**
 - Fancy chip height/spacing — functional but Clover wants a second pass
 - Plain/Default mode text readability on featured/collection pages (only Fancy mode fixed)
 
-Backlog added style pass sessions: **horse chip context menu in collection views**; **SVG coat pattern overlays**; **per-display-mode editor styles**. Prior backlog: SVG chip art system; dark mode; featured page mixed section types; site root as real home/landing page.
+Phases shipped and verified: 1.4, 1.12, 1.13, 1.14, 1.15, 1.19, 1.23, 1.29. Also confirmed: 1.16, 1.17, 1.21.
