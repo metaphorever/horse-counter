@@ -274,15 +274,17 @@ def is_display_surface() -> bool:
 def inject_globals():
     """Make is_admin, current_user, and Clerk key available in every template."""
     view_mode, picker_decided = resolve_view()
+    is_admin_page = request.path.startswith('/admin')
     return {
         'is_admin':              _is_admin(),
         'is_pin_admin':          bool(session.get('logged_in')),
+        'is_admin_page':         is_admin_page,
         'current_user':          g.get('current_user'),
         'clerk_publishable_key': CLERK_PUBLISHABLE_KEY,
         'tumblr_auth':           tumblr.authenticated,
         'blog_name':             TUMBLR_BLOG_NAME,
         'view_mode':             view_mode,
-        'view_decorated':        view_mode in ('fancy', 'plain'),
+        'view_decorated':        view_mode in ('fancy', 'plain') and not is_admin_page,
         'picker_decided':        picker_decided,
         'display_surface':       is_display_surface(),
         # One-shot confirmation shown in place of the strip right after the

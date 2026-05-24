@@ -1977,6 +1977,30 @@ body.view-fancy .text-page-updated { color: #c8b888; }
 .admin-poem-status-badge { font: 700 11px 'Courier Prime','Courier New',monospace; background: #c04040; color: #fff; border-radius: 2px; padding: 2px 6px; letter-spacing: .05em; }
 .admin-suspended-badge { font: 700 11px 'Courier Prime','Courier New',monospace; background: #c04040; color: #fff; border-radius: 2px; padding: 2px 6px; letter-spacing: .05em; }
 
+/* ── Admin page theme — plain cream bg, no grass, no pushpin ────────────── */
+body.admin-page {
+  background-color: #ede8d8;
+  background-image: none;
+}
+body.admin-page .box::before,
+body.admin-page .login-box::before { display: none; }
+
+/* ── Admin mobile responsive ─────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .admin-table,
+  .admin-users-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .admin-td-actions,
+  .admin-actions     { white-space: normal; flex-wrap: wrap; }
+  .threshold-form    { flex-wrap: wrap; }
+  .threshold-form .threshold-note { width: 100%; margin-top: 4px; }
+  .admin-cat-label-input { width: auto; min-width: 0; flex: 1; }
+  .admin-form-inline { gap: 6px; }
+  .admin-form-inline label { min-width: 0; }
+  .admin-cat-head-row { gap: 4px; }
+  .user-detail-row { flex-wrap: wrap; gap: 6px; }
+  .user-detail-label { width: auto; }
+}
+
 /* ── Phase 1.8: Admin featured page ─────────────────────────────────────── */
 .admin-featured-page { max-width: 820px; }
 .admin-section { margin-bottom: 8px; }
