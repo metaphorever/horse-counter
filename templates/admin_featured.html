@@ -163,34 +163,40 @@
 
       {# Tags list #}
       {% if cat.tags %}
-      <table class="admin-table admin-tag-table">
-        <tbody>
-          {% for tag in cat.tags %}
-          <tr class="{% if tag.status != 'active' %}admin-row-inactive{% endif %}">
-            <form method="post" action="{{ url_for('admin_tag_update', tag_id=tag.id) }}">
-              <td>
-                <input class="admin-input" type="text" name="label"
-                       value="{{ tag.label }}" maxlength="60" required>
-              </td>
-              <td class="admin-td-meta admin-tag-status">{{ tag.status }}</td>
-              <td class="admin-td-actions">
-                <button class="btn-sec btn-sm" type="submit">Rename</button>
+      <ul class="tag-edit-list">
+        {% for tag in cat.tags %}
+        <li class="tag-edit-item{% if tag.status != 'active' %} tag-inactive{% endif %}" id="tag-item-{{ tag.id }}">
+          <div class="tag-display" id="tag-display-{{ tag.id }}">
+            <button type="button" class="tag-label-btn" onclick="startEditTag({{ tag.id }})">{{ tag.label }}</button>
+            {% if tag.status != 'active' %}<span class="tag-status-pill">{{ tag.status }}</span>{% endif %}
+            <form method="post" action="{{ url_for('admin_tag_delete', tag_id=tag.id) }}" style="display:inline"
+                  onsubmit="return confirm('Delete tag &quot;{{ tag.label }}&quot;? This cannot be undone.')">
+              <button type="submit" class="tag-delete-btn" title="Delete">×</button>
             </form>
-                {% if tag.status == 'active' %}
-                <form method="post" action="{{ url_for('admin_tag_deactivate', tag_id=tag.id) }}"
-                      onsubmit="return confirm('Deactivate tag &quot;{{ tag.label }}&quot;? It will be hidden from pickers.')">
-                  <button class="btn-warn btn-sm" type="submit">Deactivate</button>
-                </form>
-                {% endif %}
-                <form method="post" action="{{ url_for('admin_tag_delete', tag_id=tag.id) }}"
-                      onsubmit="return confirm('Delete tag &quot;{{ tag.label }}&quot;? This cannot be undone.')">
-                  <button class="btn-danger btn-sm" type="submit">Delete</button>
-                </form>
-              </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </div>
+          <div class="tag-edit" id="tag-edit-{{ tag.id }}" hidden>
+            <form method="post" action="{{ url_for('admin_tag_update', tag_id=tag.id) }}" class="tag-edit-row">
+              <input class="admin-input tag-edit-input" type="text" name="label"
+                     value="{{ tag.label }}" maxlength="60" required id="tag-input-{{ tag.id }}">
+              <button class="btn-sec btn-sm" type="submit">Save</button>
+              <button type="button" class="btn-sec btn-sm" onclick="cancelEditTag({{ tag.id }})">Cancel</button>
+            </form>
+            <div class="tag-edit-actions">
+              {% if tag.status == 'active' %}
+              <form method="post" action="{{ url_for('admin_tag_deactivate', tag_id=tag.id) }}" style="display:inline"
+                    onsubmit="return confirm('Deactivate tag &quot;{{ tag.label }}&quot;? It will be hidden from pickers.')">
+                <button class="btn-warn btn-sm" type="submit">Deactivate</button>
+              </form>
+              {% else %}
+              <form method="post" action="{{ url_for('admin_tag_activate', tag_id=tag.id) }}" style="display:inline">
+                <button class="btn-sec btn-sm" type="submit">Activate</button>
+              </form>
+              {% endif %}
+            </div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
       {% else %}
       <p class="admin-hint">No tags yet.
         <form class="admin-cat-delete-form" method="post"
@@ -201,14 +207,19 @@
       </p>
       {% endif %}
 
-      {# Add tag form #}
-      <form class="admin-form-inline admin-form-compact" method="post"
-            action="{{ url_for('admin_tag_add') }}">
-        <input type="hidden" name="category_id" value="{{ cat.id }}">
-        <input class="admin-input" type="text" name="label"
-               placeholder="New tag label" maxlength="60" required>
-        <button class="btn-sec btn-sm" type="submit">Add tag</button>
-      </form>
+      {# Add tag — hidden form revealed by button #}
+      <div class="tag-add-row" id="tag-add-row-{{ cat.id }}">
+        <button type="button" class="tag-add-btn btn-sec btn-sm"
+                onclick="showAddTag({{ cat.id }})">+ Add tag</button>
+        <form class="tag-add-form" id="tag-add-form-{{ cat.id }}" method="post"
+              action="{{ url_for('admin_tag_add') }}" hidden>
+          <input type="hidden" name="category_id" value="{{ cat.id }}">
+          <input class="admin-input tag-edit-input" type="text" name="label"
+                 placeholder="New tag label" maxlength="60" required id="tag-add-input-{{ cat.id }}">
+          <button class="btn-sec btn-sm" type="submit">Add</button>
+          <button type="button" class="btn-sec btn-sm" onclick="hideAddTag({{ cat.id }})">Cancel</button>
+        </form>
+      </div>
 
     </div>
     {% endfor %}
@@ -236,4 +247,27 @@
   </section>
 
 </div>
+
+<script>
+function startEditTag(id) {
+  document.getElementById('tag-display-' + id).hidden = true;
+  var edit = document.getElementById('tag-edit-' + id);
+  edit.hidden = false;
+  document.getElementById('tag-input-' + id).focus();
+}
+function cancelEditTag(id) {
+  document.getElementById('tag-edit-' + id).hidden = true;
+  document.getElementById('tag-display-' + id).hidden = false;
+}
+function showAddTag(catId) {
+  document.querySelector('#tag-add-row-' + catId + ' .tag-add-btn').hidden = true;
+  var form = document.getElementById('tag-add-form-' + catId);
+  form.hidden = false;
+  document.getElementById('tag-add-input-' + catId).focus();
+}
+function hideAddTag(catId) {
+  document.getElementById('tag-add-form-' + catId).hidden = true;
+  document.querySelector('#tag-add-row-' + catId + ' .tag-add-btn').hidden = false;
+}
+</script>
 {% endblock %}

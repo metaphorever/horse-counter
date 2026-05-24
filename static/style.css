@@ -2017,18 +2017,6 @@ body.admin-page .login-box::before { display: none; }
   /* Row 3: order + save (natural flex row) */
   .admin-cat-head-meta { display: flex; gap: 8px; align-items: center; }
 
-  /* ── Tag rows: card layout instead of squished table ──────────────── */
-  .admin-tag-table { display: block; overflow-x: visible; }
-  .admin-tag-table tbody,
-  .admin-tag-table tr { display: block; }
-  .admin-tag-table td { display: block; border: none; padding: 2px 0; }
-  .admin-tag-table .admin-td-meta { padding-bottom: 4px; }
-  .admin-tag-table .admin-td-actions { padding-top: 2px; border-top: none; }
-  .admin-tag-table tr { border-bottom: 1px solid #e8dcc0; padding: 6px 0; }
-  .admin-tag-table tr:last-child { border-bottom: none; }
-  /* Name input takes full width in card layout */
-  .admin-tag-table .admin-input { width: 100%; box-sizing: border-box; }
-
   /* ── Reports: card layout instead of 6-column table ──────────────── */
   .admin-reports-table thead { display: none; }
   .admin-reports-table,
@@ -2097,14 +2085,29 @@ body.admin-page .login-box::before { display: none; }
 .admin-badge-count { display: inline-block; font: 700 11px 'Courier Prime','Courier New',monospace; background: #c4a030; color: #fff; border-radius: 10px; padding: 1px 7px; margin-left: 6px; vertical-align: middle; }
 .admin-cat-edit-form { margin-bottom: 8px; }
 .admin-cat-head-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
-.admin-cat-label-input { width: 200px; flex-shrink: 0; }
+.admin-cat-label-input { width: 100%; flex-basis: 100%; }
 .admin-cat-head-type,
 .admin-cat-head-meta { display: flex; align-items: center; gap: 6px; }
 .admin-inline-label { font: 12px 'Courier Prime','Courier New',monospace; color: #6b5430; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
-.admin-tag-table { margin-bottom: 8px; }
-.admin-tag-table td { padding: 4px 6px; }
-.admin-tag-status { font-size: 11px; color: #a08060; font-style: italic; }
 .admin-cat-delete-form { display: inline; margin-left: 8px; }
+
+/* ── Tag click-to-edit list ───────────────────────────────────────────── */
+.tag-edit-list { list-style: none; padding: 0; margin: 0 0 8px; }
+.tag-edit-item { border-bottom: 1px solid #e8dcc0; padding: 5px 0; }
+.tag-edit-item:last-child { border-bottom: none; }
+.tag-edit-item.tag-inactive .tag-label-btn { color: #a08060; }
+.tag-display { display: flex; align-items: center; gap: 6px; min-height: 26px; }
+.tag-label-btn { background: none; border: none; padding: 0; font: 13px 'Courier Prime','Courier New',monospace; color: #2d2316; cursor: pointer; text-align: left; text-decoration: underline dotted; text-underline-offset: 3px; }
+.tag-label-btn:hover { color: #7a4a18; }
+.tag-status-pill { font: 11px 'Courier Prime','Courier New',monospace; color: #fff; background: #a08060; border-radius: 10px; padding: 1px 7px; white-space: nowrap; }
+.tag-delete-btn { background: none; border: none; color: #c06050; font: 16px/1 'Courier Prime','Courier New',monospace; cursor: pointer; padding: 0 2px; margin-left: auto; opacity: 0.5; }
+.tag-delete-btn:hover { opacity: 1; }
+.tag-edit { padding: 4px 0 6px; }
+.tag-edit-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 4px; }
+.tag-edit-input { flex: 1; min-width: 120px; }
+.tag-edit-actions { display: flex; gap: 4px; }
+.tag-add-row { margin-top: 4px; }
+.tag-add-form { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 4px; }
 
 /* ── Phase 1.14 + 1.15 + 1.19 shared: page-level elements ───────────────── */
 /* Pages sit on the grass field in all non-Reader modes — use cream text + shadow for legibility */

@@ -321,6 +321,16 @@ def deactivate_tag(tag_id: int) -> bool:
         return cur.rowcount > 0
 
 
+def activate_tag(tag_id: int) -> bool:
+    """Set an inactive tag back to active. Returns True if found and was inactive."""
+    with get_db() as conn:
+        cur = conn.execute(
+            "UPDATE tags SET status = 'active' WHERE id = ? AND status = 'inactive'",
+            (tag_id,),
+        )
+        return cur.rowcount > 0
+
+
 def delete_tag_if_safe(tag_id: int) -> bool:
     """Delete a tag only if no poem_tags rows reference it. Returns True if deleted."""
     with get_db() as conn:

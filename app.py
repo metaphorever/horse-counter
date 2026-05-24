@@ -105,6 +105,7 @@ from db.tags import (
     reject_tag,
     update_tag_label,
     deactivate_tag,
+    activate_tag,
     delete_tag_if_safe,
     update_tag_category,
     delete_tag_category_if_safe,
@@ -866,6 +867,16 @@ def admin_tag_deactivate(tag_id):
         flash('Tag deactivated (hidden from pickers; existing poem tags preserved).', 'success')
     else:
         flash('Tag not found or already inactive.', 'error')
+    return redirect(url_for('admin_featured'))
+
+
+@app.route('/admin/tag/<int:tag_id>/activate', methods=['POST'])
+@login_required
+def admin_tag_activate(tag_id):
+    if activate_tag(tag_id):
+        flash('Tag reactivated.', 'success')
+    else:
+        flash('Tag not found or already active.', 'error')
     return redirect(url_for('admin_featured'))
 
 
