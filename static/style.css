@@ -1125,9 +1125,9 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
    below — there the body-level grass field becomes the surface and content
    floats directly on it. (Coat colours, the famous shimmer, and the poem-body
    line treatment stay shared via `view-decorated` further down.) */
-body.view-plain .collection-chips,
-body.view-plain .profile-bio-poem,
-body.view-plain .queue-poem {
+body.view-plain:not(.admin-page) .collection-chips,
+body.view-plain:not(.admin-page) .profile-bio-poem,
+body.view-plain:not(.admin-page) .queue-poem {
   background-color: #4d7432;
   background-image: url('/static/grass.svg');
   background-size: 40px 40px;

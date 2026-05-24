@@ -270,6 +270,7 @@
     <div id="draft-modal-actions" class="modal-actions">
       <button class="btn-primary" id="draft-modal-submit" onclick="saveDraftFromModal()">Save</button>
       <button class="btn-sec" onclick="closeDraftModal()">Cancel</button>
+      <button class="btn-sec btn-danger" id="draft-modal-delete" onclick="deleteDraftFromModal()" style="display:none;margin-left:auto">Delete draft</button>
     </div>
     <div id="draft-modal-err" class="msg err modal-err" style="display:none"></div>
     <div id="draft-modal-ok" class="msg ok" style="display:none"></div>
@@ -1811,9 +1812,24 @@ function openEditDetails(){
     selectedDraftTagIds = new Set();
   }
   renderDraftTagSections();
+  // Show delete button only when editing an existing saved draft.
+  document.getElementById('draft-modal-delete').style.display = draftId ? '' : 'none';
   document.getElementById('draft-modal').classList.add('open');
 }
 function closeDraftModal(){ document.getElementById('draft-modal').classList.remove('open'); }
+
+async function deleteDraftFromModal(){
+  if(!draftId) return;
+  if(!confirm('Are you sure? All horses will be set loose.')) return;
+  const idToDelete = draftId;
+  closeDraftModal();
+  await apiPost('/me/draft/delete', { draft_id: idToDelete });
+  // Reset to blank slate regardless of API result — the user asked to discard it.
+  draftId = null; currentDraftMeta = null; stable = []; lines = [[]];
+  window.history.replaceState(null, '', window.location.pathname);
+  renderStable(); renderPoem(); updateDraftStrip();
+  showToast('Draft deleted.');
+}
 
 async function saveDraftFromModal(){
   if(!isLoggedIn) return;
@@ -2069,12 +2085,15 @@ async function _doSubmitPoem(){
     poem_title: poemTitle,
     inspired_by_text: inspiredText, inspired_by_url: inspiredUrl,
     tag_ids,
+    draft_id: draftId,
   });
   if(!d) return;
   if(d.ok){
     closeModal();
-    lines=[[]]; renderPoem();
-    const t=document.getElementById('modal-title'); if(t) t.value='';
+    // Clear draft state — the poem is saved, the draft is no longer needed.
+    draftId = null; currentDraftMeta = null; stable = []; lines = [[]];
+    window.history.replaceState(null, '', window.location.pathname);
+    renderStable(); renderPoem(); updateDraftStrip();
     showToast(d.message || 'Poem submitted for review!');
   } else {
     const el=document.getElementById('modal-err');
