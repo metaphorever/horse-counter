@@ -12,7 +12,6 @@
     {% for h in horses %}
     <div class="collection-chip-wrap" data-name="{{ h.name }}">
       {{ render_chip(h) }}
-      <button class="collection-chip-remove" aria-label="Remove {{ h.display }} from pasture">×</button>
     </div>
     {% endfor %}
   </div>
@@ -25,35 +24,7 @@
   {% endif %}
 </div>
 
-{% if horses %}
-<script>
-(function() {
-  document.querySelectorAll('.collection-chip-remove').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      const wrap = this.closest('.collection-chip-wrap');
-      fetch('{{ url_for("me_pasture_remove") }}', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({name: wrap.dataset.name}),
-      })
-      .then(function(r){ return r.json(); })
-      .then(function(d) {
-        if(d.ok) {
-          wrap.remove();
-          const remaining = document.querySelectorAll('.collection-chip-wrap').length;
-          const count = document.querySelector('.collection-count');
-          if(count) count.textContent = remaining + ' horse' + (remaining !== 1 ? 's' : '');
-          if(remaining === 0) {
-            document.getElementById('pasture-chips').remove();
-            if(count) count.remove();
-            document.querySelector('.collection-page').insertAdjacentHTML('beforeend',
-              '<p class="collection-empty">Your pasture is empty.</p>');
-          }
-        }
-      });
-    });
-  });
-})();
-</script>
-{% endif %}
+{% set popover_this_code = '' %}
+{% set popover_page_context = 'pasture' %}
+{% include '_horse_popover.html' %}
 {% endblock %}

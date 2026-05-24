@@ -10,9 +10,8 @@
   {% if horses %}
   <div class="collection-chips" id="saved-horses-chips">
     {% for h in horses %}
-    <div class="collection-chip-wrap" data-name="{{ h.name }}" data-display="{{ h.display }}" data-url="{{ h.url or '' }}">
+    <div class="collection-chip-wrap" data-name="{{ h.name }}">
       {{ render_chip(h) }}
-      <button class="collection-chip-remove" aria-label="Unsave {{ h.display }}">×</button>
     </div>
     {% endfor %}
   </div>
@@ -24,35 +23,7 @@
   {% endif %}
 </div>
 
-{% if horses %}
-<script>
-(function() {
-  document.querySelectorAll('.collection-chip-remove').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      const wrap = this.closest('.collection-chip-wrap');
-      fetch('/horse/save', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({name: wrap.dataset.name, display: wrap.dataset.display, url: wrap.dataset.url}),
-      })
-      .then(function(r){ return r.json(); })
-      .then(function(d) {
-        if(!d.saved) {
-          wrap.remove();
-          const remaining = document.querySelectorAll('.collection-chip-wrap').length;
-          const count = document.querySelector('.collection-count');
-          if(count) count.textContent = remaining + ' horse' + (remaining !== 1 ? 's' : '');
-          if(remaining === 0) {
-            document.getElementById('saved-horses-chips').remove();
-            if(count) count.remove();
-            document.querySelector('.collection-page').insertAdjacentHTML('beforeend',
-              '<p class="collection-empty">No saved horses yet.</p>');
-          }
-        }
-      });
-    });
-  });
-})();
-</script>
-{% endif %}
+{% set popover_this_code = '' %}
+{% set popover_page_context = 'saved_horses' %}
+{% include '_horse_popover.html' %}
 {% endblock %}

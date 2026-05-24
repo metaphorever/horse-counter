@@ -74,6 +74,10 @@
 </div>
 
 {# ── Bio picker modal ────────────────────────────────────────────────── #}
+{% set popover_this_code = bio_poem.short_code if bio_poem else '' %}
+{% set popover_page_context = 'profile' %}
+{% include '_horse_popover.html' %}
+
 {% if is_own_profile and bio_picker_poems %}
 <div class="modal-overlay" id="bio-picker-modal" role="dialog"
      aria-modal="true" aria-label="Choose bio poem">

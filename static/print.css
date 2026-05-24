@@ -76,11 +76,13 @@
 
   /* ── Corner masthead ──────────────────────────────────────────────────── */
   .print-masthead {
-    font-family: 'Smokum', Georgia, serif;
-    font-size: 20pt;
     line-height: 1;
-    color: #0f0c06;
     text-align: left;
+  }
+  .print-masthead-logo {
+    height: 26pt;
+    width: auto;
+    display: block;
   }
 
   /* ── Poem header ──────────────────────────────────────────────────────── */
