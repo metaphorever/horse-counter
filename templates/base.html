@@ -17,7 +17,7 @@
   src="https://clerk.poet.horse/npm/@clerk/clerk-js@5/dist/clerk.browser.js"></script>
 {% endif %}
 </head>
-<body class="view-{{ view_mode }}{% if view_decorated %} view-decorated{% endif %}">
+<body class="{% if is_admin_page %}view-plain admin-page{% else %}view-{{ view_mode }}{% if view_decorated %} view-decorated{% endif %}{% endif %}">
 <div class="site-nav-bar">
   <nav class="site-nav" id="site-nav">
     <div class="nav-brand">
