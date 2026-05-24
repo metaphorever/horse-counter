@@ -53,6 +53,22 @@
             <button class="mode-opt{% if view_mode == 'reader' %} mode-opt-current{% endif %}" type="submit" name="mode" value="reader">Reader</button>
           </form>
         </details>
+        {% if is_admin %}
+          <div class="nav-group" data-nav-group>
+            <button class="nav-item nav-item-btn"
+                    aria-expanded="false" aria-haspopup="true">
+              Admin
+              <span class="nav-caret" aria-hidden="true">&#x25BE;</span>
+            </button>
+            <div class="nav-sub nav-sub-right" role="menu">
+              <a class="nav-sub-item" href="/admin/poem-queue" role="menuitem">Queue</a>
+              <a class="nav-sub-item" href="/admin/reports"    role="menuitem">Reports</a>
+              <a class="nav-sub-item" href="/admin/featured"   role="menuitem">Featured</a>
+              <a class="nav-sub-item" href="/admin/users"      role="menuitem">Users</a>
+              <a class="nav-sub-item" href="/admin/dictionary" role="menuitem">Dictionary</a>
+            </div>
+          </div>
+        {% endif %}
         {% if current_user %}
           <div class="nav-group" data-nav-group>
             <button class="nav-item nav-item-btn nav-username"

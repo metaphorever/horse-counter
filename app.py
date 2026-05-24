@@ -2238,7 +2238,7 @@ def poem_permalink(short_code):
     # eyeballs. Anonymous-author submissions are publicly viewable only after
     # admin publish; the link itself is a soft secret in the meantime.
     user     = g.get('current_user')
-    is_admin = bool(session.get('logged_in'))
+    is_admin = _is_admin()
     if poem['status'] != 'published':
         owns = user is not None and poem.get('author_user_id') == user.get('id')
         if not (is_admin or owns):
