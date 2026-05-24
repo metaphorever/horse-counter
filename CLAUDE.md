@@ -250,19 +250,21 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: Style pass built — ⚠ OPEN TESTING HOLD: Clover live-verification before style pass closes (2026-05-23)**
+**PHASE: Style pass ✅ closed (2026-05-24) — next session is open**
 
-Style pass is built on branch `claude/style-pass`, PR #57 open, awaiting squash-merge → auto-deploy → Clover live test.
+Style pass shipped and verified live. PRs #57–#61 merged. All 7 testing holds cleared; chip height/spacing is functional with a known rough edge deferred to a later session (not blocking).
 
-What's in PR #57: SVG wordmark in nav (text fallback); Fancy chips → Playfair Display SC small-caps; attributions → Playfair SC across all modes; Plain poem body → IM Fell English; page titles → Abril Fatface; collection chip green-color fix; editor layout restructure (Clear Poem danger style + Post Poem/Edit Details below draft strip); Saved Horses quick-pick button in editor search.
-
-**Next session opens by confirming the testing holds in `sessions/2026-05-23-style-pass.md`** (Fancy chips; Plain body; nav SVG logo; collection chip colors; page titles; editor layout; Saved Horses route). If all clear → close style pass. If issues → fix-forward.
+What shipped across the style pass: SVG wordmark in nav; Fancy chips → Playfair Display SC small-caps; attributions → Playfair SC across all modes; Plain poem body → IM Fell English; page titles → Abril Fatface with cream+shadow (grass-readable); Plain mode poem card → cream BG; nav logo → 34px; Featured page Fancy mode text → cream/tan palette; Saved Horses quick-pick in editor search; editor layout restructure.
 
 Phases 1.4, 1.12, 1.13, 1.14, 1.15, 1.19, 1.23, 1.29 fully shipped and verified. Also confirmed shipped: 1.16, 1.17, 1.21.
 
-After style pass closes, next candidates (see ROADMAP for full detail):
+**Next session candidates (see ROADMAP for full detail):**
 - **Wandering pasture/saved-horses layout** — its own session `[sonnet · medium]`
 - **1.13.1** Trust score system `[sonnet · medium]`
 - **1.20** Cross-post queue `[sonnet · high]`
 
-Backlog added this session: **horse chip context menu in collection views** (send to drafts / remove from pasture / save-unsave toggle, context-sensitive); **SVG coat pattern overlays** (post SVG-chip-art-system); **per-display-mode editor styles** (long-term opt-in). Prior backlog: SVG chip art system; dark mode; featured page mixed section types; site root as real home/landing page.
+**Open rough edges (not blocking, revisit later):**
+- Fancy chip height/spacing — functional but Clover wants a second pass
+- Plain/Default mode text readability on featured/collection pages (only Fancy mode fixed)
+
+Backlog added style pass sessions: **horse chip context menu in collection views**; **SVG coat pattern overlays**; **per-display-mode editor styles**. Prior backlog: SVG chip art system; dark mode; featured page mixed section types; site root as real home/landing page.
