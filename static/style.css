@@ -189,7 +189,7 @@ h2 {
   align-items: center;
   gap: 0;
 }
-.nav-logo-svg  { height: 28px; width: auto; display: block; }
+.nav-logo-svg  { height: 34px; width: auto; display: block; }
 .nav-logo-text { display: none; }
 .nav-logo:hover { color: #3a6b1a; }
 .nav-body {
@@ -1238,7 +1238,7 @@ body.view-decorated .poem-line-out {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
   padding-left: 0; text-indent: 0;
 }
-body.view-fancy .poem-line-out { line-height: 2.4; }
+body.view-fancy .poem-line-out { line-height: 1.8; }
 body.view-plain .poem-line-out { font: 1.05rem/2.0 'IM Fell English', Georgia, serif; }
 
 /* ── Decorated chips — Fancy mode (legs / tail / head, scattered tilt) ─────── */
@@ -1247,7 +1247,7 @@ body.view-fancy .poem-horse {
   position: relative;
   overflow: visible;
   padding: 3px 11px;
-  margin: 14px 5px 9px;
+  margin: 8px 5px 6px;
   font-family: 'Playfair Display SC', Georgia, serif;
   font-size: 1.0rem;
   font-weight: normal;
@@ -1381,7 +1381,7 @@ body.view-plain a.poem-horse:hover { filter: brightness(1.08); }
    (Enlarging chips + harmonising the chip font with the display type is routed
    to the style/font pass, where chip size + font are decided together.) */
 @media (max-width: 520px) {
-  body.view-fancy .poem-line-out { line-height: 2.6; }
+  body.view-fancy .poem-line-out { line-height: 2.0; }
   body.view-fancy .poem-view-title { font-size: 1.45rem; }
   body.view-fancy .poem-view-body { padding-top: 20px; }
 }
@@ -1556,6 +1556,12 @@ body.view-reader .poem-ribbon-btn[aria-pressed="true"] {
   box-shadow: inset 1px 1px 2px rgba(0, 0, 0, .5);
   transform: translate(2px, 2px);
 }
+
+/* Reader mode: paper background — restore dark text for page-level elements */
+body.view-reader h1.page-title { color: #0f0c06; text-shadow: none; }
+body.view-reader .page-desc { color: #3a2e18; text-shadow: none; }
+body.view-reader .collection-empty,
+body.view-reader .collection-count { color: #6b5430; text-shadow: none; }
 
 /* Tag picker — inside the publish modal */
 .modal-tag-sections { margin-top: 14px; display: flex; flex-direction: column; gap: 14px; }
@@ -2000,8 +2006,13 @@ body.view-reader .poem-ribbon-btn[aria-pressed="true"] {
 .admin-cat-delete-form { display: inline; margin-left: 8px; }
 
 /* ── Phase 1.14 + 1.15 + 1.19 shared: page-level elements ───────────────── */
-h1.page-title { font: normal 26px/1.2 'Abril Fatface',Georgia,serif; margin-bottom: 6px; }
-.page-desc  { font: 14px/1.6 Georgia,'Times New Roman',serif; color: #6b5430; margin-bottom: 20px; }
+/* Pages sit on the grass field in all non-Reader modes — use cream text + shadow for legibility */
+h1.page-title {
+  font: normal 26px/1.2 'Abril Fatface',Georgia,serif; margin-bottom: 6px;
+  color: #fdf8f0;
+  text-shadow: 0 1px 1px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.5);
+}
+.page-desc  { font: 14px/1.6 Georgia,'Times New Roman',serif; color: #e8d5b0; text-shadow: 0 1px 2px rgba(0,0,0,.35); margin-bottom: 20px; }
 .btn-pri    { font: 13px 'Courier Prime','Courier New',monospace; background: #3a6b1a; border: 1px solid #2a5010; border-radius: 2px; padding: 5px 14px; cursor: pointer; color: #fdf8ed; box-shadow: 1px 1px 0 #1a3a08; }
 .btn-pri:hover  { background: #4a7f22; }
 .btn-pri:active { transform: translate(1px,1px); box-shadow: none; }
@@ -2095,8 +2106,8 @@ a.collection-poem-title:hover { text-decoration: underline; }
 .collection-meta a:hover { text-decoration: underline; }
 .collection-remove-btn  { font: 11px 'Courier Prime','Courier New',monospace; color: #a08060; white-space: nowrap; flex-shrink: 0; }
 .collection-remove-btn:hover { color: #7a2020; }
-.collection-empty { font: italic 14px Georgia,serif; color: #a08060; }
-.collection-count { font: 12px 'Courier Prime','Courier New',monospace; color: #a08060; margin-top: 8px; }
+.collection-empty { font: italic 14px Georgia,serif; color: #c8b888; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.collection-count { font: 12px 'Courier Prime','Courier New',monospace; color: #c8b888; text-shadow: 0 1px 2px rgba(0,0,0,.3); margin-top: 8px; }
 
 /* Horse-chip grid layout for pasture + saved-horses pages */
 .collection-chips     { display: flex; flex-wrap: wrap; gap: 10px; padding: 24px 0 8px; }
