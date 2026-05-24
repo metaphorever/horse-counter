@@ -66,3 +66,33 @@ Test on poet.horse before calling verified:
 - Account-action test-account holds (suspend/reinstate/delete/admin-block) — still pending test accounts
 - 1.24 DNS cutover — owner action when ready
 - Wandering layout — Phase 2
+
+---
+
+## Continuation — same day, post-deploy testing
+
+### What we did
+
+**Tumblr crosspost attribution verified.** `POEM_SUFFIX` in `poetry.py:122` already links to `https://poet.horse/poetry`. `format_poem_prefix` produces plain-text author credit (no URLs). No PythonAnywhere URLs anywhere in the crosspost flow. Poem permalink not included in crosspost body — noted as intentional; easy to add if desired later.
+
+**CSS fix: Plain-mode chips still showing grass inside cream box.** The existing `body.view-plain:not(.admin-page) .collection-chips` grass rule applied even when `.collection-chips` was nested inside the new cream `.collection-page` box. Fixed by adding a more specific override:
+```css
+body.view-plain:not(.admin-page) .collection-page .collection-chips {
+  background-color: transparent;
+  background-image: none;
+}
+```
+
+**Auto-pasture on publish.** Neither the bypass-queue nor admin-approval publish paths wired up `add_to_pasture`. Added `_auto_pasture_from_lines(user_id, lines)` helper (idempotent via INSERT OR IGNORE) and called it from both paths. No backfill for existing poems — **[confirmed]** by Clover.
+
+**Horse/word ratio** added to ROADMAP backlog. Formula: `horse_count / sum(word-tokens per horse name)` — 1.0 for all-single-word names, 0.5 for all-two-word names. Store as a float column on `poems` at publish time for indexable browse filtering. `compute_poem_stats`'s stale `horse_density: 100.0` field to be removed in that session.
+
+### Decisions
+
+- **[confirmed]** No backfill of existing poems for auto-pasture
+- **[confirmed]** Tumblr crosspost body does not need a specific poem permalink link (existing suffix pointing to /poetry is sufficient)
+
+### Additional testing holds
+
+- Plain mode chips: verify no grass bg inside cream box on `/me/pasture` and `/me/saved-horses`
+- Auto-pasture: publish a new poem, verify horses appear in `/me/pasture` without manual add

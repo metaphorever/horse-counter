@@ -250,9 +250,13 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: Collection pages + print SVG — shipped 2026-05-24, verification pending**
+**PHASE: Collection pages + fixes — shipped 2026-05-24, verification pending**
 
-Horse popover extracted to `templates/_horse_popover.html` shared include. Pasture and Saved Horses pages now wire the same popover as poem permalinks: ribbon (save/unsave), pasture toggle, draft picker, poems-featuring. Removing from pasture or unsaving removes the chip from the DOM. Plain-mode cream note box added to collection pages. Bio poem chips on profile pages wired. Print masthead updated to SVG logo (`print.css` + `poem.html`). Old `.collection-chip-remove` hover-button approach removed. Wandering/scatter layout deferred to Phase 2.
+Horse popover extracted to `templates/_horse_popover.html` shared include. Pasture and Saved Horses pages now wire the same popover as poem permalinks: ribbon (save/unsave), pasture toggle, draft picker, poems-featuring. Removing from pasture or unsaving removes the chip from the DOM. Plain-mode cream note box added to collection pages (chips inside the cream box no longer show grass background). Bio poem chips on profile pages wired. Print masthead updated to SVG logo (`print.css` + `poem.html`). Old `.collection-chip-remove` hover-button approach removed. Wandering/scatter layout deferred to Phase 2.
+
+Auto-pasture on publish: `_auto_pasture_from_lines()` called on both the bypass-queue and admin-approval publish paths. No backfill for existing poems.
+
+Tumblr crosspost attribution confirmed clean: `POEM_SUFFIX` in `poetry.py` already links to `https://poet.horse/poetry`; no PythonAnywhere URLs anywhere in the crosspost flow. Poem permalink not included in crosspost body (by design).
 
 Deferred holds (needs test accounts — nag before go-live):
 - Suspend → blocked sign-in with visible error message; Reinstate clears it
@@ -260,12 +264,13 @@ Deferred holds (needs test accounts — nag before go-live):
 - Admin accounts blocked from suspend/delete actions
 
 **Testing holds before calling this session verified:**
-- On `/me/pasture`: click a chip → popover opens; "Remove from my pasture" removes chip from page
+- On `/me/pasture`: click a chip → popover opens; "Remove from my pasture" removes chip from page; chips no longer show grass bg in Plain mode
 - On `/me/saved-horses`: click a chip → popover opens; ribbon unsave removes chip from page
 - On `/u/<slug>`: click a bio poem chip → popover opens with draft picker + poems-featuring
-- All three display modes (Fancy / Plain / Reader) on collection pages look correct; Plain mode has cream note box
+- All three display modes (Fancy / Plain / Reader) on collection pages look correct; Plain mode cream box, no grass on chips
 - Print a poem permalink → SVG logo appears in masthead (not Smokum text)
 - Poem permalink: popover still works (regression check on the refactor)
+- Auto-pasture: publish a new poem → horses appear in `/me/pasture` without manual add
 
 **Remaining before beta / soft launch:**
 - **1.20 Cross-post queue** — shipped (PR #69); needs Clover live verification
