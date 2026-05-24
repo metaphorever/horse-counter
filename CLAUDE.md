@@ -250,23 +250,23 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: 1.13.1 Trust score system — merged (2026-05-24), pending live verification**
+**PHASE: Admin QoL — closed (2026-05-24)**
 
-PR #62 merged to master. Testing holds must clear before this phase closes:
-1. Deploy to VPS — confirm boot migration runs clean
-2. Submit as logged-in user → publishes directly (threshold=0)
-3. Raise threshold to 5 → submission goes to queue
-4. Approve without tag edits → author +1; approve with edits → author -1
-5. `/admin/users` threshold form works; `/admin/user/<id>` override works
-6. Queue card author links to `/admin/user/<id>`
+PRs #63–#66 merged. All major testing holds cleared live by Clover.
+
+Deferred holds (needs test accounts — nag before go-live):
+- Suspend → blocked sign-in with visible error message; Reinstate clears it
+- Delete account → poems persist as anonymous
+- Admin accounts blocked from suspend/delete actions
 
 **Next session candidates (see ROADMAP for full detail):**
-- **Admin QoL session** — quick-access admin nav, poem hide/delete, account actions `[sonnet · medium]`
 - **Wandering pasture/saved-horses layout** — its own session `[sonnet · medium]`
 - **1.20** Cross-post queue `[sonnet · high]`
+- **Style pass** — pre-beta styling session (chips, typography, layout) `[sonnet · high]`
 
 **Open rough edges (not blocking):**
 - Fancy chip height/spacing — functional but Clover wants a second pass
 - Plain/Default mode text readability on featured/collection pages (only Fancy mode fixed)
+- Admin tag taxonomy mobile layout — usable but cramped; low priority
 
-Phases shipped and verified: 1.4, 1.12, 1.13, 1.14, 1.15, 1.19, 1.23, 1.29. Also confirmed: 1.16, 1.17, 1.21.
+Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.19, 1.23, 1.29. Also confirmed: 1.16, 1.17, 1.21.
