@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% from 'macros.html' import render_poem %}
+{% block title %}Cross-post Queue — poet.horse{% endblock %}
+{% block content %}
+
+<style>
+.cq-card { border: 1px solid #d4c490; border-radius: 6px; padding: 18px; margin-bottom: 24px; background: #fdfaf2; }
+.cq-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.cq-card-meta { font-size: 14px; color: #5a4a1a; flex: 1; line-height: 1.7; }
+.cq-stat  { font-size: 13px; color: #7a6a3a; }
+.cq-date  { font-size: 12px; color: #9a8a5a; }
+.cq-preview-link { font-size: 13px; color: #5a7a2a; white-space: nowrap; }
+.cq-poem  { margin: 10px 0 14px; padding: 26px 14px 14px; background: #fff8e8; border-left: 3px solid #d4c490; border-radius: 3px; }
+.cq-poem-line { margin: 2px 0; line-height: 2.4; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.cq-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
+.cq-no-tumblr { font-size: 13px; color: #9a6a2a; font-style: italic; }
+</style>
+
+<div class="box">
+  {% include 'admin_nav.html' %}
+
+  <h1>Cross-post Queue</h1>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    <div class="msg {{ 'ok' if category == 'ok' else 'err' }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  {% if not tumblr_connected %}
+  <div class="msg err">Not connected to Tumblr — <a href="/auth">connect now</a> to dispatch posts.</div>
+  {% endif %}
+
+  {% if not items %}
+  <div class="msg ok">Queue empty — nothing pending!</div>
+  {% endif %}
+
+  {% for item in items %}
+  <div class="cq-card">
+
+    <div class="cq-card-head">
+      <div class="cq-card-meta">
+        {% if item.title %}<strong><em>{{ item.title }}</em></strong> · {% endif %}
+        <span class="cq-stat">{{ item.horse_count }} horse{{ 's' if item.horse_count != 1 else '' }}</span>
+        · <span class="cq-date">{{ item.published_at | datefmt }}</span>
+        · {% if item.author_display_name %}
+            {% if item.author_user_id %}
+              <a href="/admin/user/{{ item.author_user_id }}">{{ item.author_display_name }}</a>
+            {% elif item.author_link_url %}
+              <a href="{{ item.author_link_url }}" target="_blank">{{ item.author_display_name }}</a>
+            {% else %}
+              {{ item.author_display_name }}
+            {% endif %}
+          {% else %}<em>anonymous</em>{% endif %}
+        {% if item.inspired_by_text %}
+          · <em>After {% if item.inspired_by_url %}<a href="{{ item.inspired_by_url }}" rel="nofollow noopener" target="_blank">{{ item.inspired_by_text }}</a>{% else %}{{ item.inspired_by_text }}{% endif %}</em>
+        {% endif %}
+      </div>
+      <a class="cq-preview-link" href="/p/{{ item.short_code }}" target="_blank">Full preview →</a>
+    </div>
+
+    <div class="cq-poem">
+      {{ render_poem(item.lines, line_class='cq-poem-line', linked=false) }}
+    </div>
+
+    <div class="cq-actions">
+      {% if tumblr_connected %}
+      <form method="post" action="/admin/crosspost-queue/{{ item.cq_id }}/dispatch">
+        <input type="hidden" name="action" value="queue">
+        <button type="submit" class="btn-primary">Add to Tumblr queue</button>
+      </form>
+      <form method="post" action="/admin/crosspost-queue/{{ item.cq_id }}/dispatch">
+        <input type="hidden" name="action" value="post">
+        <button type="submit" class="btn-sec">Post now</button>
+      </form>
+      <form method="post" action="/admin/crosspost-queue/{{ item.cq_id }}/dispatch">
+        <input type="hidden" name="action" value="draft">
+        <button type="submit" class="btn-sec">Save as draft</button>
+      </form>
+      {% else %}
+      <span class="cq-no-tumblr">Connect Tumblr to dispatch</span>
+      {% endif %}
+      <form method="post" action="/admin/crosspost-queue/{{ item.cq_id }}/skip"
+            onsubmit="return confirm('Skip this poem?')">
+        <button type="submit" class="btn-sec btn-danger">Skip</button>
+      </form>
+    </div>
+
+  </div>
+  {% endfor %}
+
+</div>
+{% endblock %}

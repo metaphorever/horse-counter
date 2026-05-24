@@ -123,8 +123,7 @@ POEM_SUFFIX = (
     "<p><small>This poem was written by a human, processed automatically, "
     "and queued to post. Click the links for more information about each horse. "
     "You can write and submit your own horse poetry at "
-    "<a href=\"https://horsecounterbot.pythonanywhere.com/poetry\">"
-    "horsecounterbot.pythonanywhere.com/poetry</a>.</small></p>"
+    "<a href=\"https://poet.horse/poetry\">poet.horse/poetry</a>.</small></p>"
 )
 def build_poem_tags(count: int, name: str = '', tumblr: str = '', is_admin: bool = False) -> List[str]:
     plural = 's' if count != 1 else ''
