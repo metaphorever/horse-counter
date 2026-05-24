@@ -41,6 +41,8 @@ _COLUMN_MIGRATIONS = [
     ('drafts', 'post_as', "TEXT NOT NULL DEFAULT 'account'"),
     # Phase 1.13.1 — integer trust score per user
     ('users', 'trust_score', "INTEGER NOT NULL DEFAULT 0"),
+    # Admin QoL — suspension timestamp; NULL = active, non-NULL = suspended
+    ('users', 'suspended_at', "REAL"),
 ]
 
 

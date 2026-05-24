@@ -19,12 +19,7 @@
 </style>
 
 <div class="box">
-  <div class="nav-links">
-    <a href="/">← Home</a>
-    <a href="/admin/poem-queue">Queue →</a>
-    <a href="/admin/featured">Featured →</a>
-    <a href="/admin/reports">Reports →</a>
-  </div>
+  {% include 'admin_nav.html' %}
 
   <h1>Users</h1>
 
@@ -66,6 +61,7 @@
         <td>
           <a href="/admin/user/{{ u.id }}">{{ u.display_name or u.slug }}</a>
           {% if u.role == 'admin' %}<span class="admin-role-badge">admin</span>{% endif %}
+          {% if u.suspended_at %}<span class="admin-suspended-badge">suspended</span>{% endif %}
         </td>
         <td><a href="/u/{{ u.slug }}" target="_blank">{{ u.slug }}</a></td>
         <td>{{ u.role }}</td>

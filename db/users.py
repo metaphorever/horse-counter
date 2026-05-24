@@ -158,6 +158,30 @@ def set_trust_score(user_id: int, score: int) -> None:
         )
 
 
+def suspend_user(user_id: int) -> None:
+    import time
+    with get_db() as conn:
+        conn.execute(
+            'UPDATE users SET suspended_at = ? WHERE id = ?',
+            (time.time(), user_id),
+        )
+
+
+def unsuspend_user(user_id: int) -> None:
+    with get_db() as conn:
+        conn.execute(
+            'UPDATE users SET suspended_at = NULL WHERE id = ?',
+            (user_id,),
+        )
+
+
+def delete_user(user_id: int) -> None:
+    """Delete a user row. FK cascades handle drafts/pasture/saved collections.
+    poems.author_user_id is ON DELETE SET NULL — poems orphan to anonymous."""
+    with get_db() as conn:
+        conn.execute('DELETE FROM users WHERE id = ?', (user_id,))
+
+
 def get_all_users(limit: int = 200) -> list:
     """Return all users ordered by join date, newest first."""
     with get_db() as conn:
