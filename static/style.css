@@ -1987,18 +1987,77 @@ body.admin-page .login-box::before { display: none; }
 
 /* ── Admin mobile responsive ─────────────────────────────────────────────── */
 @media (max-width: 600px) {
-  .admin-table,
+  /* Users table: scrollable block */
   .admin-users-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Action cells and inline action rows: allow wrapping */
   .admin-td-actions,
-  .admin-actions     { white-space: normal; flex-wrap: wrap; }
-  .threshold-form    { flex-wrap: wrap; }
+  .admin-actions { white-space: normal; flex-wrap: wrap; }
+
+  /* Threshold form: stack vertically */
+  .threshold-form { flex-wrap: wrap; }
   .threshold-form .threshold-note { width: 100%; margin-top: 4px; }
-  .admin-cat-label-input { width: auto; min-width: 0; flex: 1; }
+
+  /* Add-tag inline forms: tighten gap */
   .admin-form-inline { gap: 6px; }
   .admin-form-inline label { min-width: 0; }
-  .admin-cat-head-row { gap: 4px; }
+
+  /* User detail rows: wrap label+value */
   .user-detail-row { flex-wrap: wrap; gap: 6px; }
   .user-detail-label { width: auto; }
+
+  /* Queue card head: wrap preview link below meta on narrow screens */
+  .queue-card-head { flex-wrap: wrap; }
+
+  /* ── Category edit head: 3-row stack ──────────────────────────────── */
+  /* Row 1: full-width name input */
+  .admin-cat-label-input { flex-basis: 100%; width: 100%; }
+  /* Row 2: type select + admin-only checkbox (natural flex row) */
+  .admin-cat-head-type { display: flex; gap: 8px; align-items: center; }
+  /* Row 3: order + save (natural flex row) */
+  .admin-cat-head-meta { display: flex; gap: 8px; align-items: center; }
+
+  /* ── Tag rows: card layout instead of squished table ──────────────── */
+  .admin-tag-table { display: block; overflow-x: visible; }
+  .admin-tag-table tbody,
+  .admin-tag-table tr { display: block; }
+  .admin-tag-table td { display: block; border: none; padding: 2px 0; }
+  .admin-tag-table .admin-td-meta { padding-bottom: 4px; }
+  .admin-tag-table .admin-td-actions { padding-top: 2px; border-top: none; }
+  .admin-tag-table tr { border-bottom: 1px solid #e8dcc0; padding: 6px 0; }
+  .admin-tag-table tr:last-child { border-bottom: none; }
+  /* Name input takes full width in card layout */
+  .admin-tag-table .admin-input { width: 100%; box-sizing: border-box; }
+
+  /* ── Reports: card layout instead of 6-column table ──────────────── */
+  .admin-reports-table thead { display: none; }
+  .admin-reports-table,
+  .admin-reports-table tbody,
+  .admin-reports-table tr { display: block; }
+  .admin-reports-table tr {
+    border: 1px solid #d4c490;
+    border-radius: 4px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    background: #fdfaf2;
+  }
+  .admin-reports-table td {
+    display: block;
+    border: none;
+    padding: 2px 0;
+    font-size: 13px;
+  }
+  .admin-reports-table .admin-report-reason {
+    color: #3a2e18;
+    padding: 4px 0;
+    border-top: 1px solid #e8dcc0;
+    border-bottom: 1px solid #e8dcc0;
+    margin: 4px 0;
+  }
+  .admin-reports-table .admin-nowrap { white-space: normal; color: #7a6a3a; font-size: 12px; display: inline; }
+  .admin-reports-table .admin-actions { padding-top: 6px; }
+  /* Hide reporter IP on mobile to save space */
+  .admin-reports-table .admin-row-inactive { opacity: .6; }
 }
 
 /* ── Phase 1.8: Admin featured page ─────────────────────────────────────── */
@@ -2039,6 +2098,8 @@ body.admin-page .login-box::before { display: none; }
 .admin-cat-edit-form { margin-bottom: 8px; }
 .admin-cat-head-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
 .admin-cat-label-input { width: 200px; flex-shrink: 0; }
+.admin-cat-head-type,
+.admin-cat-head-meta { display: flex; align-items: center; gap: 6px; }
 .admin-inline-label { font: 12px 'Courier Prime','Courier New',monospace; color: #6b5430; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
 .admin-tag-table { margin-bottom: 8px; }
 .admin-tag-table td { padding: 4px 6px; }
