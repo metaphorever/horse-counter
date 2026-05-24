@@ -126,6 +126,7 @@ from horse_collections import (
     list_saved_poems,
 )
 from db.reports import create_report, list_reports, resolve_report
+from db.crosspost import enqueue_poem as enqueue_crosspost, get_pending as get_crosspost_pending, mark_posted as mark_crosspost_posted, mark_skipped as mark_crosspost_skipped
 from poem_submissions import (
     create_for_poem      as create_poem_submission,
     load_pending         as load_pending_poem_submissions,
@@ -1701,6 +1702,7 @@ def submit_poem_public():
         # Publish directly — apply tags as approved, no submission row needed.
         if tag_ids:
             apply_tags_to_poem(poem['id'], tag_ids, applied_by=author_user_id, status='approved')
+        enqueue_crosspost(poem['id'])
         return jsonify({
             'ok':         True,
             'message':    'Poem published!',
@@ -2506,6 +2508,7 @@ def admin_poem_publish():
         if author_id:
             delta = -1 if tags_edited else 1
             update_trust_score(author_id, delta)
+        enqueue_crosspost(poem['id'])
         flash(f'Published: /p/{poem["short_code"]}', 'ok')
     else:
         flash('Submission not found.', 'err')
@@ -2522,6 +2525,97 @@ def admin_poem_reject():
     reject_poem_submission(sub_id, reviewer_user_id=reviewer_id, review_notes=notes)
     flash('Rejected.', 'ok')
     return redirect(url_for('admin_poem_queue'))
+
+
+# ── Admin cross-post queue ────────────────────────────────────────────────────
+
+@app.route('/admin/crosspost-queue')
+@login_required
+def admin_crosspost_queue():
+    import json
+    items = get_crosspost_pending()
+    for item in items:
+        item['lines'] = json.loads(item['lines_json'])
+        # Enrich chips with appearance data
+        for line in item['lines']:
+            for h in line:
+                name = h.get('name', '')
+                appearance = horse_appearance(name)
+                h['coat']      = appearance['coat']
+                h['rev']       = appearance['rev']
+                h['is_famous'] = bool(name) and famous_horses.lookup(name) is not None
+    return render_template(
+        'admin_crosspost_queue.html',
+        items=items,
+        tumblr_connected=tumblr.authenticated,
+    )
+
+
+def _build_crosspost(item: dict) -> tuple[str, str]:
+    """Build (body, tags) for a crosspost queue item."""
+    lines       = item['lines']
+    horse_count = item['horse_count']
+    title       = item.get('title', '')
+    author_name = item.get('author_display_name', '')
+
+    # If poem is user-linked, try to get their display name
+    if not author_name and item.get('author_user_id'):
+        user = get_user_by_id(item['author_user_id'])
+        if user:
+            author_name = user.get('display_name', '')
+
+    linked_html = build_poem_html(lines)
+    pre         = format_poem_prefix(horse_count, title, author_name, '')
+    body        = build_post_body(pre, linked_html, '', POEM_SUFFIX)
+    tags        = ','.join(build_poem_tags(horse_count, author_name, ''))
+    return body, tags
+
+
+@app.route('/admin/crosspost-queue/<int:cq_id>/dispatch', methods=['POST'])
+@login_required
+def admin_crosspost_dispatch(cq_id: int):
+    if not tumblr.authenticated:
+        flash('Not connected to Tumblr.', 'err')
+        return redirect(url_for('admin_crosspost_queue'))
+
+    action = request.form.get('action', 'queue')
+
+    # Find the item in pending
+    items = get_crosspost_pending()
+    item  = next((i for i in items if i['cq_id'] == cq_id), None)
+    if not item:
+        flash('Item not found or already dispatched.', 'err')
+        return redirect(url_for('admin_crosspost_queue'))
+
+    import json
+    item['lines'] = json.loads(item['lines_json'])
+
+    body, tags = _build_crosspost(item)
+    draft = {'is_text_post': True, 'is_fallback': False, 'post_data': {}}
+    success, err = submit_post(
+        draft=draft,
+        action=action,
+        body=body,
+        tags=tags,
+        make_request=tumblr.make_request,
+    )
+
+    if success:
+        mark_crosspost_posted(cq_id)
+        label = {'post': 'published', 'queue': 'queued', 'draft': 'saved as draft'}.get(action, 'queued')
+        flash(f'Post {label}!', 'ok')
+    else:
+        flash(f'Tumblr error: {err}', 'err')
+
+    return redirect(url_for('admin_crosspost_queue'))
+
+
+@app.route('/admin/crosspost-queue/<int:cq_id>/skip', methods=['POST'])
+@login_required
+def admin_crosspost_skip(cq_id: int):
+    mark_crosspost_skipped(cq_id)
+    flash('Skipped.', 'ok')
+    return redirect(url_for('admin_crosspost_queue'))
 
 
 # ── Admin user management ─────────────────────────────────────────────────────

@@ -264,6 +264,20 @@ def cleanup_obsolete_tags() -> None:
                 raise
 
 
+def ensure_crosspost_queue() -> None:
+    """Create crosspost_queue table if missing. Idempotent."""
+    with get_db() as conn:
+        conn.execute(
+            """CREATE TABLE IF NOT EXISTS crosspost_queue (
+               id        INTEGER PRIMARY KEY AUTOINCREMENT,
+               poem_id   INTEGER NOT NULL UNIQUE REFERENCES poems(id),
+               status    TEXT NOT NULL DEFAULT 'pending',
+               queued_at REAL NOT NULL,
+               posted_at REAL
+            )"""
+        )
+
+
 def ensure_admin_settings() -> None:
     """Create admin_settings table and seed defaults if missing."""
     now = time.time()
@@ -289,3 +303,4 @@ def run_all() -> None:
     seed_tag_taxonomy()
     cleanup_obsolete_tags()
     ensure_admin_settings()
+    ensure_crosspost_queue()
