@@ -1879,6 +1879,13 @@ body.view-fancy .text-page-updated { color: #c8b888; }
   border: 1px solid #c4a96b; border-radius: 2px; cursor: pointer;
 }
 .draft-strip-change:hover { background: #ede0b0; }
+.draft-strip-delete {
+  margin-left: 8px; padding: 2px 6px; flex-shrink: 0;
+  font: 11px 'Courier Prime','Courier New',monospace;
+  background: #fdf8ed; color: #8a3a1a;
+  border: 1px solid #c4a96b; border-radius: 2px; cursor: pointer;
+}
+.draft-strip-delete:hover { background: #f5d8c8; border-color: #a05030; }
 .draft-strip-guest { background: #faf8f2; border-color: #d8cba8; color: #9a8a6a; }
 .draft-strip-signin-link { color: #6b5430; }
 .draft-strip-signin-link:hover { color: #3a2a10; }

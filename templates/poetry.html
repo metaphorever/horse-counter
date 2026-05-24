@@ -105,6 +105,7 @@
       {% if current_user %}
       <div class="draft-strip" id="draft-strip">
         <span class="draft-strip-label">Currently editing: <span id="draft-strip-name">—</span></span>
+        <button class="draft-strip-delete" id="draft-strip-delete" onclick="deleteDraftFromModal()" style="display:none">Delete</button>
         <button class="draft-strip-change" id="draft-strip-change" onclick="openDraftPicker()">Change Draft ▾</button>
       </div>
       {% else %}
@@ -1913,6 +1914,8 @@ function updateDraftStrip(){
   if(!nameEl) return;
   const title = currentDraftMeta?.title;
   nameEl.textContent = title || (draftId ? 'untitled' : '—');
+  const delBtn = document.getElementById('draft-strip-delete');
+  if(delBtn) delBtn.style.display = draftId ? '' : 'none';
 }
 
 // ── Draft picker ──────────────────────────────────────────────────────────────
