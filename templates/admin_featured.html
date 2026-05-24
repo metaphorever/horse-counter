@@ -140,20 +140,24 @@
         <div class="admin-cat-head-row">
           <input class="admin-input admin-cat-label-input" type="text"
                  name="label" value="{{ cat.label }}" maxlength="60" required>
-          <select class="admin-select-sm" name="behavior">
-            <option value="multi_select"    {% if cat.behavior == 'multi_select'    %}selected{% endif %}>multi</option>
-            <option value="single_select"   {% if cat.behavior == 'single_select'   %}selected{% endif %}>single</option>
-            <option value="content_warning" {% if cat.behavior == 'content_warning' %}selected{% endif %}>CW</option>
-          </select>
-          <label class="admin-inline-label">
-            <input type="checkbox" name="admin_only" value="1"
-                   {% if cat.admin_only %}checked{% endif %}> admin-only
-          </label>
-          <label class="admin-inline-label">order
-            <input class="admin-input admin-input-narrow" type="number"
-                   name="sort_order" value="{{ cat.sort_order }}" min="0">
-          </label>
-          <button class="btn-sec btn-sm" type="submit">Save</button>
+          <div class="admin-cat-head-type">
+            <select class="admin-select-sm" name="behavior">
+              <option value="multi_select"    {% if cat.behavior == 'multi_select'    %}selected{% endif %}>multi</option>
+              <option value="single_select"   {% if cat.behavior == 'single_select'   %}selected{% endif %}>single</option>
+              <option value="content_warning" {% if cat.behavior == 'content_warning' %}selected{% endif %}>CW</option>
+            </select>
+            <label class="admin-inline-label">
+              <input type="checkbox" name="admin_only" value="1"
+                     {% if cat.admin_only %}checked{% endif %}> admin-only
+            </label>
+          </div>
+          <div class="admin-cat-head-meta">
+            <label class="admin-inline-label">order
+              <input class="admin-input admin-input-narrow" type="number"
+                     name="sort_order" value="{{ cat.sort_order }}" min="0">
+            </label>
+            <button class="btn-sec btn-sm" type="submit">Save</button>
+          </div>
         </div>
       </form>
 
