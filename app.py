@@ -1713,6 +1713,7 @@ def submit_poem_public():
         if tag_ids:
             apply_tags_to_poem(poem['id'], tag_ids, applied_by=author_user_id, status='approved')
         enqueue_crosspost(poem['id'])
+        _auto_pasture_from_lines(author_user_id, lines)
         return jsonify({
             'ok':         True,
             'message':    'Poem published!',
@@ -2519,6 +2520,7 @@ def admin_poem_publish():
             delta = -1 if tags_edited else 1
             update_trust_score(author_id, delta)
         enqueue_crosspost(poem['id'])
+        _auto_pasture_from_lines(author_id, sub['lines'])
         flash(f'Published: /p/{poem["short_code"]}', 'ok')
     else:
         flash('Submission not found.', 'err')
@@ -2559,6 +2561,15 @@ def admin_crosspost_queue():
         items=items,
         tumblr_connected=tumblr.authenticated,
     )
+
+
+def _auto_pasture_from_lines(user_id: int, lines: list) -> None:
+    """Add every horse in a poem to the author's pasture (idempotent)."""
+    if not user_id:
+        return
+    for line in lines:
+        for h in (line or []):
+            add_to_pasture(user_id, h.get('name', ''), h.get('display', ''), h.get('url', ''))
 
 
 def _build_crosspost(item: dict) -> tuple[str, str]:
