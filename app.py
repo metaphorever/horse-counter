@@ -1637,6 +1637,12 @@ def submit_poem_public():
     if not any(lines):
         return jsonify({'ok': False, 'error': 'Poem is empty'})
 
+    src_draft_id     = data.get('draft_id')
+    try:
+        src_draft_id = int(src_draft_id) if src_draft_id is not None else None
+    except (TypeError, ValueError):
+        src_draft_id = None
+
     poem_title       = _sanitize_name(data.get('poem_title', ''))
     submitter_link   = (data.get('submitter_link') or '').strip()[:300]
     submitter_tumblr = _sanitize_tumblr(data.get('submitter_tumblr', ''))
@@ -1697,6 +1703,10 @@ def submit_poem_public():
         inspired_by_url     = inspired_url,
         status              = poem_status,
     )
+
+    # Delete the source draft (if provided) now that the poem is saved.
+    if src_draft_id and current_user:
+        delete_user_draft(src_draft_id, current_user['id'])
 
     if bypass_queue:
         # Publish directly — apply tags as approved, no submission row needed.
