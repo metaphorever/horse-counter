@@ -250,9 +250,9 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: Admin QoL — closed (2026-05-24)**
+**PHASE: Admin QoL + Tag Taxonomy — closed (2026-05-24)**
 
-PRs #63–#66 merged. All major testing holds cleared live by Clover.
+PRs #63–#68 merged. All major testing holds cleared live by Clover.
 
 Deferred holds (needs test accounts — nag before go-live):
 - Suspend → blocked sign-in with visible error message; Reinstate clears it
@@ -267,6 +267,6 @@ Deferred holds (needs test accounts — nag before go-live):
 **Open rough edges (not blocking):**
 - Fancy chip height/spacing — functional but Clover wants a second pass
 - Plain/Default mode text readability on featured/collection pages (only Fancy mode fixed)
-- Admin tag taxonomy mobile layout — usable but cramped; low priority
+- Admin featured sections table still squashed on mobile — low priority
 
 Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.19, 1.23, 1.29. Also confirmed: 1.16, 1.17, 1.21.
