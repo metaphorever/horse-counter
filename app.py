@@ -138,7 +138,7 @@ from poetry import (
     search_dictionary, random_horses, short_horses, load_stable, add_to_stable,
     remove_from_stable, clear_stable,
     build_poem_html, compute_poem_stats, format_poem_prefix,
-    POEM_SUFFIX, build_poem_tags, order_tags,
+    POEM_SUFFIX, build_poem_suffix, build_poem_tags, order_tags,
     get_rhymes, search_by_rhyme_terms, RHYME_DEFAULT_ON,
     get_synonyms, search_by_synonym_terms, THESAURUS_DEFAULT_ON,
 )
@@ -2538,21 +2538,35 @@ def _auto_pasture_from_lines(user_id: int, lines: list) -> None:
 
 def _build_crosspost(item: dict) -> tuple[str, str]:
     """Build (body, tags) for a crosspost queue item."""
-    lines       = item['lines']
-    horse_count = item['horse_count']
-    title       = item.get('title', '')
-    author_name = item.get('author_display_name', '')
+    lines          = item['lines']
+    horse_count    = item['horse_count']
+    title          = item.get('title', '') or ''
+    author_name    = item.get('author_display_name', '') or ''
+    author_url     = item.get('author_link_url', '') or ''
+    short_code     = item.get('short_code', '') or ''
+    inspired_text  = item.get('inspired_by_text', '') or ''
+    inspired_url   = item.get('inspired_by_url', '') or ''
 
-    # If poem is user-linked, try to get their display name
+    # Fill in display name from user record if missing
     if not author_name and item.get('author_user_id'):
         user = get_user_by_id(item['author_user_id'])
         if user:
-            author_name = user.get('display_name', '')
+            author_name = user.get('display_name', '') or user.get('slug', '')
+            if not author_url:
+                author_url = f'/u/{user["slug"]}'
+
+    # Make relative poet.horse profile URLs absolute for Tumblr
+    if author_url and author_url.startswith('/'):
+        author_url = f'https://poet.horse{author_url}'
 
     linked_html = build_poem_html(lines)
-    pre         = format_poem_prefix(horse_count, title, author_name, '')
-    body        = build_post_body(pre, linked_html, '', POEM_SUFFIX)
-    tags        = ','.join(build_poem_tags(horse_count, author_name, ''))
+    pre  = format_poem_prefix(horse_count, title, author_name, '',
+                               author_url=author_url,
+                               inspired_by_text=inspired_text,
+                               inspired_by_url=inspired_url)
+    suf  = build_poem_suffix(short_code, author_name, author_url)
+    body = build_post_body(pre, linked_html, '', suf)
+    tags = ','.join(build_poem_tags(horse_count, author_name, ''))
     return body, tags
 
 

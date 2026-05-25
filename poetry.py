@@ -120,9 +120,9 @@ def search_by_synonym_terms(terms: List[str], dictionary) -> List[Dict]:
 
 
 POEM_SUFFIX = (
-    "<p><small>This poem was written by a human, processed automatically, "
-    "and queued to post. Click the links for more information about each horse. "
-    "You can write and submit your own horse poetry at "
+    "<p><small>This poem was written by a human and posted automatically. "
+    "Click the links for more information about each horse. "
+    "Write and submit your own horse poetry at "
     "<a href=\"https://poet.horse/poetry\">poet.horse/poetry</a>.</small></p>"
 )
 def build_poem_tags(count: int, name: str = '', tumblr: str = '', is_admin: bool = False) -> List[str]:
@@ -156,10 +156,14 @@ def order_tags(tags_str: str, first: str, *prepend: str, force_first: bool = Tru
     return ','.join(front + rest)
 
 
-def format_poem_prefix(count: int, title: str = '', name: str = '', tumblr: str = '') -> str:
+def format_poem_prefix(count: int, title: str = '', name: str = '', tumblr: str = '',
+                        author_url: str = '', inspired_by_text: str = '',
+                        inspired_by_url: str = '') -> str:
     plural = 's' if count != 1 else ''
     display = name or (f'@{tumblr}' if tumblr else '')
-    if display and tumblr:
+    if display and author_url:
+        author_html = f'<a href="{author_url}">{display}</a>'
+    elif display and tumblr:
         author_html = f'<a href="https://www.tumblr.com/{tumblr}">{display}</a>'
     elif display:
         author_html = display
@@ -173,7 +177,32 @@ def format_poem_prefix(count: int, title: str = '', name: str = '', tumblr: str 
         subject = f'This poem by {author_html}'
     else:
         subject = 'This poem'
-    return f'<p><b>{subject} contains {count} horse{plural}</b></p>'
+    result = f'<p><b>{subject} contains {count} horse{plural}</b></p>'
+    if inspired_by_text:
+        if inspired_by_url:
+            result += (f'<p><em>After <a href="{inspired_by_url}" rel="nofollow noopener">'
+                       f'{inspired_by_text}</a></em></p>')
+        else:
+            result += f'<p><em>After {inspired_by_text}</em></p>'
+    return result
+
+
+def build_poem_suffix(short_code: str = '', author_name: str = '', author_url: str = '') -> str:
+    poem_link = (f'<a href="https://poet.horse/p/{short_code}">poem</a>'
+                 if short_code else 'poem')
+    if author_name and author_url:
+        author_html = f'<a href="{author_url}">{author_name}</a>'
+    elif author_name:
+        author_html = author_name
+    else:
+        author_html = 'anonymous'
+    return (
+        f'<p><small>This {poem_link} was written by {author_html}. '
+        f'Click the links for more information about each horse. '
+        f'You can <a href="https://poet.horse/browse">read more poems</a> or '
+        f'<a href="https://poet.horse/poetry">create your own horse poetry</a>.'
+        f'</small></p>'
+    )
 
 
 # ── Search ────────────────────────────────────────────────────────────────────

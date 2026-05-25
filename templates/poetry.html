@@ -137,58 +137,73 @@
 <!-- POST MODAL -->
 <div class="modal-overlay" id="post-modal">
   <div class="modal">
-    <h3>Submit Poem</h3>
+    <div id="modal-form-content">
+      <h3>Submit Poem</h3>
 
-    <label>Title <span class="opt">(optional)</span>:</label>
-    <input type="text" id="modal-title" placeholder="Poem title" maxlength="120">
+      <label>Title <span class="opt">(optional)</span>:</label>
+      <input type="text" id="modal-title" placeholder="Poem title" maxlength="120">
 
-    {% if current_user %}
-    <div class="modal-post-as-row">
-      <span class="modal-post-as-text">Posting as: <strong id="modal-post-as-display">{{ current_user.display_name or current_user.slug }}</strong></span>
-      <button type="button" class="btn-link modal-post-as-change" onclick="closeModal();openEditDetails()">Change in Edit Details</button>
-    </div>
-    {% else %}
-    <label>Post as</label>
-    <div class="post-as-chooser" id="modal-post-as-chooser">
-      <label class="post-as-option">
-        <input type="radio" name="modal-post-as" value="anonymous" checked>
-        <span>Anonymously</span>
-      </label>
-      <label class="post-as-option">
-        <input type="radio" name="modal-post-as" value="pseudonymous">
-        <span>With a name</span>
-      </label>
-    </div>
-    <div id="modal-pseudo-name-row" style="display:none">
-      <input type="text" id="modal-submitter-name" placeholder="Display name" maxlength="60">
-    </div>
-    <p class="modal-signin-nudge"><a href="/sign-in">Sign in</a> to save your poems to your account.</p>
-    {% endif %}
-
-    <label>After <span class="opt">(optional — credit a work this poem riffs on)</span>:</label>
-    <div class="modal-name-row">
-      <input type="text" id="modal-inspired-text" placeholder="e.g. Hamlet by William Shakespeare" maxlength="200">
-      <input type="text" id="modal-inspired-url"  placeholder="https://… (optional source link)"   maxlength="300">
-    </div>
-
-    <div id="modal-tag-sections" class="modal-tag-sections"></div>
-
-    <div id="empty-line-warning" class="msg warn" style="display:none">
-      This poem has empty lines — intentional or accidental?
-      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn-primary" onclick="resolveEmptyLines(true)">Remove empty lines</button>
-        <button class="btn-sec" onclick="resolveEmptyLines(false)">Keep them</button>
+      {% if current_user %}
+      <div class="modal-post-as-row">
+        <span class="modal-post-as-text">Posting as: <strong id="modal-post-as-display">{{ current_user.display_name or current_user.slug }}</strong></span>
+        <button type="button" class="btn-link modal-post-as-change" onclick="closeModal();openEditDetails()">Change in Edit Details</button>
       </div>
-      <label style="display:block;margin-top:8px;font-size:12px;cursor:pointer">
-        <input type="checkbox" id="empty-line-remember"> Remember my choice
-      </label>
+      {% else %}
+      <label>Post as</label>
+      <div class="post-as-chooser" id="modal-post-as-chooser">
+        <label class="post-as-option">
+          <input type="radio" name="modal-post-as" value="anonymous" checked>
+          <span>Anonymously</span>
+        </label>
+        <label class="post-as-option">
+          <input type="radio" name="modal-post-as" value="pseudonymous">
+          <span>With a name</span>
+        </label>
+      </div>
+      <div id="modal-pseudo-name-row" style="display:none">
+        <input type="text" id="modal-submitter-name" placeholder="Display name" maxlength="60">
+      </div>
+      <p class="modal-signin-nudge"><a href="/sign-in">Sign in</a> to save your poems to your account.</p>
+      {% endif %}
+
+      <label>After <span class="opt">(optional — credit a work this poem riffs on)</span>:</label>
+      <div class="modal-name-row">
+        <input type="text" id="modal-inspired-text" placeholder="e.g. Hamlet by William Shakespeare" maxlength="200">
+        <input type="text" id="modal-inspired-url"  placeholder="https://… (optional source link)"   maxlength="300">
+      </div>
+
+      <div id="modal-tag-sections" class="modal-tag-sections"></div>
+
+      <div id="empty-line-warning" class="msg warn" style="display:none">
+        This poem has empty lines — intentional or accidental?
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-primary" onclick="resolveEmptyLines(true)">Remove empty lines</button>
+          <button class="btn-sec" onclick="resolveEmptyLines(false)">Keep them</button>
+        </div>
+        <label style="display:block;margin-top:8px;font-size:12px;cursor:pointer">
+          <input type="checkbox" id="empty-line-remember"> Remember my choice
+        </label>
+      </div>
+
+      <div id="modal-actions" class="modal-actions">
+        <button class="btn-primary" onclick="submitPoemPublic()">{% if is_admin %}Submit to queue{% else %}Submit for review{% endif %}</button>
+        <button class="btn-sec" onclick="closeModal()">Cancel</button>
+      </div>
+      <div id="modal-err" class="msg err modal-err" style="display:none"></div>
     </div>
 
-    <div id="modal-actions" class="modal-actions">
-      <button class="btn-primary" onclick="submitPoemPublic()">{% if is_admin %}Submit to queue{% else %}Submit for review{% endif %}</button>
-      <button class="btn-sec" onclick="closeModal()">Cancel</button>
+    <div id="modal-success" style="display:none">
+      <h3>Your poem is live!</h3>
+      <p style="margin:0 0 16px;font-size:14px;color:#5a4a1a">It's been published to the blog.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+        <a id="modal-poem-link" href="#" class="btn-primary" target="_blank">View poem →</a>
+        <button class="btn-sec" id="modal-copy-btn" onclick="copyPoemLink()">Copy link</button>
+        <span id="modal-copy-ok" style="display:none;font-size:13px;color:#4a7a1a">Copied!</span>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-sec" onclick="closeModal()">Done</button>
+      </div>
     </div>
-    <div id="modal-err" class="msg err modal-err" style="display:none"></div>
   </div>
 </div>
 
@@ -1729,6 +1744,8 @@ async function suggestTagInline(categoryId, categoryLabel, tagSet, onRerender){
 
 // ── Post modal ────────────────────────────────────────────────────────────────
 function openModal(){
+  document.getElementById('modal-success').style.display='none';
+  document.getElementById('modal-form-content').style.display='';
   document.getElementById('modal-err').style.display='none';
   document.getElementById('empty-line-warning').style.display='none';
   document.getElementById('modal-actions').style.display='';
@@ -2101,16 +2118,44 @@ async function _doSubmitPoem(){
   });
   if(!d) return;
   if(d.ok){
-    closeModal();
     // Clear draft state — the poem is saved, the draft is no longer needed.
     draftId = null; currentDraftMeta = null; stable = []; lines = [[]];
     window.history.replaceState(null, '', window.location.pathname);
     renderStable(); renderPoem(); updateDraftStrip();
-    showToast(d.message || 'Poem submitted for review!');
+    if(d.published && d.short_code){
+      const poemUrl = '/p/' + d.short_code;
+      const link = document.getElementById('modal-poem-link');
+      link.href = poemUrl;
+      link.dataset.fullUrl = window.location.origin + poemUrl;
+      document.getElementById('modal-copy-btn').textContent = 'Copy link';
+      document.getElementById('modal-copy-ok').style.display = 'none';
+      document.getElementById('modal-form-content').style.display = 'none';
+      document.getElementById('modal-success').style.display = '';
+    } else {
+      closeModal();
+      showToast(d.message || 'Poem submitted for review!');
+    }
   } else {
     const el=document.getElementById('modal-err');
     el.textContent=d.error; el.style.display='';
   }
+}
+
+function copyPoemLink(){
+  const link = document.getElementById('modal-poem-link');
+  const url = link.dataset.fullUrl || link.href;
+  const btn = document.getElementById('modal-copy-btn');
+  const ok  = document.getElementById('modal-copy-ok');
+  (navigator.clipboard
+    ? navigator.clipboard.writeText(url)
+    : Promise.reject()
+  ).catch(function(){
+    const inp = document.createElement('input');
+    inp.value = url; document.body.appendChild(inp); inp.select();
+    document.execCommand('copy'); document.body.removeChild(inp);
+  }).finally(function(){
+    btn.textContent = 'Copied!'; ok.style.display = '';
+  });
 }
 </script>
 {% endblock %}
