@@ -250,34 +250,21 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: Collection pages + fixes — shipped 2026-05-24, verification pending**
+**PHASE: Soft launch — DNS cutover pending (2026-05-24)**
 
-Horse popover extracted to `templates/_horse_popover.html` shared include. Pasture and Saved Horses pages now wire the same popover as poem permalinks: ribbon (save/unsave), pasture toggle, draft picker, poems-featuring. Removing from pasture or unsaving removes the chip from the DOM. Plain-mode cream note box added to collection pages (chips inside the cream box no longer show grass background). Bio poem chips on profile pages wired. Print masthead updated to SVG logo (`print.css` + `poem.html`). Old `.collection-chip-remove` hover-button approach removed. Wandering/scatter layout deferred to Phase 2.
+All Phase 1 MVP work is shipped and verified. Clover cleared all collection-pages testing holds on the live site. 1.20 cross-post queue verified. Account-action holds (suspend/delete/admin-block) accepted as low-risk by Clover — will test with test accounts when convenient, not blocking launch.
 
-Auto-pasture on publish: `_auto_pasture_from_lines()` called on both the bypass-queue and admin-approval publish paths. No backfill for existing poems.
+**This session shipped:**
+- View-mode style fixes: Fancy dark panels for profile/drafts; consolidated Plain cream card for all `.text-page` surfaces; bio poem grass fix inside cream card; featured page Plain cream card; untitled poem color parity; Saved Poems Fancy legible text
+- Hamburger menu: Abril Fatface 18px on mobile nav items when open
+- Featured page: full poem display (title + chips via `render_poem` + meta) replacing title-only list; horse popover wired; `get_poems_for_tag_slug` now returns full poem data
+- Horse enrichment centralized: `_enrich_lines()` in `poem_db.py` called from `_row_to_poem` and `_join_row` (poem_submissions) and `get_pending` (db/crosspost); removed 6 redundant enrichment loops from `app.py`
 
-Tumblr crosspost attribution confirmed clean: `POEM_SUFFIX` in `poetry.py` already links to `https://poet.horse/poetry`; no PythonAnywhere URLs anywhere in the crosspost flow. Poem permalink not included in crosspost body (by design).
-
-Deferred holds (needs test accounts — nag before go-live):
-- Suspend → blocked sign-in with visible error message; Reinstate clears it
-- Delete account → poems persist as anonymous
-- Admin accounts blocked from suspend/delete actions
-
-**Testing holds before calling this session verified:**
-- On `/me/pasture`: click a chip → popover opens; "Remove from my pasture" removes chip from page; chips no longer show grass bg in Plain mode
-- On `/me/saved-horses`: click a chip → popover opens; ribbon unsave removes chip from page
-- On `/u/<slug>`: click a bio poem chip → popover opens with draft picker + poems-featuring
-- All three display modes (Fancy / Plain / Reader) on collection pages look correct; Plain mode cream box, no grass on chips
-- Print a poem permalink → SVG logo appears in masthead (not Smokum text)
-- Poem permalink: popover still works (regression check on the refactor)
-- Auto-pasture: publish a new poem → horses appear in `/me/pasture` without manual add
-
-**Remaining before beta / soft launch:**
-- **1.20 Cross-post queue** — shipped (PR #69); needs Clover live verification
-- **1.24 DNS cutover + PA shutdown** — owner action, the go-live step `[haiku · low]`
+**Only remaining before launch:**
+- **1.24 DNS cutover + PA shutdown** — owner action `[haiku · low]`
 
 **Open rough edges (not blocking):**
-- Plain/Default mode text readability on featured/collection pages (only Fancy mode fixed)
-- Admin featured sections table still squashed on mobile — low priority
+- Admin featured sections table squashed on mobile — low priority
+- Account-action test-account holds — not blocking, test when convenient
 
-Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.19, 1.23, 1.29. Also confirmed: 1.16, 1.17, 1.21. Shipped, verification pending: 1.20, collection-pages session.
+Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.16, 1.17, 1.19, 1.20, 1.21, 1.23, 1.29. Collection pages session verified 2026-05-24.
