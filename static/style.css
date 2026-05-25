@@ -1127,6 +1127,13 @@ a.poem-horse:hover { border-bottom-color: #5a7a2a; }
    below — there the body-level grass field becomes the surface and content
    floats directly on it. (Coat colours, the famous shimmer, and the poem-body
    line treatment stay shared via `view-decorated` further down.) */
+/* All .text-page surfaces get the cream card in Plain — covers Featured, Browse,
+   profile, drafts, collection pages, and legal pages uniformly. */
+body.view-plain:not(.admin-page) .text-page {
+  background: #fdf8f0; border: 2px solid #c4a96b; border-radius: 2px;
+  box-shadow: 2px 3px 14px rgba(0,0,0,.18);
+  padding: 24px 28px; margin: 24px auto;
+}
 body.view-plain:not(.admin-page) .collection-page {
   background: #fdf8f0; border: 2px solid #c4a96b; border-radius: 2px;
   box-shadow: 2px 3px 14px rgba(0,0,0,.18);
@@ -1144,6 +1151,15 @@ body.view-plain:not(.admin-page) .queue-poem {
   background-size: 40px 40px;
   border-color: #6b4820;
   color: #fdf8f0;
+}
+/* Bio poem inside the cream profile card: cancel the grass — revert to the
+   base inset style (.profile-bio-poem has background:#f5eedc by default).
+   More specific than the rule above so it wins when inside .profile-page. */
+body.view-plain:not(.admin-page) .profile-page .profile-bio-poem {
+  background-color: #f5eedc;
+  background-image: none;
+  color: #2d2316;
+  border-color: #c4a96b;
 }
 body.view-plain .poem-view-head,
 body.view-plain .poem-view-tags,
@@ -1959,7 +1975,7 @@ body.view-fancy .text-page-updated { color: #c8b888; }
 .poem-index-item:last-child { border-bottom: none; }
 .poem-index-title { font: 15px/1.4 Georgia,'Times New Roman',serif; color: #2d2316; text-decoration: none; }
 .poem-index-title:hover { color: #3a6b1a; text-decoration: underline; }
-.poem-index-title em { color: #a08060; }
+.poem-index-title em { color: inherit; font-style: italic; }
 .poem-index-meta { font: 12px 'Courier Prime','Courier New',monospace; color: #a08060; display: block; margin-top: 2px; }
 
 .browse-pagination { display: flex; align-items: center; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e8dcc0; }
@@ -2143,17 +2159,8 @@ h1.page-title {
 .btn-pri:hover  { background: #4a7f22; }
 .btn-pri:active { transform: translate(1px,1px); box-shadow: none; }
 
-/* ── View-mode fixes: profile + drafts pages ─────────────────────────────────
-   .collection-page already gets a cream card in Plain and correct Fancy treatment.
-   These rules extend the same patterns to .profile-page and .drafts-page.       */
-
-/* Plain: cream card (matches .collection-page rule) */
-body.view-plain:not(.admin-page) .profile-page,
-body.view-plain:not(.admin-page) .drafts-page {
-  background: #fdf8f0; border: 2px solid #c4a96b; border-radius: 2px;
-  box-shadow: 2px 3px 14px rgba(0,0,0,.18);
-  padding: 24px 28px; margin: 24px auto;
-}
+/* ── View-mode fixes: Fancy panels + field-text legibility ───────────────────
+   Plain cream cards are handled above via the broad .text-page rule.             */
 
 /* Plain: page-title + page-desc go dark inside cream cards
    (those classes are cream by default for the grass field; inside a card they'd
