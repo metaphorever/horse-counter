@@ -15,7 +15,7 @@ For deployment, ops, and prod environment specifics, see `DEPLOYMENT.md` at repo
 | Framework | Flask 3.x + Jinja2 | no SPA, no async — view-source-able by design |
 | Database | SQLite (`data/poet.db`) | WAL mode, foreign keys on, FTS5 planned for Phase 2.11 |
 | Dictionary | static `data/horses.json.gz` (~30 MB) | loaded once at app startup; in-memory |
-| Auth | Clerk (live tier) | JWT verification via JWKS; admin PIN fallback |
+| Auth | Clerk (live tier) | JWT verification via JWKS; admin PIN auth removed 2026-05-25 |
 | Frontend | Vanilla JS, per-page `<script>` blocks | no bundler, no framework |
 | Deploy | Manual `git pull` + `systemctl --user restart` | GitHub Actions deploy planned (Phase 1.23) |
 
