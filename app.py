@@ -2586,9 +2586,6 @@ def admin_crosspost_dispatch(cq_id: int):
         flash('Item not found or already dispatched.', 'err')
         return redirect(url_for('admin_crosspost_queue'))
 
-    import json
-    item['lines'] = json.loads(item['lines_json'])
-
     body, tags = _build_crosspost(item)
     draft = {'is_text_post': True, 'is_fallback': False, 'post_data': {}}
     success, err = submit_post(
