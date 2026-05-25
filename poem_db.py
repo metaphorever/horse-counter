@@ -247,8 +247,7 @@ def get_poems_for_tag_slug(tag_slug: str, limit: int = 20) -> List[Dict]:
     """Return up to `limit` published poems that carry the given tag slug."""
     with get_db() as conn:
         rows = conn.execute(
-            """SELECT p.id, p.short_code, p.title, p.author_display_name,
-                      p.author_user_id, p.horse_count, p.published_at
+            """SELECT p.*
                  FROM poems p
                  JOIN poem_tags pt ON pt.poem_id = p.id
                  JOIN tags t ON t.id = pt.tag_id
@@ -257,7 +256,7 @@ def get_poems_for_tag_slug(tag_slug: str, limit: int = 20) -> List[Dict]:
                 LIMIT ?""",
             (tag_slug, limit),
         ).fetchall()
-    return [dict(r) for r in rows]
+    return [_row_to_poem(r) for r in rows]
 
 
 def get_random_published() -> Optional[str]:

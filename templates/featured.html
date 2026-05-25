@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from 'macros.html' import render_poem %}
 {% block title %}Featured Poems — poet.horse{% endblock %}
 {% block content %}
 
@@ -14,24 +15,29 @@
       {% if not sec.poems %}
         <p class="featured-empty">No poems in this section yet.</p>
       {% else %}
-        <ul class="poem-index">
-          {% for p in sec.poems %}
-            <li class="poem-index-item">
-              <a class="poem-index-title" href="{{ url_for('poem_permalink', short_code=p.short_code) }}">
-                {% if p.title %}{{ p.title }}{% else %}<em>untitled</em>{% endif %}
-              </a>
-              <span class="poem-index-meta">
-                {% if p.author_display_name %}
-                  · by {{ p.author_display_name }}
-                {% else %}
-                  · anonymous
-                {% endif %}
-                · {{ p.horse_count }} horse{{ 's' if p.horse_count != 1 else '' }}
-                {% if p.published_at %} · {{ p.published_at|datefmt }}{% endif %}
-              </span>
-            </li>
-          {% endfor %}
-        </ul>
+        {% for p in sec.poems %}
+        <article class="featured-poem">
+          <h3 class="featured-poem-title">
+            <a href="{{ url_for('poem_permalink', short_code=p.short_code) }}">
+              {% if p.title %}{{ p.title }}{% else %}<em>untitled</em>{% endif %}
+            </a>
+          </h3>
+          <div class="featured-poem-body">
+            {{ render_poem(p.lines) }}
+          </div>
+          <p class="featured-poem-meta">
+            {% if p.author_link_url and p.author_display_name %}
+              by <a href="{{ p.author_link_url }}">{{ p.author_display_name }}</a>
+            {% elif p.author_display_name %}
+              by {{ p.author_display_name }}
+            {% else %}
+              anonymous
+            {% endif %}
+            · {{ p.horse_count }} horse{{ 's' if p.horse_count != 1 else '' }}
+            {% if p.published_at %} · {{ p.published_at|datefmt }}{% endif %}
+          </p>
+        </article>
+        {% endfor %}
       {% endif %}
     </section>
     {% endfor %}
@@ -39,4 +45,8 @@
 
   <p class="featured-browse-link"><a href="{{ url_for('browse') }}">Browse all poems →</a></p>
 </div>
+
+{% set popover_this_code = '' %}
+{% set popover_page_context = 'featured' %}
+{% include '_horse_popover.html' %}
 {% endblock %}

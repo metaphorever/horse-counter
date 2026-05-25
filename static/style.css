@@ -362,6 +362,13 @@ h2 {
   .nav-signin { padding: 5px 7px; border: none; }
   .mode-menu  { width: 100%; }
   .mode-menu-form { position: static; box-shadow: none; border: none; background: transparent; padding: 0 0 2px 12px; min-width: 0; }
+  /* Hamburger menu — bigger, Abril Fatface */
+  .site-nav.nav-open .nav-body .nav-item {
+    font-family: 'Abril Fatface', Georgia, serif;
+    font-size: 18px;
+    font-weight: 400;
+    padding: 7px 10px;
+  }
 }
 
 /* ── Nav links (small, inside box — legacy, used on some inner pages) ── */
@@ -1990,6 +1997,24 @@ body.view-fancy .text-page-updated { color: #c8b888; }
 .featured-empty { font: italic 13px Georgia,serif; color: #a08060; }
 .featured-browse-link { margin-top: 24px; font: 13px 'Courier Prime','Courier New',monospace; }
 .featured-browse-link a { color: #3a6b1a; }
+
+.featured-poem { padding: 14px 0; border-bottom: 1px solid #ddd0b0; }
+.featured-poem:last-child { border-bottom: none; }
+.featured-poem-title { margin: 0 0 6px; font: normal 1.1rem 'Abril Fatface',Georgia,serif; }
+.featured-poem-title a { color: #2d2316; text-decoration: none; }
+.featured-poem-title a:hover { color: #3a6b1a; }
+.featured-poem-body { margin: 4px 0 8px; }
+.featured-poem-meta { margin: 0; font: 12px 'Courier Prime','Courier New',monospace; color: #7a6040; }
+.featured-poem-meta a { color: #3a6b1a; }
+
+/* Fancy mode overrides for featured poems (dark panel) */
+body.view-fancy .featured-poem { border-bottom-color: rgba(196,169,107,0.3); }
+body.view-fancy .featured-poem-title a { color: #fdf8f0; }
+body.view-fancy .featured-poem-title a:hover { color: #c8e8a0; }
+body.view-fancy .featured-poem-meta { color: #c8b888; }
+body.view-fancy .featured-poem-meta a { color: #c8e8a0; }
+body.view-fancy .featured-empty,
+body.view-fancy .featured-section-head { color: #e8d5b0; }
 
 /* ── Phase 1.8: Admin tag editor (poem page) ─────────────────────────────── */
 .poem-admin-tags { border-top: 1px dashed #c4a96b; margin-top: 8px; padding-top: 8px; }
