@@ -5,7 +5,8 @@
 <div class="text-page browse-page">
   <h1>Browse Poems</h1>
 
-  <form class="browse-filters" method="get" action="{{ url_for('browse') }}">
+  <form class="browse-filters" method="get" action="{{ url_for('browse') }}" id="browse-form">
+
     <div class="browse-filter-row">
       <label class="browse-filter-label" for="browse-sort">Sort</label>
       <select class="browse-select" id="browse-sort" name="sort" onchange="this.form.submit()">
@@ -15,18 +16,6 @@
         <option value="fewest"  {% if sort == 'fewest'  %}selected{% endif %}>Fewest horses</option>
       </select>
 
-      <label class="browse-filter-label" for="browse-tag">Tag</label>
-      <select class="browse-select" id="browse-tag" name="tag" onchange="this.form.submit()">
-        <option value="">Any tag</option>
-        {% for cat in all_tags %}
-          <optgroup label="{{ cat.label }}">
-            {% for tag in cat.tags %}
-              <option value="{{ tag.slug }}" {% if tag_slug == tag.slug %}selected{% endif %}>{{ tag.label }}</option>
-            {% endfor %}
-          </optgroup>
-        {% endfor %}
-      </select>
-
       <label class="browse-filter-check">
         <input type="checkbox" name="attributed" value="1"
                {% if attributed %}checked{% endif %}
@@ -34,10 +23,48 @@
         Based on existing works
       </label>
 
-      {% if sort != 'newest' or tag_slug or attributed %}
+      {% set has_filters = (sort != 'newest' or tag_slugs or attributed or ratio_min is not none or ratio_max is not none) %}
+      {% if has_filters %}
         <a class="browse-clear" href="{{ url_for('browse') }}">Clear filters</a>
       {% endif %}
     </div>
+
+    {# Tag multi-checkbox panel #}
+    <div class="browse-tag-panel">
+      {% for cat in all_tags %}
+      <div class="browse-tag-cat">
+        <span class="browse-tag-cat-label">{{ cat.label }}</span>
+        <div class="browse-tag-checks">
+          {% for tag in cat.tags %}
+          <label class="browse-tag-check-item">
+            <input type="checkbox" name="tags" value="{{ tag.slug }}"
+                   {% if tag.slug in tag_slugs %}checked{% endif %}
+                   onchange="this.form.submit()">
+            {{ tag.label }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {# Horse/word ratio range filter #}
+    <div class="browse-filter-row browse-ratio-row">
+      <span class="browse-filter-label">Horse/word ratio</span>
+      <span class="browse-ratio-hint">(1.0 = all single-word names · 0.5 = all two-word · 0.33 = three-word)</span>
+      <label class="browse-filter-label" for="ratio-min">Min</label>
+      <input class="browse-ratio-input" type="number" id="ratio-min" name="ratio_min"
+             min="0" max="1" step="0.05"
+             value="{{ '%.2f' % ratio_min if ratio_min is not none else '' }}"
+             placeholder="0.00">
+      <label class="browse-filter-label" for="ratio-max">Max</label>
+      <input class="browse-ratio-input" type="number" id="ratio-max" name="ratio_max"
+             min="0" max="1" step="0.05"
+             value="{{ '%.2f' % ratio_max if ratio_max is not none else '' }}"
+             placeholder="1.00">
+      <button type="submit" class="browse-ratio-apply">Apply</button>
+    </div>
+
   </form>
 
   <p class="browse-count">
@@ -48,11 +75,14 @@
     {% else %}
       {{ total }} poems
     {% endif %}
+    {% if tag_slugs %}
+      · {% for slug in tag_slugs %}<span class="browse-active-tag">{{ slug.split(':')[-1] }}</span>{% if not loop.last %} + {% endif %}{% endfor %}
+    {% endif %}
     {% if total_pages > 1 %} · page {{ page }} of {{ total_pages }}{% endif %}
   </p>
 
   {% if not poems %}
-    {% if total == 0 and not (tag_slug or attributed) %}
+    {% if total == 0 and not has_filters %}
       <p>No poems published yet. <a href="{{ url_for('poetry_editor') }}">Write the first one →</a></p>
     {% endif %}
   {% else %}
@@ -69,6 +99,9 @@
               · anonymous
             {% endif %}
             · {{ p.horse_count }} horse{{ 's' if p.horse_count != 1 else '' }}
+            {% if p.horse_ratio is not none %}
+              · {{ '%.0f%%' % (p.horse_ratio * 100) }} ratio
+            {% endif %}
             {% if p.published_at %} · {{ p.published_at|datefmt }}{% endif %}
           </span>
         </li>
@@ -78,12 +111,16 @@
 
   {% if total_pages > 1 %}
   <nav class="browse-pagination" aria-label="Page navigation">
-    {% set base_args = {'sort': sort} %}
-    {% if tag_slug %}{% set _ = base_args.update({'tag': tag_slug}) %}{% endif %}
-    {% if attributed %}{% set _ = base_args.update({'attributed': '1'}) %}{% endif %}
+    {# Build query string manually to support repeated 'tags' params #}
+    {% set qs_parts = ['sort=' ~ sort] %}
+    {% for slug in tag_slugs %}{% set _ = qs_parts.append('tags=' ~ slug) %}{% endfor %}
+    {% if attributed %}{% set _ = qs_parts.append('attributed=1') %}{% endif %}
+    {% if ratio_min is not none %}{% set _ = qs_parts.append('ratio_min=' ~ ('%.2f' % ratio_min)) %}{% endif %}
+    {% if ratio_max is not none %}{% set _ = qs_parts.append('ratio_max=' ~ ('%.2f' % ratio_max)) %}{% endif %}
+    {% set base_qs = qs_parts | join('&') %}
 
     {% if page > 1 %}
-      <a class="browse-page-btn" href="{{ url_for('browse', page=page-1, **base_args) }}">&larr; Prev</a>
+      <a class="browse-page-btn" href="{{ url_for('browse') }}?{{ base_qs }}&page={{ page - 1 }}">&larr; Prev</a>
     {% else %}
       <span class="browse-page-btn browse-page-disabled">&larr; Prev</span>
     {% endif %}
@@ -91,7 +128,7 @@
     <span class="browse-page-info">{{ page }} / {{ total_pages }}</span>
 
     {% if page < total_pages %}
-      <a class="browse-page-btn" href="{{ url_for('browse', page=page+1, **base_args) }}">Next &rarr;</a>
+      <a class="browse-page-btn" href="{{ url_for('browse') }}?{{ base_qs }}&page={{ page + 1 }}">Next &rarr;</a>
     {% else %}
       <span class="browse-page-btn browse-page-disabled">Next &rarr;</span>
     {% endif %}

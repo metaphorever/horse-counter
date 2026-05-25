@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Pending Review — poet.horse{% endblock %}
+
+{% block content %}
+<div class="text-page drafts-page">
+  <h1>Pending Review</h1>
+
+  {% if not poems %}
+  <p class="drafts-empty">No poems awaiting review. <a href="{{ url_for('poetry_editor') }}">Write one →</a></p>
+  {% else %}
+  <p class="browse-count">{{ poems | length }} poem{{ 's' if poems | length != 1 else '' }} in the queue</p>
+  <ul class="draft-list">
+    {% for p in poems %}
+    <li class="draft-item">
+      <div class="draft-item-main">
+        <a class="draft-title" href="{{ url_for('poem_permalink', short_code=p.short_code) }}">{{ p.title or '(untitled)' }}</a>
+        <span class="draft-meta">{{ p.horse_count }} horse{{ 's' if p.horse_count != 1 else '' }} · submitted {{ p.created_at | datefmt }}</span>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <p class="drafts-back"><a href="{{ url_for('me_published') }}">&larr; my poems</a></p>
+</div>
+{% endblock %}

@@ -43,6 +43,9 @@ _COLUMN_MIGRATIONS = [
     ('users', 'trust_score', "INTEGER NOT NULL DEFAULT 0"),
     # Admin QoL — suspension timestamp; NULL = active, non-NULL = suspended
     ('users', 'suspended_at', "REAL"),
+    # Phase 2 — horse/word ratio: horse_count / total word count across all names
+    # 1.0 = all single-word names, 0.5 = all two-word names, etc.
+    ('poems', 'horse_ratio', "REAL"),
 ]
 
 
@@ -132,6 +135,14 @@ def apply_migrations() -> None:
         for table, column, ddl in _COLUMN_MIGRATIONS:
             if not _column_exists(conn, table, column):
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+        # Backfill horse_ratio for poems created before this column existed.
+        # Computable from already-stored horse_count / word_count; no lines_json needed.
+        conn.execute(
+            """UPDATE poems
+                  SET horse_ratio = CASE WHEN word_count > 0
+                      THEN CAST(horse_count AS REAL) / word_count ELSE 1.0 END
+                WHERE horse_ratio IS NULL"""
+        )
 
 
 def seed_tag_taxonomy() -> None:

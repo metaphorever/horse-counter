@@ -18,6 +18,13 @@
 .chip-remove { background: none; border: none; cursor: pointer; font-size: 15px; line-height: 1; color: #7a6a3a; padding: 0 2px; }
 .chip-remove:hover { color: #c04040; }
 .queue-no-tags { font-size: 13px; color: #9a8a5a; font-style: italic; }
+.queue-tag-chip-suggested { background: #fff3cc; border-color: #d4a820; color: #6b4a00; }
+.queue-suggested-note { font-size: 12px; color: #7a5a00; font-style: italic; margin: 4px 0 2px; }
+.queue-suggested-actions { display: inline-flex; gap: 4px; margin-left: 4px; }
+.queue-suggested-approve { font-size: 11px; padding: 1px 5px; background: #e8f0cc; border: 1px solid #8aaa40; border-radius: 10px; cursor: pointer; color: #3a5a1a; }
+.queue-suggested-approve:hover { background: #d0e0a0; }
+.queue-suggested-reject { font-size: 11px; padding: 1px 5px; background: #f8e8e8; border: 1px solid #cc8888; border-radius: 10px; cursor: pointer; color: #7a2020; }
+.queue-suggested-reject:hover { background: #f0d0d0; }
 .queue-edit-tags-btn { background: none; border: none; cursor: pointer; font: inherit; font-size: 13px; color: #5a7a2a; text-decoration: underline; padding: 0; }
 .queue-edit-tags-btn:hover { color: #3a5a1a; }
 .queue-tag-editor { margin: 8px 0; padding: 12px 14px; background: #f5f2e8; border: 1px solid #d4c490; border-radius: 4px; }
@@ -100,9 +107,28 @@
         <div class="queue-chips-list" id="chips-list-{{ sid }}">
           {% if sub.pending_tags %}
             {% for tag in sub.pending_tags %}
+            {% if tag.tag_status == 'pending' %}
+            {# Suggested new tag — not yet in the taxonomy #}
+            <span class="queue-tag-chip queue-tag-chip-suggested" id="chip-{{ sid }}-{{ tag.tag_id }}"
+                  title="Suggested new tag — not yet approved in the taxonomy">
+              ⚠ {{ tag.tag_label }}
+              <span class="queue-suggested-actions">
+                <form method="post" action="{{ url_for('admin_tag_approve', tag_id=tag.tag_id) }}" style="display:inline">
+                  <input type="hidden" name="next" value="{{ url_for('admin_poem_queue') }}">
+                  <button type="submit" class="queue-suggested-approve" title="Approve this tag into the taxonomy">✓</button>
+                </form>
+                <form method="post" action="{{ url_for('admin_tag_reject', tag_id=tag.tag_id) }}" style="display:inline">
+                  <input type="hidden" name="next" value="{{ url_for('admin_poem_queue') }}">
+                  <button type="submit" class="queue-suggested-reject" title="Reject this tag suggestion">✕</button>
+                </form>
+              </span>
+              <button type="button" class="chip-remove" aria-label="Remove {{ tag.tag_label }}" onclick="removeTagChip({{ sid }}, {{ tag.tag_id }})">×</button>
+            </span>
+            {% else %}
             <span class="queue-tag-chip" id="chip-{{ sid }}-{{ tag.tag_id }}">
               {{ tag.tag_label }}<button type="button" class="chip-remove" aria-label="Remove {{ tag.tag_label }}" onclick="removeTagChip({{ sid }}, {{ tag.tag_id }})">×</button>
             </span>
+            {% endif %}
             {% endfor %}
           {% else %}
             <span class="queue-no-tags" id="no-tags-msg-{{ sid }}">No tags submitted</span>

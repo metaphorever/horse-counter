@@ -868,7 +868,7 @@ button[type="submit"]:active { transform: translate(2px, 2px); box-shadow: none;
 
 /* Stable */
 .stable-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.stable-head h3 { font: 700 13px 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .06em; color: #6b5430; margin: 0; }
+.stable-head h3 { font: 700 1.05rem 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .06em; color: #6b5430; margin: 0; }
 .clear-btn  { font: 11px 'Courier Prime','Courier New',monospace; padding: 3px 8px; background: #fff0ef; color: #7a2020; border: 1px solid #e8b0a8; border-radius: 2px; cursor: pointer; }
 .stable-tiles { display: flex; flex-wrap: wrap; gap: 8px; min-height: 44px; padding: 8px; background: #f0ead8; border: 2px dashed #c4a96b; border-radius: 2px; }
 .stable-empty { color: #a08060; font: italic 12px Georgia,serif; }
@@ -1970,7 +1970,7 @@ body.view-fancy .text-page-updated { color: #c8b888; }
 .browse-page { max-width: 720px; }
 
 .browse-filters { margin-bottom: 16px; }
-.browse-filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.browse-filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 8px; }
 .browse-filter-label { font: 12px 'Courier Prime','Courier New',monospace; color: #6b5430; white-space: nowrap; }
 .browse-select { font: 13px 'Courier Prime','Courier New',monospace; border: 1px solid #c4a96b; background: #fdf8ed; padding: 4px 6px; border-radius: 2px; color: #2d2316; cursor: pointer; }
 .browse-select:focus { outline: 2px solid #5a7a2a; outline-offset: 1px; }
@@ -1979,6 +1979,24 @@ body.view-fancy .text-page-updated { color: #c8b888; }
 .browse-clear { font: 12px 'Courier Prime','Courier New',monospace; color: #7a3030; text-decoration: underline; white-space: nowrap; }
 .browse-clear:hover { color: #3a1010; }
 .browse-count { font: 12px 'Courier Prime','Courier New',monospace; color: #a08060; margin-bottom: 12px; }
+.browse-active-tag { font-weight: 700; color: #3a5a1a; }
+
+/* Tag multi-checkbox panel */
+.browse-tag-panel { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 6px 0 10px; padding: 10px 12px; background: #faf7ee; border: 1px solid #ddd0a0; border-radius: 3px; }
+.browse-tag-cat { min-width: 130px; }
+.browse-tag-cat-label { display: block; font: bold 10px 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .06em; color: #7a6a3a; margin-bottom: 5px; }
+.browse-tag-checks { display: flex; flex-direction: column; gap: 2px; }
+.browse-tag-check-item { font: 13px 'Courier Prime','Courier New',monospace; color: #2d2316; display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; }
+.browse-tag-check-item input { cursor: pointer; }
+.browse-tag-check-item:has(input:checked) { font-weight: 700; color: #3a5a1a; }
+
+/* Ratio filter row */
+.browse-ratio-row { margin-top: 6px; }
+.browse-ratio-hint { font: 11px 'Courier Prime','Courier New',monospace; color: #a08060; font-style: italic; }
+.browse-ratio-input { width: 64px; font: 13px 'Courier Prime','Courier New',monospace; border: 1px solid #c4a96b; background: #fdf8ed; padding: 3px 5px; border-radius: 2px; color: #2d2316; }
+.browse-ratio-input:focus { outline: 2px solid #5a7a2a; outline-offset: 1px; }
+.browse-ratio-apply { font: 12px 'Courier Prime','Courier New',monospace; background: #f0e8cc; border: 1px solid #c4a96b; border-radius: 2px; padding: 3px 8px; cursor: pointer; color: #2d2316; }
+.browse-ratio-apply:hover { background: #ede0b0; }
 
 .poem-index { list-style: none; padding: 0; margin: 0; }
 .poem-index-item { padding: 8px 0; border-bottom: 1px solid #e8dcc0; }
