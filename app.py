@@ -689,8 +689,9 @@ _BROWSE_PER_PAGE = 20
 @app.route('/browse')
 def browse():
     sort       = request.args.get('sort', 'newest')
-    tag_slugs  = request.args.getlist('tags')
-    attributed = request.args.get('attributed') == '1'
+    tag_slugs      = request.args.getlist('tags')
+    excluded_slugs = request.args.getlist('exclude')
+    attributed     = request.args.get('attributed') == '1'
     try:
         page = max(1, int(request.args.get('page', 1)))
     except (ValueError, TypeError):
@@ -706,26 +707,29 @@ def browse():
     ratio_min = _parse_ratio('ratio_min')
     ratio_max = _parse_ratio('ratio_max')
 
-    poems      = browse_poems(sort=sort, tag_slugs=tag_slugs, page=page,
-                               per_page=_BROWSE_PER_PAGE, attributed=attributed,
-                               ratio_min=ratio_min, ratio_max=ratio_max)
-    total      = count_browse_poems(tag_slugs=tag_slugs, attributed=attributed,
-                                    ratio_min=ratio_min, ratio_max=ratio_max)
+    poems = browse_poems(sort=sort, tag_slugs=tag_slugs, page=page,
+                         per_page=_BROWSE_PER_PAGE, attributed=attributed,
+                         ratio_min=ratio_min, ratio_max=ratio_max,
+                         excluded_slugs=excluded_slugs)
+    total = count_browse_poems(tag_slugs=tag_slugs, attributed=attributed,
+                               ratio_min=ratio_min, ratio_max=ratio_max,
+                               excluded_slugs=excluded_slugs)
     total_pages = max(1, -(-total // _BROWSE_PER_PAGE))  # ceiling div
 
-    all_tags   = list_categories_with_tags()  # public tags only for the filter UI
+    all_tags = list_categories_with_tags()  # public tags only for the filter UI
     return render_template(
         'poem_index.html',
-        poems       = poems,
-        sort        = sort,
-        tag_slugs   = tag_slugs,
-        attributed  = attributed,
-        page        = page,
-        total_pages = total_pages,
-        total       = total,
-        all_tags    = all_tags,
-        ratio_min   = ratio_min,
-        ratio_max   = ratio_max,
+        poems          = poems,
+        sort           = sort,
+        tag_slugs      = tag_slugs,
+        excluded_slugs = excluded_slugs,
+        attributed     = attributed,
+        page           = page,
+        total_pages    = total_pages,
+        total          = total,
+        all_tags       = all_tags,
+        ratio_min      = ratio_min,
+        ratio_max      = ratio_max,
     )
 
 

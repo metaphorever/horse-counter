@@ -125,7 +125,7 @@ def apply_tags_to_poem(
         rows = conn.execute(
             f"""SELECT t.id, t.category_id, c.behavior
                   FROM tags t JOIN tag_categories c ON t.category_id = c.id
-                 WHERE t.status = 'active'
+                 WHERE t.status IN ('active', 'pending')
                    AND t.id IN ({','.join('?' * len(deduped))})""",
             deduped,
         ).fetchall()

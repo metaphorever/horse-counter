@@ -1982,20 +1982,36 @@ body.view-fancy .text-page-updated { color: #c8b888; }
 .browse-active-tag { font-weight: 700; color: #3a5a1a; }
 
 /* Tag multi-checkbox panel */
-.browse-tag-panel { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 6px 0 10px; padding: 10px 12px; background: #faf7ee; border: 1px solid #ddd0a0; border-radius: 3px; }
-.browse-tag-cat { min-width: 130px; }
-.browse-tag-cat-label { display: block; font: bold 10px 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .06em; color: #7a6a3a; margin-bottom: 5px; }
-.browse-tag-checks { display: flex; flex-direction: column; gap: 2px; }
+.browse-panel-heading { display: block; font: bold 10px 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .06em; color: #7a6a3a; margin-bottom: 4px; width: 100%; }
+.browse-tag-panel { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 6px 0 10px; padding: 10px 12px; background: #faf7ee; border: 1px solid #ddd0a0; border-radius: 3px; }
+.browse-tag-cat { min-width: 0; }
+.browse-tag-cat > summary.browse-tag-cat-label { list-style: none; font: bold 10px 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .06em; color: #7a6a3a; cursor: pointer; user-select: none; padding: 3px 6px; background: #f0ead8; border: 1px solid #ddd0a0; border-radius: 2px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.browse-tag-cat > summary.browse-tag-cat-label::after { content: '▸'; font-size: 9px; }
+.browse-tag-cat[open] > summary.browse-tag-cat-label::after { content: '▾'; }
+.browse-tag-cat > summary::-webkit-details-marker { display: none; }
+.browse-tag-checks { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 5px; max-width: 320px; }
 .browse-tag-check-item { font: 13px 'Courier Prime','Courier New',monospace; color: #2d2316; display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; }
 .browse-tag-check-item input { cursor: pointer; }
 .browse-tag-check-item:has(input:checked) { font-weight: 700; color: #3a5a1a; }
 
+/* CW exclusion panel */
+.browse-cw-panel { margin: 4px 0 8px; }
+.browse-cw-heading { list-style: none; font: bold 10px 'Courier Prime','Courier New',monospace; text-transform: uppercase; letter-spacing: .06em; color: #9a5a3a; cursor: pointer; user-select: none; padding: 3px 8px; background: #fdf3ee; border: 1px solid #e0b8a0; border-radius: 2px; display: inline-flex; align-items: center; gap: 4px; }
+.browse-cw-heading::after { content: '▸'; font-size: 9px; }
+.browse-cw-panel[open] .browse-cw-heading::after { content: '▾'; }
+.browse-cw-heading::-webkit-details-marker { display: none; }
+.browse-cw-body { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 6px; padding: 8px 10px; background: #fdf8f4; border: 1px solid #e8c8b0; border-radius: 3px; }
+.browse-cw-item:has(input:checked) { font-weight: 700; color: #9a3a1a; }
+.browse-excluded-tag { background: #f8e8e0; border-color: #d09070; color: #7a3a1a; }
+
 /* Ratio filter row */
 .browse-ratio-row { margin-top: 6px; }
-.browse-ratio-hint { font: 11px 'Courier Prime','Courier New',monospace; color: #a08060; font-style: italic; }
-.browse-ratio-input { width: 64px; font: 13px 'Courier Prime','Courier New',monospace; border: 1px solid #c4a96b; background: #fdf8ed; padding: 3px 5px; border-radius: 2px; color: #2d2316; }
-.browse-ratio-input:focus { outline: 2px solid #5a7a2a; outline-offset: 1px; }
-.browse-ratio-apply { font: 12px 'Courier Prime','Courier New',monospace; background: #f0e8cc; border: 1px solid #c4a96b; border-radius: 2px; padding: 3px 8px; cursor: pointer; color: #2d2316; }
+.browse-ratio-hint { font: 11px 'Courier Prime','Courier New',monospace; color: #a08060; font-style: italic; flex-basis: 100%; }
+.browse-ratio-sliders { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 4px; }
+.browse-ratio-slider-group { display: flex; flex-direction: column; gap: 2px; }
+.browse-ratio-val { font-weight: 700; color: #2d2316; }
+.browse-ratio-slider { width: 160px; accent-color: #5a7a2a; cursor: pointer; }
+.browse-ratio-apply { font: 12px 'Courier Prime','Courier New',monospace; background: #f0e8cc; border: 1px solid #c4a96b; border-radius: 2px; padding: 3px 8px; cursor: pointer; color: #2d2316; align-self: flex-end; margin-bottom: 3px; }
 .browse-ratio-apply:hover { background: #ede0b0; }
 
 .poem-index { list-style: none; padding: 0; margin: 0; }

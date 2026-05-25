@@ -220,10 +220,11 @@ _BROWSE_SORTS = {
 
 
 def _browse_where(
-    tag_slugs:  List[str]     = (),
-    attributed: bool          = False,
-    ratio_min:  Optional[float] = None,
-    ratio_max:  Optional[float] = None,
+    tag_slugs:      List[str]      = (),
+    attributed:     bool           = False,
+    ratio_min:      Optional[float] = None,
+    ratio_max:      Optional[float] = None,
+    excluded_slugs: List[str]      = (),
 ) -> tuple:
     """Build the WHERE clause and params for browse queries."""
     clauses = ["p.status = 'published'"]
@@ -233,6 +234,13 @@ def _browse_where(
             "p.id IN (SELECT pt.poem_id FROM poem_tags pt "
             "JOIN tags t ON t.id = pt.tag_id "
             "WHERE t.slug = ? AND pt.status = 'approved')"
+        )
+        params.append(slug)
+    for slug in excluded_slugs:
+        clauses.append(
+            "NOT EXISTS (SELECT 1 FROM poem_tags pt "
+            "JOIN tags t ON t.id = pt.tag_id "
+            "WHERE t.slug = ? AND pt.poem_id = p.id AND pt.status = 'approved')"
         )
         params.append(slug)
     if attributed:
@@ -247,16 +255,17 @@ def _browse_where(
 
 
 def browse_poems(
-    sort:       str            = 'newest',
-    tag_slugs:  List[str]      = (),
-    page:       int            = 1,
-    per_page:   int            = 20,
-    attributed: bool           = False,
-    ratio_min:  Optional[float] = None,
-    ratio_max:  Optional[float] = None,
+    sort:           str            = 'newest',
+    tag_slugs:      List[str]      = (),
+    page:           int            = 1,
+    per_page:       int            = 20,
+    attributed:     bool           = False,
+    ratio_min:      Optional[float] = None,
+    ratio_max:      Optional[float] = None,
+    excluded_slugs: List[str]      = (),
 ) -> List[Dict]:
     order = _BROWSE_SORTS.get(sort, _BROWSE_SORTS['newest'])
-    where, params = _browse_where(tag_slugs, attributed, ratio_min, ratio_max)
+    where, params = _browse_where(tag_slugs, attributed, ratio_min, ratio_max, excluded_slugs)
     offset = (max(1, page) - 1) * per_page
     sql = f"SELECT p.* FROM poems p WHERE {where} ORDER BY {order} LIMIT ? OFFSET ?"
     with get_db() as conn:
@@ -265,12 +274,13 @@ def browse_poems(
 
 
 def count_browse_poems(
-    tag_slugs:  List[str]      = (),
-    attributed: bool           = False,
-    ratio_min:  Optional[float] = None,
-    ratio_max:  Optional[float] = None,
+    tag_slugs:      List[str]      = (),
+    attributed:     bool           = False,
+    ratio_min:      Optional[float] = None,
+    ratio_max:      Optional[float] = None,
+    excluded_slugs: List[str]      = (),
 ) -> int:
-    where, params = _browse_where(tag_slugs, attributed, ratio_min, ratio_max)
+    where, params = _browse_where(tag_slugs, attributed, ratio_min, ratio_max, excluded_slugs)
     sql = f"SELECT COUNT(*) FROM poems p WHERE {where}"
     with get_db() as conn:
         return conn.execute(sql, params).fetchone()[0]
