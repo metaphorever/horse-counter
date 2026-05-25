@@ -1754,30 +1754,33 @@ body.view-fancy .text-page-updated { color: #c8b888; }
 }
 .popover-close:hover { color: #6b3a10; background: #f0ead8; }
 
-/* Blue-ribbon save toggle */
+/* Ribbon save button — bottom of popover */
 .popover-ribbon {
-  position: absolute;
-  top: 8px; right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 6px 10px;
   background: none;
-  border: none;
-  font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 2px 4px;
+  border: 1px solid #d4c490;
   border-radius: 2px;
   box-shadow: none;
-  margin: 0;
-  opacity: 0.35;
-  transition: opacity .15s, transform .12s;
+  font: 13px Georgia, serif;
+  color: #7a6a3a;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity .15s, background .12s, color .12s;
+  text-align: left;
 }
-.popover-ribbon:hover   { opacity: 0.8; transform: scale(1.15); }
-.popover-ribbon.ribbon-on { opacity: 1; }
+.popover-ribbon:hover { opacity: 1; background: #f0ead8; }
+.popover-ribbon.ribbon-on { opacity: 1; color: #3a5a1a; border-color: #8ab060; background: #f0f5e8; }
 .popover-ribbon:focus-visible { outline: 2px solid #5a7a2a; outline-offset: 2px; }
 
 .popover-name {
   font: 700 1rem/1.2 'Playfair Display', Georgia, serif;
   margin-bottom: 6px;
-  padding-right: 44px; /* clear close + ribbon */
+  padding-right: 28px; /* clear close button */
 }
 .popover-pq-link {
   display: inline-block;

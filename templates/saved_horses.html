@@ -5,7 +5,7 @@
 {% block content %}
 <div class="text-page collection-page">
   <h1 class="page-title">Saved Horses</h1>
-  <p class="page-desc">Horses you've given the blue ribbon. Private — only you can see this.</p>
+  <p class="page-desc">Horses you've saved with the ribbon. Private — only you can see this.</p>
 
   {% if horses %}
   <div class="collection-chips" id="saved-horses-chips">
@@ -18,7 +18,7 @@
   <p class="collection-count">{{ horses | length }} horse{{ 's' if horses | length != 1 }}</p>
   {% else %}
   <p class="collection-empty">
-    No saved horses yet. Give the blue ribbon 🎀 to a horse from its popover while reading poems.
+    No saved horses yet. Give the ribbon 🎀 to a horse from its popover while reading poems.
   </p>
   {% endif %}
 </div>

@@ -62,7 +62,7 @@ from db.users import (
     update_trust_score, set_trust_score, get_all_users,
     suspend_user, unsuspend_user, delete_user,
 )
-from db.admin_settings import get_auto_post_threshold, get_setting, set_setting
+from db.admin_settings import get_auto_post_threshold, get_anon_auto_post, get_pseudo_auto_post, get_new_user_trust_score, get_setting, set_setting
 from db.pasture import add_to_pasture, list_pasture_horses
 from db.drafts import (
     list_user_drafts, get_user_draft, save_user_draft,
@@ -490,6 +490,7 @@ def setup_account():
                 clerk_id     = clerk_id,
                 slug         = slug,
                 display_name = display_name or slug,
+                trust_score  = get_new_user_trust_score(),
             )
             session.pop('pending_clerk_id',    None)
             session.pop('pending_display_name', None)
@@ -1687,15 +1688,16 @@ def submit_poem_public():
             except (TypeError, ValueError):
                 continue
 
-    # Check if this user qualifies to bypass the submission queue.
-    threshold = get_auto_post_threshold()
-    bypass_queue = (
-        post_as == 'account'
-        and current_user is not None
-        and not current_user.get('suspended_at')
-        and threshold is not None
-        and current_user.get('trust_score', 0) >= threshold
-    )
+    # Check if this submission bypasses the queue.
+    if post_as == 'account' and current_user and not current_user.get('suspended_at'):
+        threshold = get_auto_post_threshold()
+        bypass_queue = threshold is not None and current_user.get('trust_score', 0) >= threshold
+    elif post_as == 'anonymous':
+        bypass_queue = get_anon_auto_post()
+    elif post_as == 'pseudonymous':
+        bypass_queue = get_pseudo_auto_post()
+    else:
+        bypass_queue = False
 
     poem_status = 'published' if bypass_queue else 'submitted'
     poem = save_poem_db(
@@ -2408,7 +2410,7 @@ def poem_report(short_code):
 
 @app.route('/p/<short_code>/save', methods=['POST'])
 def poem_save_toggle(short_code):
-    """Toggle the blue-ribbon save for the current user on a poem."""
+    """Toggle ribbon save for the current user on a poem."""
     user = g.get('current_user')
     if not user:
         return jsonify({'error': 'login_required'}), 401
@@ -2634,7 +2636,21 @@ def admin_crosspost_skip(cq_id: int):
 def admin_users():
     users = get_all_users()
     threshold = get_setting('auto_post_threshold', '0')
-    return render_template('admin_users.html', users=users, threshold=threshold)
+    anon_auto_post = get_anon_auto_post()
+    pseudo_auto_post = get_pseudo_auto_post()
+    new_user_trust = get_setting('new_user_trust_score', '0')
+    return render_template('admin_users.html', users=users, threshold=threshold,
+                           anon_auto_post=anon_auto_post, pseudo_auto_post=pseudo_auto_post,
+                           new_user_trust=new_user_trust)
+
+
+@app.route('/admin/users/anon-settings', methods=['POST'])
+@login_required
+def admin_set_anon_settings():
+    set_setting('anon_auto_post',   '1' if request.form.get('anon_auto_post') else '')
+    set_setting('pseudo_auto_post', '1' if request.form.get('pseudo_auto_post') else '')
+    flash('Anonymous post settings saved.', 'ok')
+    return redirect(url_for('admin_users'))
 
 
 @app.route('/admin/users/threshold', methods=['POST'])
@@ -2655,6 +2671,20 @@ def admin_set_threshold():
             return redirect(url_for('admin_users'))
         set_setting('auto_post_threshold', str(val))
         flash(f'Auto-post threshold set to {val}.', 'ok')
+    return redirect(url_for('admin_users'))
+
+
+@app.route('/admin/users/new-user-trust', methods=['POST'])
+@login_required
+def admin_set_new_user_trust():
+    raw = request.form.get('new_user_trust', '0').strip()
+    try:
+        val = int(raw)
+    except ValueError:
+        flash('New-user trust score must be an integer.', 'err')
+        return redirect(url_for('admin_users'))
+    set_setting('new_user_trust_score', str(val))
+    flash(f'New accounts will start with trust score {val}.', 'ok')
     return redirect(url_for('admin_users'))
 
 
@@ -2789,7 +2819,7 @@ def horse_state():
 
 @app.route('/horse/save', methods=['POST'])
 def horse_save():
-    """Toggle blue-ribbon save on a horse. Requires login."""
+    """Toggle ribbon save on a horse. Requires login."""
     user = g.get('current_user')
     if not user:
         return jsonify({'error': 'login_required'}), 401

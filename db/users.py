@@ -67,15 +67,15 @@ def slug_available(slug: str) -> bool:
 
 # ── Write ──────────────────────────────────────────────────────────────────────
 
-def create_user(clerk_id: str, slug: str, display_name: str) -> dict:
+def create_user(clerk_id: str, slug: str, display_name: str, trust_score: int = 0) -> dict:
     """Insert a new user row and return it as a dict. Raises on constraint violation."""
     now = time.time()
     with get_db() as conn:
         conn.execute('BEGIN')
         conn.execute(
-            """INSERT INTO users (clerk_id, slug, display_name, role, joined_at)
-               VALUES (?, ?, ?, 'user', ?)""",
-            (clerk_id, slug.lower(), display_name, now),
+            """INSERT INTO users (clerk_id, slug, display_name, role, trust_score, joined_at)
+               VALUES (?, ?, ?, 'user', ?, ?)""",
+            (clerk_id, slug.lower(), display_name, trust_score, now),
         )
         row = conn.execute(
             'SELECT * FROM users WHERE clerk_id = ?', (clerk_id,)

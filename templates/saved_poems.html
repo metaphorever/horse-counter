@@ -4,7 +4,7 @@
 {% block content %}
 <div class="text-page collection-page">
   <h1 class="page-title">Saved Poems</h1>
-  <p class="page-desc">Poems you've given the blue ribbon. Private — only you can see this.</p>
+  <p class="page-desc">Poems you've saved with the ribbon. Private — only you can see this.</p>
 
   {% if poems %}
   <ul class="collection-list">
@@ -30,7 +30,7 @@
   <p class="collection-count">{{ poems | length }} poem{{ 's' if poems | length != 1 }}</p>
   {% else %}
   <p class="collection-empty">
-    No saved poems yet. Give the blue ribbon 🎀 to a poem from its permalink page.
+    No saved poems yet. Give the ribbon 🎀 to a poem from its permalink page.
   </p>
   {% endif %}
 </div>

@@ -16,6 +16,10 @@
 .threshold-form label { font-size: 14px; color: #3a3020; font-weight: bold; }
 .threshold-form input[type=text] { width: 80px; font-size: 14px; padding: 4px 8px; border: 1px solid #c4b070; border-radius: 4px; }
 .threshold-form .threshold-note { font-size: 12px; color: #7a6a3a; }
+.anon-settings-form { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; padding: 14px 18px; background: #fdfaf2; border: 1px solid #d4c490; border-radius: 6px; flex-wrap: wrap; }
+.anon-settings-form label.heading { font-size: 14px; color: #3a3020; font-weight: bold; white-space: nowrap; }
+.anon-settings-form .toggle-pair { display: flex; align-items: center; gap: 6px; }
+.anon-settings-form .threshold-note { font-size: 12px; color: #7a6a3a; }
 </style>
 
 <div class="box">
@@ -40,6 +44,28 @@
         Users with trust ≥ <strong>{{ threshold }}</strong> bypass the queue.
       {% endif %}
     </span>
+  </form>
+
+  <form class="threshold-form" method="post" action="/admin/users/new-user-trust">
+    <label for="new-user-trust-input">New account trust score:</label>
+    <input type="text" id="new-user-trust-input" name="new_user_trust" value="{{ new_user_trust }}" placeholder="0">
+    <button type="submit" class="btn">Save</button>
+    <span class="threshold-note">New accounts start with trust <strong>{{ new_user_trust }}</strong>.</span>
+  </form>
+
+  <form class="anon-settings-form" method="post" action="/admin/users/anon-settings">
+    <label class="heading">Anonymous / pseudo auto-post:</label>
+    <div class="toggle-pair">
+      <input type="checkbox" id="anon-auto-post" name="anon_auto_post" value="1" {% if anon_auto_post %}checked{% endif %}>
+      <label for="anon-auto-post">Anonymous</label>
+      <span class="threshold-note">({% if anon_auto_post %}auto-publishing{% else %}goes to queue{% endif %})</span>
+    </div>
+    <div class="toggle-pair">
+      <input type="checkbox" id="pseudo-auto-post" name="pseudo_auto_post" value="1" {% if pseudo_auto_post %}checked{% endif %}>
+      <label for="pseudo-auto-post">Pseudonymous</label>
+      <span class="threshold-note">({% if pseudo_auto_post %}auto-publishing{% else %}goes to queue{% endif %})</span>
+    </div>
+    <button type="submit" class="btn">Save</button>
   </form>
 
   {% if not users %}

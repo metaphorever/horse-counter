@@ -5,9 +5,6 @@
 #}
 <div id="horse-popover" class="horse-popover" role="dialog" aria-modal="true" aria-label="Horse details" hidden>
   <button class="popover-close" id="popover-close" aria-label="Close">×</button>
-  <button class="popover-ribbon" id="popover-ribbon" aria-label="Save this horse" aria-pressed="false" title="Save horse">
-    <span aria-hidden="true">🎀</span>
-  </button>
   <div class="popover-name" id="popover-name"></div>
   <a class="popover-pq-link" id="popover-pq-link" target="_blank" rel="noopener nofollow">View on PedigreeQuery →</a>
   <div class="popover-actions">
@@ -22,6 +19,9 @@
     <div class="popover-poems-head">Poems featuring this horse</div>
     <div class="popover-poems-list" id="popover-poems-list"></div>
   </div>
+  <button class="popover-ribbon" id="popover-ribbon" aria-pressed="false" type="button">
+    <span aria-hidden="true">🎀</span><span class="popover-ribbon-label">Save this horse</span>
+  </button>
 </div>
 
 <script>
@@ -230,7 +230,7 @@
   function updateRibbon(saved){
     pRibbon.setAttribute('aria-pressed', String(saved));
     pRibbon.classList.toggle('ribbon-on', saved);
-    pRibbon.title = saved ? 'Saved — click to remove' : 'Save this horse';
+    pRibbon.querySelector('.popover-ribbon-label').textContent = saved ? 'Saved — click to remove' : 'Save this horse';
   }
 
   pRibbon.addEventListener('click', async ()=>{
