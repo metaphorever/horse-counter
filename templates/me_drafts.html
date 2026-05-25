@@ -16,7 +16,7 @@
         <span class="draft-meta">{{ d.horse_count }} horse{{ 's' if d.horse_count != 1 else '' }}</span>
       </div>
       <div class="draft-item-actions">
-        <a class="btn-sec draft-edit-btn" href="{{ url_for('poetry_editor') }}?draft={{ d.id }}">Resume editing</a>
+        <a class="btn-sec btn-link draft-edit-btn" href="{{ url_for('poetry_editor') }}?draft={{ d.id }}">Resume editing</a>
         <button class="btn-sec draft-delete-btn" data-id="{{ d.id }}" data-title="{{ d.title | e }}">Delete</button>
       </div>
     </li>
