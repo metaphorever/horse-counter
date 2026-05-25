@@ -250,26 +250,17 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: Soft launch — DNS cutover pending (2026-05-25)**
+**PHASE: Live — post-launch, Phase 2 priority evaluation (2026-05-25)**
 
-All Phase 1 MVP work is shipped and verified. Clover cleared all collection-pages testing holds on the live site. 1.20 cross-post queue verified. Account-action holds (suspend/delete/admin-block) accepted as low-risk by Clover — will test with test accounts when convenient, not blocking launch.
+DNS cutover complete. poet.horse is the primary home of the project. Phase 1 fully shipped and verified. Entering Phase 2 work — see ROADMAP.md for current priority picture.
 
-**Last session shipped (2026-05-25):**
-- Crosspost attribution fixed: `_build_crosspost` now uses `short_code`, `author_link_url`, `inspired_by_*`; relative profile URLs made absolute; `format_poem_prefix` gains `author_url` + `inspired_by_*` params; `build_poem_suffix` replaces static `POEM_SUFFIX` in the crosspost path
-- Crosspost dispatch KeyError fixed: removed stale `lines_json` re-parse left over from enrichment centralization
-- Post modal success panel: auto-published poems swap modal to "Your poem is live!" with View poem / Copy link / Done
-- Button consistency: 4 anchor tags missing `btn-link` base class fixed (me_drafts, poetry modal, profile_edit, user_profile)
-
-**Only remaining before launch:**
-- **1.24 DNS cutover + PA shutdown** — owner action `[haiku · low]`
-
-**Testing holds (clear before next session):**
-- Crosspost dispatch: verify no error + correct attribution + footer block on a dispatched post
-- Post modal success panel: verify modal swaps on auto-publish, link works, copy works, re-open shows form
-- Button styling: spot-check me_drafts / profile / profile-edit / poetry modal success panel
+**This session shipped (2026-05-25):**
+- Pasture infinite scroll popover fix: event delegation on `document` replaces `querySelectorAll`-at-load; `window.__mergeHorseStates` for incremental state pre-loading; `loadMore` calls it after each batch
 
 **Open rough edges (not blocking):**
+- PA redirect to poet.horse — owner action, low priority, before PA expires
 - Admin featured sections table squashed on mobile — low priority
 - Account-action test-account holds — not blocking, test when convenient
+- Editor section label size parity (Poem / Stable labels should be same size) — slot into next small-items session
 
-Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.16, 1.17, 1.19, 1.20, 1.21, 1.23, 1.29. Collection pages session verified 2026-05-24.
+Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.16, 1.17, 1.19, 1.20, 1.21, 1.23, 1.29. Collection pages verified 2026-05-24. All Phase 1 holds cleared 2026-05-25.
