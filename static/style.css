@@ -2143,6 +2143,81 @@ h1.page-title {
 .btn-pri:hover  { background: #4a7f22; }
 .btn-pri:active { transform: translate(1px,1px); box-shadow: none; }
 
+/* ── View-mode fixes: profile + drafts pages ─────────────────────────────────
+   .collection-page already gets a cream card in Plain and correct Fancy treatment.
+   These rules extend the same patterns to .profile-page and .drafts-page.       */
+
+/* Plain: cream card (matches .collection-page rule) */
+body.view-plain:not(.admin-page) .profile-page,
+body.view-plain:not(.admin-page) .drafts-page {
+  background: #fdf8f0; border: 2px solid #c4a96b; border-radius: 2px;
+  box-shadow: 2px 3px 14px rgba(0,0,0,.18);
+  padding: 24px 28px; margin: 24px auto;
+}
+
+/* Plain: page-title + page-desc go dark inside cream cards
+   (those classes are cream by default for the grass field; inside a card they'd
+   be invisible without this override). */
+body.view-plain h1.page-title { color: #2d2316; text-shadow: none; }
+body.view-plain .page-desc    { color: #6b5430; text-shadow: none; }
+
+/* Fancy: profile + drafts become dark inverted-note panels (same treatment as
+   the tags / footer panels on poem permalinks). */
+body.view-fancy .profile-page,
+body.view-fancy .drafts-page {
+  background: rgba(38, 29, 18, 0.86);
+  border: 1px solid rgba(196, 169, 107, 0.95);
+  border-radius: 3px;
+  color: #e8d5b0;
+  padding: 24px 28px; margin: 24px auto;
+}
+
+/* Profile: name is the primary heading — floats cream, haloed */
+body.view-fancy .profile-name {
+  color: #fdf8f0;
+  text-shadow: 0 1px 1px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.5);
+}
+/* Profile: secondary text inherits warm-cream from panel; named overrides for
+   elements that set their own colour in the base rules. */
+body.view-fancy .profile-slug,
+body.view-fancy .profile-joined,
+body.view-fancy .profile-section-head,
+body.view-fancy .profile-no-bio,
+body.view-fancy .profile-no-poems,
+body.view-fancy .profile-poem-meta { color: #e8d5b0; }
+
+/* Drafts: h1 (no .page-title class) gets the haloed heading treatment */
+body.view-fancy .drafts-page h1 {
+  color: #fdf8f0;
+  text-shadow: 0 1px 1px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.5);
+}
+
+/* .text-page p and .text-page li set explicit colour (#2d2316) that beats
+   the inherited panel colour. Override them here so body text inside the dark
+   panels stays warm-cream. Named element overrides above have higher specificity
+   still and cascade on top correctly. */
+body.view-fancy .profile-page p,
+body.view-fancy .profile-page li,
+body.view-fancy .drafts-page  p,
+body.view-fancy .drafts-page  li { color: #e8d5b0; }
+
+/* Links inside the dark panels — light green, readable against dark bg */
+body.view-fancy .profile-page a:not(.btn-sec):not(.btn-pri):not(.btn-primary) { color: #c8e8a0; }
+body.view-fancy .drafts-page  a:not(.btn-sec):not(.btn-pri)                   { color: #c8e8a0; }
+
+/* Internal borders inside dark panels — warm gold hairlines */
+body.view-fancy .profile-header    { border-bottom-color: rgba(196,169,107,0.4); }
+body.view-fancy .profile-poem-item { border-bottom-color: rgba(196,169,107,0.3); }
+
+/* Fancy: Saved Poems list — light text on grass (no panel; consistent with the
+   chip-page treatment where chips float bare on the field). */
+body.view-fancy .collection-poem-title       { color: #c8e8a0; }
+body.view-fancy .collection-meta             { color: #e8d5b0; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
+body.view-fancy .collection-meta a           { color: #c8e8a0; }
+body.view-fancy .collection-item             { border-bottom-color: rgba(196,169,107,0.3); }
+body.view-fancy .collection-remove-btn       { color: #e8d5b0; }
+body.view-fancy .collection-remove-btn:hover { color: #fdf8f0; }
+
 /* ── Phase 1.14: poem report ─────────────────────────────────────────────── */
 .poem-action-btns  { display: flex; gap: 6px; align-items: center; margin-left: 8px; }
 .poem-ribbon-btn   { font: 18px/1 serif; background: none; border: 1px solid transparent; border-radius: 2px; padding: 2px 4px; cursor: pointer; opacity: .5; transition: opacity .15s; }
