@@ -73,25 +73,26 @@ All work in [PR #72](https://github.com/metaphorever/horse-counter/pull/72), mer
 
 ---
 
-## Testing holds
+## Testing holds — verified 2026-05-25
 
-All of these need live verification on poet.horse before the next session proceeds:
-
-1. **Browse checkboxes**: visit `/browse`, check multiple tags — does the poem list filter with AND semantics? Do page links preserve all `tags=` params?
-2. **Ratio filter**: enter a min/max ratio (e.g. 0.4–0.6) and Apply — do only multi-word-heavy poems appear?
-3. **Editor label parity**: "Stable" and "Poem" labels same height in the editor?
-4. **Pending poems**: submit a poem as a logged-in user — does it appear on `/me/pending`?
-5. **Admin hidden poems**: hide a poem, then visit `/admin/hidden-poems` — does it appear? Do unhide/delete work?
-6. **Suggested tag in queue**: submit a poem with a suggested new tag — does the queue card show the ⚠ badge? Do the inline approve/reject buttons work and return to the queue?
-7. **PIN removal**: visit `/login` — does it redirect to Clerk sign-in? Can Clerk admin still access all `/admin/*` routes?
+1. ✅ **Browse checkboxes** — AND filtering works; pagination preserves `tags=` params. **Follow-up:** tag checkboxes should be hidden/collapsed by category group rather than all expanded — too much noise at once. Logged as browse UI polish.
+2. ✅ **Ratio filter** — filtering works correctly. **Follow-up:** replace text inputs with sliders for a less intimidating UX. Logged as browse UI polish.
+3. ✅ **Editor label parity** — "Stable" and "Poem" labels same size. Cleared.
+4. ✅ **Pending poems** — `/me/pending` shows submitted poems correctly. Cleared.
+5. ✅ **Admin hidden poems** — `/admin/hidden-poems` shows hidden poems; unhide/delete work. Cleared.
+6. ❌ **Suggested tags in queue** — ⚠ badge not appearing on suggested (pending-status) tags in the queue card. Bug — shipped in PR #72 but not working live. Logged for investigation.
+7. ✅ **PIN removal** — `/login` redirects (to home/featured); Clerk auth works correctly for admin routes. Cleared.
 
 ---
 
 ## Next session
 
-**No hard gate** — the items above are standard verification, not architectural holds. If they clear, the next session can pick up any Phase 2 backlog item.
+**One remaining hold:** suggested tags bug (#6 above) should be investigated and fixed before the browse/filter area is touched again.
 
-Remaining obvious near-term items (not blocking anything):
+Remaining obvious near-term items:
+- **Suggested tags bug fix** — ⚠ badge not appearing; investigate query + template path in `admin_poem_queue`
+- **Browse UI polish** — collapsible tag categories; ratio slider inputs (two small UI changes, same session)
+- **Content warning filter** — opt-in hide for CW-tagged poems on browse; specced 2026-05-25 (see ROADMAP)
 - Remove legacy JSON submission backend (needs design decision on counting-tool post path first)
 - Admin-promotion UI (Clerk users still need DB surgery to become admin)
 - PA redirect (owner action, low priority)
