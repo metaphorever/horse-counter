@@ -340,16 +340,23 @@
 
   pClose.addEventListener('click', closePopover);
 
-  // ── Wire chips — intercept click on poem-horse elements ──────────────────────
-  document.querySelectorAll('.poem-horse[data-name]').forEach(el => {
-    el.addEventListener('click', e => {
-      e.preventDefault();  // stop <a> from navigating
-      if (!popover.hidden && currentHorse && currentHorse.name === el.dataset.name)
-        closePopover();
-      else
-        openPopover(el);
-    });
+  // ── Wire chips — event delegation handles dynamically added chips ────────────
+  document.addEventListener('click', e => {
+    const el = e.target.closest('.poem-horse[data-name]');
+    if (!el) return;
+    e.preventDefault();
+    if (!popover.hidden && currentHorse && currentHorse.name === el.dataset.name)
+      closePopover();
+    else
+      openPopover(el);
   });
+
+  async function mergePageStates(names){
+    if (!names.length || !IS_LOGGED_IN) return;
+    const data = await apiPost('/horse/state', {names});
+    if (data) Object.assign(horseStates, data);
+  }
+  window.__mergeHorseStates = mergePageStates;
 
   document.addEventListener('DOMContentLoaded', loadPageStates);
   loadPageStates();  // also run now if DOM is already ready

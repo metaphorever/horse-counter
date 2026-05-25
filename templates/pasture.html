@@ -52,6 +52,8 @@
         seen.add(h.name);
         grid.insertAdjacentHTML('beforeend', chipHTML(h));
       });
+      if (fresh.length && typeof window.__mergeHorseStates === 'function')
+        window.__mergeHorseStates(fresh.map(h => h.name));
     } catch(e){
       // silently ignore network errors
     } finally {
