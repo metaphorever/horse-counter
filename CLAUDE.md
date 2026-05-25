@@ -250,18 +250,23 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: Soft launch — DNS cutover pending (2026-05-24)**
+**PHASE: Soft launch — DNS cutover pending (2026-05-25)**
 
 All Phase 1 MVP work is shipped and verified. Clover cleared all collection-pages testing holds on the live site. 1.20 cross-post queue verified. Account-action holds (suspend/delete/admin-block) accepted as low-risk by Clover — will test with test accounts when convenient, not blocking launch.
 
-**This session shipped:**
-- View-mode style fixes: Fancy dark panels for profile/drafts; consolidated Plain cream card for all `.text-page` surfaces; bio poem grass fix inside cream card; featured page Plain cream card; untitled poem color parity; Saved Poems Fancy legible text
-- Hamburger menu: Abril Fatface 18px on mobile nav items when open
-- Featured page: full poem display (title + chips via `render_poem` + meta) replacing title-only list; horse popover wired; `get_poems_for_tag_slug` now returns full poem data
-- Horse enrichment centralized: `_enrich_lines()` in `poem_db.py` called from `_row_to_poem` and `_join_row` (poem_submissions) and `get_pending` (db/crosspost); removed 6 redundant enrichment loops from `app.py`
+**Last session shipped (2026-05-25):**
+- Crosspost attribution fixed: `_build_crosspost` now uses `short_code`, `author_link_url`, `inspired_by_*`; relative profile URLs made absolute; `format_poem_prefix` gains `author_url` + `inspired_by_*` params; `build_poem_suffix` replaces static `POEM_SUFFIX` in the crosspost path
+- Crosspost dispatch KeyError fixed: removed stale `lines_json` re-parse left over from enrichment centralization
+- Post modal success panel: auto-published poems swap modal to "Your poem is live!" with View poem / Copy link / Done
+- Button consistency: 4 anchor tags missing `btn-link` base class fixed (me_drafts, poetry modal, profile_edit, user_profile)
 
 **Only remaining before launch:**
 - **1.24 DNS cutover + PA shutdown** — owner action `[haiku · low]`
+
+**Testing holds (clear before next session):**
+- Crosspost dispatch: verify no error + correct attribution + footer block on a dispatched post
+- Post modal success panel: verify modal swaps on auto-publish, link works, copy works, re-open shows form
+- Button styling: spot-check me_drafts / profile / profile-edit / poetry modal success panel
 
 **Open rough edges (not blocking):**
 - Admin featured sections table squashed on mobile — low priority
