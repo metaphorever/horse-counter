@@ -2349,6 +2349,16 @@ a.collection-poem-title:hover { text-decoration: underline; }
 .collection-chips     { display: flex; flex-wrap: wrap; gap: 10px; padding: 24px 0 8px; }
 /* Ensure coat color wins over .text-page a's link color on collection pages */
 .collection-chips a.poem-horse { color: var(--fg); }
+/* Apply poem-line typography directly to chips — they have no .poem-line-out
+   wrapper, so the mode-specific font doesn't inherit automatically. */
+body.view-reader .collection-chips .poem-horse {
+  font: 1.35rem/1.7 'IM Fell English', Georgia, serif;
+  font-variant: small-caps;
+  letter-spacing: .04em;
+}
+body.view-plain .collection-chips .poem-horse {
+  font: 1.05rem/2.0 'IM Fell English', Georgia, serif;
+}
 .collection-chip-wrap { position: relative; }
 .collection-chip-remove {
   position: absolute; top: -10px; right: -10px;
