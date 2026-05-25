@@ -693,6 +693,16 @@ def featured():
     for sec in sections:
         sec['display_label'] = sec['section_label'] or sec['tag_label']
         sec['poems'] = get_poems_for_tag_slug(sec['tag_slug'], limit=20)
+        # Enrich horse dicts with coat/rev/is_famous so render_chip works in
+        # decorated modes (same pass done in poem_permalink for /p/<code>).
+        for poem in sec['poems']:
+            for line in poem.get('lines', []):
+                for h in line:
+                    name = h.get('name', '')
+                    app_ = horse_appearance(name)
+                    h['coat']      = app_['coat']
+                    h['rev']       = app_['rev']
+                    h['is_famous'] = bool(name) and famous_horses.lookup(name) is not None
     return render_template('featured.html', sections=sections)
 
 
