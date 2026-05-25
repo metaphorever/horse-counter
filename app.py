@@ -942,11 +942,24 @@ def poem_tags_update(short_code):
 
 @app.route('/pasture')
 def pasture():
-    return render_template('coming_soon.html',
-        title='Pasture',
-        description='A field of horses. Public by default — your personal collection when signed in. Coming in Phase 1.19.',
-        roadmap_task='1.19',
-    )
+    horses = random_horses(dictionary, 30)
+    for h in horses:
+        app_ = horse_appearance(h['name'])
+        h['coat']     = app_['coat']
+        h['rev']      = app_['rev']
+        h['is_famous'] = famous_horses.lookup(h['name']) is not None
+    return render_template('pasture.html', horses=horses)
+
+
+@app.route('/pasture/more')
+def pasture_more():
+    horses = random_horses(dictionary, 30)
+    for h in horses:
+        app_ = horse_appearance(h['name'])
+        h['coat']     = app_['coat']
+        h['rev']      = app_['rev']
+        h['is_famous'] = famous_horses.lookup(h['name']) is not None
+    return jsonify({'horses': horses})
 
 
 # ── User account pages (/me/*) stubs (Phase 1.1) ─────────────────────────────

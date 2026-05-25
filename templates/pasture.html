@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% from 'macros.html' import render_chip %}
+{% block title %}Pasture — poet.horse{% endblock %}
+
+{% block content %}
+<div class="text-page collection-page">
+  <h1 class="page-title">Pasture</h1>
+  <p class="page-desc">A field of horses.</p>
+
+  <div class="collection-chips" id="pasture-chips">
+    {% for h in horses %}
+      {{ render_chip(h) }}
+    {% endfor %}
+  </div>
+
+  <div id="pasture-sentinel" style="height:1px;margin-top:2rem;"></div>
+  <div id="pasture-loading" hidden style="text-align:center;padding:1rem;color:var(--text-muted,#888);">Loading…</div>
+</div>
+
+{% set popover_this_code = '' %}
+{% set popover_page_context = 'pasture' %}
+{% include '_horse_popover.html' %}
+
+<script>
+(function(){
+  const grid     = document.getElementById('pasture-chips');
+  const sentinel = document.getElementById('pasture-sentinel');
+  const loading  = document.getElementById('pasture-loading');
+  const seen     = new Set({{ horses | map(attribute='name') | list | tojson }});
+  let   busy     = false;
+
+  function chipHTML(h){
+    const cls = ['poem-horse', 'coat-' + h.coat, h.rev ? 'rev' : '', h.is_famous ? 'famous-horse' : '']
+                  .filter(Boolean).join(' ');
+    const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    if(h.url){
+      return `<a class="${cls}" data-name="${esc(h.name)}" href="${esc(h.url)}" rel="nofollow noopener" target="_blank">${esc(h.display)}</a>`;
+    }
+    return `<span class="${cls}" data-name="${esc(h.name)}">${esc(h.display)}</span>`;
+  }
+
+  async function loadMore(){
+    if(busy) return;
+    busy = true;
+    loading.hidden = false;
+    try {
+      const r = await fetch('/pasture/more');
+      if(!r.ok) return;
+      const d = await r.json();
+      const fresh = (d.horses || []).filter(h => !seen.has(h.name));
+      fresh.forEach(h => {
+        seen.add(h.name);
+        grid.insertAdjacentHTML('beforeend', chipHTML(h));
+      });
+    } catch(e){
+      // silently ignore network errors
+    } finally {
+      busy = false;
+      loading.hidden = true;
+    }
+  }
+
+  const obs = new IntersectionObserver(entries => {
+    if(entries[0].isIntersecting) loadMore();
+  }, { rootMargin: '200px' });
+  obs.observe(sentinel);
+})();
+</script>
+{% endblock %}
