@@ -78,6 +78,7 @@
             </button>
             <div class="nav-sub nav-sub-right" role="menu">
               <a class="nav-sub-item" href="{{ url_for('me_published') }}"    role="menuitem">My Poems</a>
+              <a class="nav-sub-item" href="{{ url_for('me_pending') }}"      role="menuitem">Pending Review</a>
               <a class="nav-sub-item" href="{{ url_for('me_drafts') }}"       role="menuitem">Drafts</a>
               <a class="nav-sub-item" href="{{ url_for('me_pasture') }}"      role="menuitem">My Pasture</a>
               <a class="nav-sub-item" href="{{ url_for('me_saved_poems') }}"  role="menuitem">Saved Poems</a>
@@ -87,7 +88,7 @@
               <a class="nav-sub-item" href="{{ url_for('sign_out') }}"        role="menuitem">Sign Out</a>
             </div>
           </div>
-        {% elif not session.get('logged_in') %}
+        {% else %}
           <a class="nav-signin" href="{{ url_for('sign_in') }}">Sign In</a>
         {% endif %}
       </div>

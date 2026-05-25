@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Hidden Poems — poet.horse{% endblock %}
+{% block content %}
+
+<div class="box">
+  {% include 'admin_nav.html' %}
+
+  <h1>Hidden Poems</h1>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    <div class="msg {{ 'ok' if category == 'ok' else 'err' }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  {% if not poems %}
+  <div class="msg ok">No hidden poems.</div>
+  {% else %}
+  <p class="browse-count">{{ poems | length }} hidden poem{{ 's' if poems | length != 1 else '' }}</p>
+  <ul class="poem-index">
+    {% for p in poems %}
+    <li class="poem-index-item" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+      <div>
+        <a class="poem-index-title" href="{{ url_for('poem_permalink', short_code=p.short_code) }}" target="_blank">
+          {% if p.title %}{{ p.title }}{% else %}<em>untitled</em>{% endif %}
+        </a>
+        <span class="poem-index-meta">
+          · {{ p.horse_count }} horse{{ 's' if p.horse_count != 1 else '' }}
+          {% if p.author_display_name %} · {{ p.author_display_name }}{% endif %}
+          {% if p.created_at %} · {{ p.created_at | datefmt }}{% endif %}
+        </span>
+      </div>
+      <div style="display:flex; gap:6px; flex-shrink:0;">
+        <form method="post" action="{{ url_for('admin_poem_unhide', short_code=p.short_code) }}">
+          <button type="submit" class="btn-sec">Unhide</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_poem_delete', short_code=p.short_code) }}"
+              onsubmit="return confirm('Permanently delete this poem? This cannot be undone.')">
+          <button type="submit" class="btn-sec btn-danger">Delete</button>
+        </form>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+
+{% endblock %}

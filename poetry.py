@@ -421,4 +421,5 @@ def build_poem_html(lines: List[List[Dict]]) -> str:
 def compute_poem_stats(lines: List[List[Dict]]) -> Dict:
     total_names = sum(len(line) for line in lines)
     total_words = sum(len(h['name'].split()) for line in lines for h in line)
-    return {'total_names': total_names, 'total_words': total_words, 'horse_density': 100.0}
+    horse_ratio = total_names / total_words if total_words > 0 else 1.0
+    return {'total_names': total_names, 'total_words': total_words, 'horse_ratio': horse_ratio}

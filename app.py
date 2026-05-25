@@ -49,7 +49,7 @@ from config import (
     SECRET_KEY, SESSION_LIFETIME_SECONDS,
     TUMBLR_BLOG_NAME, HORSES_RICH_FILE, HORSES_LEGACY_FILE, HORSE_OVERRIDES_FILE,
     FAMOUS_HORSES_FILE,
-    check_pin, get_horse_emoji, build_default_tags,
+    get_horse_emoji, build_default_tags,
     OPTIONAL_TAGS, POST_SUFFIX, SEO_TAGS, format_prefix,
 )
 from clerk_auth import verify_clerk_token, CLERK_PUBLISHABLE_KEY
@@ -89,6 +89,8 @@ from poem_db import (
     get_random_published,
     get_poems_for_tag_slug,
     get_published_poems_by_user,
+    get_user_submitted_poems,
+    list_hidden_poems,
 )
 from db.tags import (
     list_categories_with_tags,
@@ -212,9 +214,7 @@ def load_current_user():
 
 
 def _is_admin() -> bool:
-    """True if the current request has admin privileges (Clerk role or PIN)."""
-    if session.get('logged_in'):
-        return True
+    """True if the current request has admin privileges (Clerk role=admin)."""
     user = g.get('current_user')
     return user is not None and user.get('role') == 'admin'
 
@@ -279,7 +279,7 @@ def inject_globals():
     is_admin_page = request.path.startswith('/admin')
     return {
         'is_admin':              _is_admin(),
-        'is_pin_admin':          bool(session.get('logged_in')),
+        'is_pin_admin':          False,
         'is_admin_page':         is_admin_page,
         'current_user':          g.get('current_user'),
         'clerk_publishable_key': CLERK_PUBLISHABLE_KEY,
@@ -367,46 +367,41 @@ def _auto_check_tags(post_data: dict) -> set:
 # ── Auth guard ────────────────────────────────────────────────────────────────
 
 def login_required(f):
-    """Require Clerk auth (role=admin) OR PIN fallback session."""
+    """Require Clerk auth (role=admin)."""
     @wraps(f)
     def decorated(*args, **kwargs):
         if not _is_admin():
             if (request.content_type or '').startswith('application/json') or \
                request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify({'error': 'Session expired — please reload the page'}), 401
-            return redirect(url_for('login'))
+            return redirect(url_for('sign_in'))
         return f(*args, **kwargs)
     return decorated
 
 
 def user_required(f):
-    """Require any signed-in user (regular Clerk user or admin)."""
+    """Require any signed-in Clerk user."""
     @wraps(f)
     def decorated(*args, **kwargs):
-        if g.get('current_user') is None and not session.get('logged_in'):
+        if g.get('current_user') is None:
             return redirect(url_for('sign_in'))
         return f(*args, **kwargs)
     return decorated
 
 
 # ── Login / logout ────────────────────────────────────────────────────────────
+# PIN auth removed — admin access is now Clerk-only (role='admin').
+# /login and /logout are kept as redirects so any bookmarked links don't 404.
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login')
 def login():
-    if request.method == 'POST':
-        pin = request.form.get('pin', '')
-        if check_pin(pin):
-            session.permanent = True
-            session['logged_in'] = True
-            return redirect(url_for('count'))
-        return render_template('login.html', error='Incorrect PIN')
-    return render_template('login.html')
+    return redirect(url_for('sign_in'))
 
 
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('login'))
+    return redirect(url_for('sign_out'))
 
 
 # ── Clerk sign-in / sign-out ──────────────────────────────────────────────────
@@ -414,7 +409,7 @@ def logout():
 @app.route('/sign-in')
 def sign_in():
     """Render the Clerk-powered sign-in page."""
-    if g.get('current_user') or session.get('logged_in'):
+    if g.get('current_user'):
         return redirect(url_for('featured'))
     return render_template('sign_in.html')
 
@@ -694,16 +689,28 @@ _BROWSE_PER_PAGE = 20
 @app.route('/browse')
 def browse():
     sort       = request.args.get('sort', 'newest')
-    tag_slug   = request.args.get('tag') or None
+    tag_slugs  = request.args.getlist('tags')
     attributed = request.args.get('attributed') == '1'
     try:
         page = max(1, int(request.args.get('page', 1)))
     except (ValueError, TypeError):
         page = 1
 
-    poems      = browse_poems(sort=sort, tag_slug=tag_slug, page=page,
-                               per_page=_BROWSE_PER_PAGE, attributed=attributed)
-    total      = count_browse_poems(tag_slug=tag_slug, attributed=attributed)
+    def _parse_ratio(key):
+        try:
+            v = float(request.args.get(key, ''))
+            return max(0.0, min(1.0, v))
+        except (ValueError, TypeError):
+            return None
+
+    ratio_min = _parse_ratio('ratio_min')
+    ratio_max = _parse_ratio('ratio_max')
+
+    poems      = browse_poems(sort=sort, tag_slugs=tag_slugs, page=page,
+                               per_page=_BROWSE_PER_PAGE, attributed=attributed,
+                               ratio_min=ratio_min, ratio_max=ratio_max)
+    total      = count_browse_poems(tag_slugs=tag_slugs, attributed=attributed,
+                                    ratio_min=ratio_min, ratio_max=ratio_max)
     total_pages = max(1, -(-total // _BROWSE_PER_PAGE))  # ceiling div
 
     all_tags   = list_categories_with_tags()  # public tags only for the filter UI
@@ -711,12 +718,14 @@ def browse():
         'poem_index.html',
         poems       = poems,
         sort        = sort,
-        tag_slug    = tag_slug,
+        tag_slugs   = tag_slugs,
         attributed  = attributed,
         page        = page,
         total_pages = total_pages,
         total       = total,
         all_tags    = all_tags,
+        ratio_min   = ratio_min,
+        ratio_max   = ratio_max,
     )
 
 
@@ -830,7 +839,8 @@ def admin_tag_approve(tag_id):
         flash('Tag approved and activated.', 'success')
     else:
         flash('Tag not found or already reviewed.', 'error')
-    return redirect(url_for('admin_featured'))
+    next_url = request.form.get('next') or url_for('admin_featured')
+    return redirect(next_url)
 
 
 @app.route('/admin/tag/<int:tag_id>/reject', methods=['POST'])
@@ -840,7 +850,8 @@ def admin_tag_reject(tag_id):
         flash('Tag suggestion rejected.', 'success')
     else:
         flash('Tag not found or already reviewed.', 'error')
-    return redirect(url_for('admin_featured'))
+    next_url = request.form.get('next') or url_for('admin_featured')
+    return redirect(next_url)
 
 
 @app.route('/admin/tag/<int:tag_id>/update', methods=['POST'])
@@ -970,6 +981,14 @@ def pasture_more():
 def me_published():
     user = g.get('current_user')
     return redirect(url_for('user_profile', slug=user['slug']))
+
+
+@app.route('/me/pending')
+@user_required
+def me_pending():
+    user = g.get('current_user')
+    poems = get_user_submitted_poems(user['id'])
+    return render_template('me_pending.html', poems=poems)
 
 
 @app.route('/me/drafts')
@@ -1322,7 +1341,7 @@ def index():
 
 @app.route('/count', methods=['GET', 'POST'])
 def count():
-    is_admin = bool(session.get('logged_in'))
+    is_admin = _is_admin()
 
     if request.method == 'GET':
         return render_template('index.html',
@@ -1599,7 +1618,7 @@ def public_submit():
             error='Submission timed out — please count again and try again',
         )
 
-    is_admin         = bool(session.get('logged_in'))
+    is_admin         = _is_admin()
     sub_type         = 'text' if draft.get('is_text_post') else 'url'
     submitter_name   = _sanitize_name(request.form.get('submitter_name', ''))
     submitter_tumblr = _sanitize_tumblr(request.form.get('submitter_tumblr', ''))
@@ -1926,7 +1945,7 @@ def callback():
 @app.route('/poetry')
 def poetry_editor():
     import json
-    is_admin = bool(session.get('logged_in'))
+    is_admin = _is_admin()
     initial_draft  = None
     initial_drafts = []
     if is_admin:
@@ -2457,7 +2476,8 @@ def admin_poem_queue():
     with get_db() as conn:
         for sub in pending:
             rows = conn.execute(
-                """SELECT pt.tag_id, t.label AS tag_label, t.slug AS tag_slug
+                """SELECT pt.tag_id, t.label AS tag_label, t.slug AS tag_slug,
+                          t.status AS tag_status
                      FROM poem_tags pt
                      JOIN tags t ON t.id = pt.tag_id
                     WHERE pt.poem_id = ? AND pt.status = 'pending'
@@ -2760,6 +2780,13 @@ def admin_user_delete(user_id):
 
 
 # ── Admin poem actions ───────────────────────────────────────────────────────
+
+@app.route('/admin/hidden-poems')
+@login_required
+def admin_hidden_poems():
+    poems = list_hidden_poems()
+    return render_template('admin_hidden_poems.html', poems=poems)
+
 
 @app.route('/admin/poem/<short_code>/hide', methods=['POST'])
 @login_required

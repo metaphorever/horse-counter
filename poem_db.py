@@ -54,10 +54,11 @@ def _generate_short_code(conn) -> str:
     raise RuntimeError("Could not generate a unique short_code after 8 tries")
 
 
-def _compute_counts(lines: List[List[Dict]]) -> Dict[str, int]:
+def _compute_counts(lines: List[List[Dict]]) -> Dict:
     horse_count = sum(len(line) for line in lines)
     word_count  = sum(len(h['name'].split()) for line in lines for h in line)
-    return {'horse_count': horse_count, 'word_count': word_count}
+    horse_ratio = horse_count / word_count if word_count > 0 else 1.0
+    return {'horse_count': horse_count, 'word_count': word_count, 'horse_ratio': horse_ratio}
 
 
 def _unique_horse_names(lines: List[List[Dict]]) -> List[str]:
@@ -108,15 +109,15 @@ def save_poem(
                    (short_code, title, lines_json, status,
                     author_user_id, author_display_name, author_link_url,
                     inspired_by_text, inspired_by_url,
-                    created_at, published_at, horse_count, word_count)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    created_at, published_at, horse_count, word_count, horse_ratio)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     code, title, lines_json, status,
                     author_user_id, author_display_name, author_link_url,
                     inspired_by_text, inspired_by_url,
                     now,
                     now if status == 'published' else None,
-                    counts['horse_count'], counts['word_count'],
+                    counts['horse_count'], counts['word_count'], counts['horse_ratio'],
                 ),
             )
             poem_id = cur.lastrowid
@@ -218,31 +219,44 @@ _BROWSE_SORTS = {
 }
 
 
-def _browse_where(tag_slug: Optional[str], attributed: bool) -> tuple:
+def _browse_where(
+    tag_slugs:  List[str]     = (),
+    attributed: bool          = False,
+    ratio_min:  Optional[float] = None,
+    ratio_max:  Optional[float] = None,
+) -> tuple:
     """Build the WHERE clause and params for browse queries."""
     clauses = ["p.status = 'published'"]
     params: List = []
-    if tag_slug:
+    for slug in tag_slugs:
         clauses.append(
             "p.id IN (SELECT pt.poem_id FROM poem_tags pt "
             "JOIN tags t ON t.id = pt.tag_id "
             "WHERE t.slug = ? AND pt.status = 'approved')"
         )
-        params.append(tag_slug)
+        params.append(slug)
     if attributed:
         clauses.append("p.inspired_by_text != ''")
+    if ratio_min is not None:
+        clauses.append("p.horse_ratio >= ?")
+        params.append(ratio_min)
+    if ratio_max is not None:
+        clauses.append("p.horse_ratio <= ?")
+        params.append(ratio_max)
     return " AND ".join(clauses), params
 
 
 def browse_poems(
-    sort:       str           = 'newest',
-    tag_slug:   Optional[str] = None,
-    page:       int           = 1,
-    per_page:   int           = 20,
-    attributed: bool          = False,
+    sort:       str            = 'newest',
+    tag_slugs:  List[str]      = (),
+    page:       int            = 1,
+    per_page:   int            = 20,
+    attributed: bool           = False,
+    ratio_min:  Optional[float] = None,
+    ratio_max:  Optional[float] = None,
 ) -> List[Dict]:
     order = _BROWSE_SORTS.get(sort, _BROWSE_SORTS['newest'])
-    where, params = _browse_where(tag_slug, attributed)
+    where, params = _browse_where(tag_slugs, attributed, ratio_min, ratio_max)
     offset = (max(1, page) - 1) * per_page
     sql = f"SELECT p.* FROM poems p WHERE {where} ORDER BY {order} LIMIT ? OFFSET ?"
     with get_db() as conn:
@@ -251,10 +265,12 @@ def browse_poems(
 
 
 def count_browse_poems(
-    tag_slug:   Optional[str] = None,
-    attributed: bool          = False,
+    tag_slugs:  List[str]      = (),
+    attributed: bool           = False,
+    ratio_min:  Optional[float] = None,
+    ratio_max:  Optional[float] = None,
 ) -> int:
-    where, params = _browse_where(tag_slug, attributed)
+    where, params = _browse_where(tag_slugs, attributed, ratio_min, ratio_max)
     sql = f"SELECT COUNT(*) FROM poems p WHERE {where}"
     with get_db() as conn:
         return conn.execute(sql, params).fetchone()[0]
@@ -283,6 +299,34 @@ def get_random_published() -> Optional[str]:
             "SELECT short_code FROM poems WHERE status='published' ORDER BY RANDOM() LIMIT 1"
         ).fetchone()
     return row['short_code'] if row else None
+
+
+def get_user_submitted_poems(user_id: int) -> List[Dict]:
+    """Poems by user that are pending review (status='submitted'), newest first."""
+    with get_db() as conn:
+        rows = conn.execute(
+            """SELECT id, short_code, title, horse_count, created_at
+                 FROM poems
+                WHERE author_user_id = ? AND status = 'submitted'
+                ORDER BY created_at DESC""",
+            (user_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def list_hidden_poems(limit: int = 200) -> List[Dict]:
+    """All hidden poems, newest first (for admin management view)."""
+    with get_db() as conn:
+        rows = conn.execute(
+            """SELECT id, short_code, title, horse_count, published_at, created_at,
+                      author_display_name, author_user_id
+                 FROM poems
+                WHERE status = 'hidden'
+                ORDER BY created_at DESC
+                LIMIT ?""",
+            (limit,),
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def delete_poem(poem_id: int) -> None:
