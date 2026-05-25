@@ -20,6 +20,22 @@ import time
 from typing import Dict, List, Optional
 
 from db.conn import get_db
+from matcher import horse_appearance
+from famous import FamousHorses
+from config import FAMOUS_HORSES_FILE
+
+_famous = FamousHorses(FAMOUS_HORSES_FILE)
+
+
+def _enrich_lines(lines: list) -> None:
+    """Add coat/rev/is_famous to every horse dict in a lines structure in-place."""
+    for line in lines:
+        for h in line:
+            name = h.get('name', '')
+            app = horse_appearance(name)
+            h['coat']      = app['coat']
+            h['rev']       = app['rev']
+            h['is_famous'] = bool(name) and _famous.lookup(name) is not None
 
 
 SHORT_CODE_BYTES = 8  # secrets.token_urlsafe(8) -> ~11 chars, ~64 bits entropy
@@ -123,6 +139,7 @@ def _row_to_poem(row) -> Dict:
         return None
     d = dict(row)
     d['lines'] = json.loads(d.pop('lines_json'))
+    _enrich_lines(d['lines'])
     return d
 
 

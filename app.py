@@ -654,14 +654,6 @@ def user_profile(slug):
         bio_poem = _get_poem_by_id(user['bio_poem_id'])
         if bio_poem and bio_poem.get('status') != 'published':
             bio_poem = None
-        if bio_poem:
-            for line in bio_poem.get('lines', []):
-                for h in line:
-                    name = h.get('name', '')
-                    app_ = horse_appearance(name)
-                    h['coat'] = app_['coat']
-                    h['rev']  = app_['rev']
-                    h['is_famous'] = bool(name) and famous_horses.lookup(name) is not None
     bio_picker_poems = []
     is_own_profile = (g.get('current_user') or {}).get('id') == user['id']
     if is_own_profile:
@@ -693,16 +685,6 @@ def featured():
     for sec in sections:
         sec['display_label'] = sec['section_label'] or sec['tag_label']
         sec['poems'] = get_poems_for_tag_slug(sec['tag_slug'], limit=20)
-        # Enrich horse dicts with coat/rev/is_famous so render_chip works in
-        # decorated modes (same pass done in poem_permalink for /p/<code>).
-        for poem in sec['poems']:
-            for line in poem.get('lines', []):
-                for h in line:
-                    name = h.get('name', '')
-                    app_ = horse_appearance(name)
-                    h['coat']      = app_['coat']
-                    h['rev']       = app_['rev']
-                    h['is_famous'] = bool(name) and famous_horses.lookup(name) is not None
     return render_template('featured.html', sections=sections)
 
 
@@ -2347,21 +2329,13 @@ def poem_permalink(short_code):
         if poem.get('inspired_by_text') else base_title
     )
 
-    # Enrich each horse with appearance hooks (coat / rev / famous) so the
-    # template can render decorated chips without any client-side work. The
-    # hooks are inert except in Fancy mode — CSS only acts on them under the
-    # server-emitted `body.view-fancy` class.
-    # Also cycle through dictionary registrations for repeated names so each
+    # Cycle through dictionary registrations for repeated names so each
     # occurrence in the poem gets a distinct URL instead of all pointing at
-    # the first registration.
+    # the first registration. coat/rev/is_famous are already set by _row_to_poem.
     name_counters: dict = {}
     for line in poem.get('lines', []):
         for h in line:
             name = h.get('name', '')
-            appearance = horse_appearance(name)
-            h['coat']      = appearance['coat']
-            h['rev']       = appearance['rev']
-            h['is_famous'] = bool(name) and famous_horses.lookup(name) is not None
             if name:
                 idx = name_counters.get(name, 0)
                 name_counters[name] = idx + 1
@@ -2464,16 +2438,6 @@ def admin_report_action(report_id):
 def admin_poem_queue():
     pending = load_pending_poem_submissions()
 
-    # Enrich horse chips with appearance data
-    for sub in pending:
-        for line in sub.get('lines', []):
-            for h in line:
-                name = h.get('name', '')
-                appearance = horse_appearance(name)
-                h['coat']      = appearance['coat']
-                h['rev']       = appearance['rev']
-                h['is_famous'] = bool(name) and famous_horses.lookup(name) is not None
-
     # Attach pending tags per submission for the collapsed chip view
     with get_db() as conn:
         for sub in pending:
@@ -2556,16 +2520,6 @@ def admin_poem_reject():
 def admin_crosspost_queue():
     import json
     items = get_crosspost_pending()
-    for item in items:
-        item['lines'] = json.loads(item['lines_json'])
-        # Enrich chips with appearance data
-        for line in item['lines']:
-            for h in line:
-                name = h.get('name', '')
-                appearance = horse_appearance(name)
-                h['coat']      = appearance['coat']
-                h['rev']       = appearance['rev']
-                h['is_famous'] = bool(name) and famous_horses.lookup(name) is not None
     return render_template(
         'admin_crosspost_queue.html',
         items=items,

@@ -13,7 +13,7 @@ import time
 from typing import Dict, List, Optional
 
 from db.conn import get_db
-from poem_db import get_poem_by_id, update_poem_status
+from poem_db import get_poem_by_id, update_poem_status, _enrich_lines
 
 
 def create_for_poem(poem_id: int) -> int:
@@ -143,4 +143,5 @@ def _join_row(row) -> Dict:
     import json
     d = dict(row)
     d['lines'] = json.loads(d.pop('lines_json'))
+    _enrich_lines(d['lines'])
     return d

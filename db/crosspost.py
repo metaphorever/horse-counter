@@ -5,10 +5,12 @@ Each published poem is automatically added here with status='pending'.
 Admin dispatches them from /admin/crosspost-queue.
 """
 
+import json
 import time
 from typing import Optional
 
 from db.conn import get_db
+from poem_db import _enrich_lines
 
 
 def enqueue_poem(poem_id: int) -> None:
@@ -37,7 +39,13 @@ def get_pending() -> list[dict]:
                 WHERE cq.status = 'pending'
                 ORDER BY cq.queued_at ASC""",
         ).fetchall()
-    return [dict(r) for r in rows]
+    items = []
+    for r in rows:
+        d = dict(r)
+        d['lines'] = json.loads(d.pop('lines_json'))
+        _enrich_lines(d['lines'])
+        items.append(d)
+    return items
 
 
 def mark_posted(cq_id: int) -> None:
