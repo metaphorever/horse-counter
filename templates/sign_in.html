@@ -26,9 +26,9 @@
     const params = new URLSearchParams(window.location.search);
     if (params.get('session_error')) {
       const el = document.getElementById('sign-in-error');
-      el.textContent = 'Something went wrong finishing your sign-in — your browser may be blocking session cookies. '
+      el.innerHTML = 'Something went wrong finishing your sign-in — your browser may be blocking session cookies. '
         + 'Try enabling cookies for poet.horse, clearing existing cookies for this site, or using a different browser. '
-        + 'If it keeps happening, reach out to the site owner.';
+        + 'If it keeps happening, <a href="/feedback">send a bug report</a>.';
       el.hidden = false;
       return;
     }

@@ -128,7 +128,9 @@ from horse_collections import (
     list_saved_poems,
 )
 from db.reports import create_report, list_reports, resolve_report
+from db.feedback import create_feedback, list_feedback, mark_read as mark_feedback_read, count_unread as count_unread_feedback, set_github_url as set_feedback_github_url
 from db.crosspost import enqueue_poem as enqueue_crosspost, get_pending as get_crosspost_pending, mark_posted as mark_crosspost_posted, mark_skipped as mark_crosspost_skipped
+from github_issues import create_issue as create_github_issue
 from poem_submissions import (
     create_for_poem      as create_poem_submission,
     load_pending         as load_pending_poem_submissions,
@@ -292,6 +294,7 @@ def inject_globals():
         # One-shot confirmation shown in place of the strip right after the
         # visitor saves/dismisses the first-run picker.
         'view_picker_saved':     session.pop('view_picker_saved', False),
+        'unread_feedback_count': count_unread_feedback() if _is_admin() else 0,
     }
 
 
@@ -2470,6 +2473,88 @@ def admin_report_action(report_id):
     resolve_report(report_id, action, user['id'] if user else 0)
     flash(f'Report {action}.', 'ok')
     return redirect(url_for('admin_reports'))
+
+
+# ── Feedback form ────────────────────────────────────────────────────────────
+
+@app.route('/feedback', methods=['GET', 'POST'])
+@limiter.limit("20 per hour")
+def feedback():
+    success = False
+    error   = None
+
+    if request.method == 'POST':
+        message = request.form.get('message', '').strip()
+        contact = request.form.get('contact', '').strip()
+
+        if not message:
+            error = 'Please enter a message.'
+        elif len(message) > 2000:
+            error = 'Message is too long (max 2000 characters).'
+        else:
+            user       = g.get('current_user')
+            user_agent = request.headers.get('User-Agent', '')
+
+            fb = create_feedback(
+                message    = message,
+                user_id    = user['id'] if user else None,
+                contact    = contact,
+                user_agent = user_agent,
+            )
+
+            # Build and post GitHub issue (best-effort — failure doesn't block).
+            if user:
+                reporter = f'[@{user["slug"]}](https://poet.horse/u/{user["slug"]}) (signed in)'
+            elif contact:
+                reporter = f'Anonymous — contact: {contact}'
+            else:
+                reporter = 'Anonymous'
+
+            submitted = datetime.fromtimestamp(
+                fb['created_at'], tz=timezone.utc
+            ).strftime('%Y-%m-%d %H:%M UTC')
+
+            gh_body = (
+                f'**Message:**\n\n{message}\n\n'
+                f'---\n'
+                f'**Reporter:** {reporter}  \n'
+                f'**User agent:** `{user_agent[:200]}`  \n'
+                f'**Submitted:** {submitted}\n'
+            )
+            title_preview = message[:60].replace('\n', ' ')
+            if len(message) > 60:
+                title_preview += '…'
+
+            issue_url = create_github_issue(
+                title  = f'Bug report: {title_preview}',
+                body   = gh_body,
+                labels = ['bug-report'],
+            )
+            if issue_url:
+                set_feedback_github_url(fb['id'], issue_url)
+
+            success = True
+
+    return render_template('feedback.html', success=success, error=error)
+
+
+# ── Admin: feedback inbox ─────────────────────────────────────────────────────
+
+@app.route('/admin/feedback')
+@login_required
+def admin_feedback():
+    show       = request.args.get('show', 'unread')
+    unread_only = show != 'all'
+    items      = list_feedback(unread_only=unread_only)
+    return render_template('admin_feedback.html', items=items, show=show)
+
+
+@app.route('/admin/feedback/<int:feedback_id>/read', methods=['POST'])
+@login_required
+def admin_feedback_mark_read(feedback_id):
+    mark_feedback_read(feedback_id)
+    show = request.form.get('show', 'unread')
+    return redirect(url_for('admin_feedback', show=show))
 
 
 # ── poet.horse: admin poem-submissions queue ──────────────────────────────────

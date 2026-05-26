@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Admin: Feedback — poet.horse{% endblock %}
+
+{% block content %}
+<div class="text-page admin-reports-page">
+  {% include 'admin_nav.html' %}
+  <h1>Feedback</h1>
+
+  <div class="admin-filter-bar">
+    <span class="admin-filter-label">Show:</span>
+    <a class="admin-filter-btn {% if show == 'unread' %}admin-filter-active{% endif %}"
+       href="{{ url_for('admin_feedback', show='unread') }}">Unread</a>
+    <a class="admin-filter-btn {% if show == 'all' %}admin-filter-active{% endif %}"
+       href="{{ url_for('admin_feedback', show='all') }}">All</a>
+  </div>
+
+  {% if items %}
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Message</th>
+        <th>From</th>
+        <th>Contact</th>
+        <th>Received</th>
+        <th>GitHub</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr class="{% if item.read_at %}admin-row-inactive{% endif %}">
+        <td style="max-width:360px; white-space:pre-wrap; word-break:break-word">{{ item.message }}</td>
+        <td>
+          {% if item.user_slug %}
+            <a href="{{ url_for('user_profile', slug=item.user_slug) }}">{{ item.user_display_name }}</a>
+          {% else %}
+            anonymous
+          {% endif %}
+        </td>
+        <td class="admin-nowrap">{{ item.contact or '—' }}</td>
+        <td class="admin-nowrap">{{ item.created_at | datefmt }}</td>
+        <td>
+          {% if item.github_issue_url %}
+            <a href="{{ item.github_issue_url }}" target="_blank" rel="noopener">issue</a>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td class="admin-actions">
+          {% if not item.read_at %}
+          <form method="post"
+                action="{{ url_for('admin_feedback_mark_read', feedback_id=item.id) }}"
+                style="display:inline">
+            <input type="hidden" name="show" value="{{ show }}">
+            <button class="btn-sec admin-btn-sm" type="submit">Mark read</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="admin-empty">No {{ 'unread' if show == 'unread' else '' }} feedback.</p>
+  {% endif %}
+</div>
+{% endblock %}

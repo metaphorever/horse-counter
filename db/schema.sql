@@ -264,3 +264,20 @@ CREATE TABLE IF NOT EXISTS admin_settings (
     value      TEXT NOT NULL DEFAULT '',
     updated_at REAL NOT NULL
 );
+
+-- ── Feedback ──────────────────────────────────────────────────────────────────
+-- User-submitted bug reports / feedback. Public form, no auth required.
+-- github_issue_url set after successful GitHub issue creation; null if GitHub
+-- is not configured or the API call failed.
+CREATE TABLE IF NOT EXISTS feedback (
+    id               INTEGER PRIMARY KEY,
+    user_id          INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    contact          TEXT    NOT NULL DEFAULT '',   -- optional email/handle from anon users
+    message          TEXT    NOT NULL,
+    user_agent       TEXT    NOT NULL DEFAULT '',
+    created_at       REAL    NOT NULL,
+    github_issue_url TEXT,
+    read_at          REAL                           -- null = unread
+);
+
+CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at DESC);
