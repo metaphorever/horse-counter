@@ -20,6 +20,18 @@
 
   // Already signed in on another tab / returning user with live session.
   if (Clerk.user) {
+    // session_error=1 means /setup-account sent us back because the session
+    // cookie didn't survive the round-trip. Re-trying would loop forever.
+    // Show an actionable error instead.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('session_error')) {
+      const el = document.getElementById('sign-in-error');
+      el.textContent = 'Something went wrong finishing your sign-in — your browser may be blocking session cookies. '
+        + 'Try enabling cookies for poet.horse, clearing existing cookies for this site, or using a different browser. '
+        + 'If it keeps happening, reach out to the site owner.';
+      el.hidden = false;
+      return;
+    }
     await _verifyWithBackend();
     return;
   }

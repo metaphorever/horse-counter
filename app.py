@@ -467,7 +467,10 @@ def setup_account():
         # Not in the middle of a fresh sign-in — redirect appropriately
         if g.get('current_user'):
             return redirect(url_for('featured'))
-        return redirect(url_for('sign_in'))
+        # session_error=1 tells the sign-in page to break the loop and show an
+        # error rather than immediately re-verifying (which loops forever when
+        # the session cookie isn't persisting, e.g. due to browser cookie restrictions).
+        return redirect(url_for('sign_in', session_error='1'))
 
     display_name = session.get('pending_display_name', '')
     error = None
