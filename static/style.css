@@ -2004,14 +2004,20 @@ body.view-fancy .text-page-updated { color: #c8b888; }
 .browse-cw-item:has(input:checked) { font-weight: 700; color: #9a3a1a; }
 .browse-excluded-tag { background: #f8e8e0; border-color: #d09070; color: #7a3a1a; }
 
-/* Ratio filter row */
+/* Ratio filter row — dual range */
 .browse-ratio-row { margin-top: 6px; }
 .browse-ratio-hint { font: 11px 'Courier Prime','Courier New',monospace; color: #a08060; font-style: italic; flex-basis: 100%; }
-.browse-ratio-sliders { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 4px; }
-.browse-ratio-slider-group { display: flex; flex-direction: column; gap: 2px; }
-.browse-ratio-val { font-weight: 700; color: #2d2316; }
-.browse-ratio-slider { width: 160px; accent-color: #5a7a2a; cursor: pointer; }
-.browse-ratio-apply { font: 12px 'Courier Prime','Courier New',monospace; background: #f0e8cc; border: 1px solid #c4a96b; border-radius: 2px; padding: 3px 8px; cursor: pointer; color: #2d2316; align-self: flex-end; margin-bottom: 3px; }
+.browse-ratio-range-display { margin-left: 8px; font-weight: 700; color: #5a7a2a; }
+.browse-dual-range-wrap { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+.browse-dual-range-track { position: relative; height: 20px; flex: 1; max-width: 260px; }
+.browse-dual-range-track-bg { position: absolute; top: 50%; left: 0; right: 0; height: 4px; transform: translateY(-50%); background: #e0d4b0; border-radius: 2px; }
+.browse-dual-range-fill { position: absolute; top: 50%; height: 4px; transform: translateY(-50%); background: #5a7a2a; border-radius: 2px; pointer-events: none; }
+.browse-dual-range-input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; appearance: none; -webkit-appearance: none; background: transparent; pointer-events: none; margin: 0; padding: 0; }
+.browse-dual-range-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #5a7a2a; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); cursor: pointer; pointer-events: auto; }
+.browse-dual-range-input::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #5a7a2a; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); cursor: pointer; pointer-events: auto; }
+.browse-dual-range-input::-webkit-slider-runnable-track { background: transparent; }
+.browse-dual-range-input::-moz-range-track { background: transparent; }
+.browse-ratio-apply { font: 12px 'Courier Prime','Courier New',monospace; background: #f0e8cc; border: 1px solid #c4a96b; border-radius: 2px; padding: 3px 8px; cursor: pointer; color: #2d2316; }
 .browse-ratio-apply:hover { background: #ede0b0; }
 
 .poem-index { list-style: none; padding: 0; margin: 0; }
