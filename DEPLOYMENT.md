@@ -133,6 +133,12 @@ Clerk ID.
   on fresh deploy. (`scp` hung — use SFTP.) Without it, the dictionary fails
   to load and counting is disabled.
 
+## Deploying code changes
+
+**Push to `master` — that's it.** GitHub Actions auto-deploys on every push to master (git pull + gunicorn restart on the VPS). No need to SSH in for routine deploys.
+
+SSH is only needed for: manual DB operations, env var changes, inspecting logs, or recovering from a broken deploy.
+
 ## Lessons learned (so we don't relearn them)
 
 1. **`proxy_http_module` not enabled** — caused 500s; needed `a2enmod proxy_http`.
