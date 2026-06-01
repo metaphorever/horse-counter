@@ -60,6 +60,12 @@
       busy = false;
       loading.hidden = true;
     }
+    // IntersectionObserver only fires on state change, not continuous intersection.
+    // If the sentinel is still visible after loading (common on large desktop screens),
+    // trigger another load manually.
+    if (sentinel.getBoundingClientRect().top < window.innerHeight + 200) {
+      loadMore();
+    }
   }
 
   const obs = new IntersectionObserver(entries => {
