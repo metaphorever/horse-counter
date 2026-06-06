@@ -326,7 +326,7 @@ let userPrefs        = {{ user_prefs_json|safe }};
 const OPTIONAL_TAGS  = {{ optional_tags_json|safe }};
 let TAG_CATEGORIES   = {{ tag_categories_json|safe }};  // [{id,slug,label,behavior,tags:[…]}, …]
 const INITIAL_DRAFT  = {{ initial_draft_json|safe }};   // full draft row or null (set when ?draft=<id>)
-const INITIAL_DRAFTS = {{ initial_drafts_json|safe }};  // [{id,title,horse_count,updated_at},…] for picker
+const INITIAL_DRAFTS = {{ initial_drafts_json|safe }};  // [{id,title,horse_count,poem_count,updated_at},…] for picker
 let selectedTagIds   = new Set();  // tag IDs the user has picked for the current poem
 let draftId          = null;       // ID of the currently active saved draft (null = unsaved)
 let currentDraftMeta = null;       // last-saved draft field values; used to pre-populate re-opens
@@ -1981,12 +1981,12 @@ function renderDraftPickerItems(drafts){
   }
 
   let html = drafts.map(d => {
-    const horses = d.horse_count === 1 ? '1 horse' : `${d.horse_count} horses`;
+    const counts = `S:${d.horse_count || 0} · P:${d.poem_count || 0}`;
     const age    = fmtAge(d.updated_at);
     const active = draftId === d.id ? ' draft-picker-item-active' : '';
     return `<button class="draft-picker-item${active}" data-draft-id="${d.id}">
       <span class="draft-picker-title">${esc(d.title)}</span>
-      <span class="draft-picker-meta">${horses}${age ? ' · ' + age : ''}</span>
+      <span class="draft-picker-meta">${counts}${age ? ' · ' + age : ''}</span>
     </button>`;
   }).join('');
   html += `<div class="draft-picker-divider"></div>

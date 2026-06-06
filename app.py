@@ -1084,8 +1084,9 @@ def me_draft_save():
 def me_draft_list():
     """Return the current user's drafts for the chip picker and editor picker.
 
-    Returns [{id, title, horse_count, updated_at}, ...] newest first.
-    horse_count is the number of horses in the draft's stable.
+    Returns [{id, title, horse_count, poem_count, updated_at}, ...] newest first.
+    horse_count is the number of horses in the draft's stable; poem_count is the
+    number placed in the poem's lines.
     """
     import json as _json
     user = g.get('current_user')
@@ -1099,10 +1100,16 @@ def me_draft_list():
             horse_count = len(stable) if isinstance(stable, list) else 0
         except Exception:
             horse_count = 0
+        try:
+            lines = _json.loads(d.get('lines_json') or '[]')
+            poem_count = sum(len(l) for l in lines if isinstance(l, list))
+        except Exception:
+            poem_count = 0
         result.append({
             'id':          d['id'],
             'title':       d['title'],
             'horse_count': horse_count,
+            'poem_count':  poem_count,
             'updated_at':  d['updated_at'],
         })
     return jsonify({'ok': True, 'drafts': result})
@@ -1981,9 +1988,14 @@ def poetry_editor():
                     hc = len(stable_data) if isinstance(stable_data, list) else 0
                 except Exception:
                     hc = 0
+                try:
+                    lines_data = json.loads(d.get('lines_json') or '[]')
+                    pc = sum(len(l) for l in lines_data if isinstance(l, list))
+                except Exception:
+                    pc = 0
                 initial_drafts.append({
                     'id': d['id'], 'title': d['title'],
-                    'horse_count': hc, 'updated_at': d['updated_at'],
+                    'horse_count': hc, 'poem_count': pc, 'updated_at': d['updated_at'],
                 })
         else:
             initial_drafts = []
