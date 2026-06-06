@@ -29,7 +29,6 @@ Admin routes (login required — Clerk role='admin' OR PIN fallback):
   GET  /callback       OAuth callback
   GET  /submissions    review pending submissions
   POST /submissions/*  submission actions
-  POST /poetry/stable/*  server-persisted stable (admin only)
   GET  /admin/*        admin management pages
   GET  /login          PIN fallback (admin only)
 """
@@ -139,8 +138,7 @@ from poem_submissions import (
     reject               as reject_poem_submission,
 )
 from poetry import (
-    search_dictionary, random_horses, short_horses, load_stable, add_to_stable,
-    remove_from_stable, clear_stable,
+    search_dictionary, random_horses, short_horses,
     build_poem_html, compute_poem_stats, format_poem_prefix,
     POEM_SUFFIX, build_poem_suffix, build_poem_tags, order_tags,
     get_rhymes, search_by_rhyme_terms, RHYME_DEFAULT_ON,
@@ -1955,13 +1953,9 @@ def callback():
 @app.route('/poetry')
 def poetry_editor():
     import json
-    is_admin = _is_admin()
     initial_draft  = None
     initial_drafts = []
-    if is_admin:
-        stable = load_stable()
-        prefs  = {}
-    elif g.get('current_user'):
+    if g.get('current_user'):
         # 1.27: stable is no longer server-persisted continuously; it lives in
         # the draft. Start from empty; the client restores from a saved draft
         # or stays empty. Anonymous users hydrate from horse-draft localStorage.
@@ -2112,32 +2106,6 @@ def poetry_thesaurus_horses():
         return jsonify({'results': [], 'total': 0})
     results = search_by_synonym_terms(terms, dictionary)
     return jsonify({'results': results, 'total': len(results)})
-
-
-@app.route('/poetry/stable/add', methods=['POST'])
-@login_required
-def stable_add():
-    from flask import jsonify
-    data   = request.get_json()
-    horses = add_to_stable(data['name'], data['display'], data['url'], int(data.get('remaining', 1)))
-    return jsonify({'horses': horses})
-
-
-@app.route('/poetry/stable/remove', methods=['POST'])
-@login_required
-def stable_remove():
-    from flask import jsonify
-    data   = request.get_json()
-    horses = remove_from_stable(data['name'])
-    return jsonify({'horses': horses})
-
-
-@app.route('/poetry/stable/clear', methods=['POST'])
-@login_required
-def stable_clear():
-    from flask import jsonify
-    clear_stable()
-    return jsonify({'ok': True})
 
 
 @app.route('/submissions/post', methods=['POST'])

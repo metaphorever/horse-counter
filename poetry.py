@@ -3,18 +3,14 @@ poetry.py - Poetry editor backend
 """
 
 import json
-import os
 import random as _random
 import re
-import time
 import urllib.parse
 import requests as _requests
 from typing import List, Dict, Optional, Tuple, Callable
 
 from config import BASE_DIR, OPTIONAL_TAGS
 
-STABLE_FILE        = os.path.join(BASE_DIR, 'stable.json')
-_PASTURE_LEGACY    = os.path.join(BASE_DIR, 'pasture.json')  # migrated on first load
 SEARCH_HARD_CAP    = 2000
 RHYME_TERMS_MAX      = 50   # max terms to fetch from Datamuse
 RHYME_DEFAULT_ON     = 6    # how many chips are checked by default
@@ -357,53 +353,6 @@ def random_horses(dictionary, n: int = 5) -> List[Dict]:
             'count':   len(registrations),
         })
     return results
-
-
-# ── Stable ────────────────────────────────────────────────────────────────────
-
-def load_stable() -> List[Dict]:
-    # One-time migration: rename pasture.json → stable.json
-    if not os.path.exists(STABLE_FILE) and os.path.exists(_PASTURE_LEGACY):
-        try:
-            os.rename(_PASTURE_LEGACY, STABLE_FILE)
-        except Exception:
-            pass
-    if not os.path.exists(STABLE_FILE):
-        return []
-    try:
-        with open(STABLE_FILE) as f:
-            return json.load(f).get('horses', [])
-    except Exception:
-        return []
-
-
-def save_stable(horses: List[Dict]):
-    try:
-        with open(STABLE_FILE, 'w') as f:
-            json.dump({'horses': horses, 'updated': time.time()}, f)
-    except Exception as e:
-        print(f"Stable save error: {e}")
-
-
-def add_to_stable(name: str, display: str, url: str, remaining: int = 1) -> List[Dict]:
-    horses = load_stable()
-    existing = next((h for h in horses if h['name'] == name), None)
-    if existing:
-        existing['remaining'] = remaining
-    else:
-        horses.append({'name': name, 'display': display, 'url': url, 'remaining': remaining})
-    save_stable(horses)
-    return horses
-
-
-def remove_from_stable(name: str) -> List[Dict]:
-    horses = [h for h in load_stable() if h['name'] != name]
-    save_stable(horses)
-    return horses
-
-
-def clear_stable():
-    save_stable([])
 
 
 # ── Poem post building ────────────────────────────────────────────────────────
