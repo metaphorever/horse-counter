@@ -250,11 +250,16 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: Live — post-launch, Phase 2 priority evaluation (2026-05-25)**
+**PHASE: Live — post-launch, Phase 2 in progress (updated 2026-06-16)**
 
-DNS cutover complete. poet.horse is the primary home of the project. Phase 1 fully shipped and verified. Entering Phase 2 work — see ROADMAP.md for current priority picture.
+DNS cutover complete. poet.horse is the primary home of the project. Phase 1 fully shipped and verified. Phase 2 underway — see ROADMAP.md for current priority picture.
 
-**This session shipped (2026-05-25):**
+**This session shipped (2026-06-16) — Phase 2.2 Bluesky cross-post connector:**
+- `bluesky.py` `BlueskyManager` (atproto app-password auth, funnel-to-site text + link card to permalink); account `poethorse.bsky.social`, creds in VPS `.env`
+- Multi-target poem queue: single **Crosspost** action fires all connected platforms live; per-platform status (`tumblr_status`/`bluesky_status`) with Retry; counter's Tumblr post/queue/draft flow untouched
+- Live-verified by Clover: crosspost lands on both Tumblr and Bluesky. Spec: `spec/phase-2.2-bluesky.md`; session log `sessions/2026-06-16-phase-2.2.md`
+
+**Prior session shipped (2026-05-25):**
 - Pasture infinite scroll popover fix: event delegation on `document` replaces `querySelectorAll`-at-load; `window.__mergeHorseStates` for incremental state pre-loading; `loadMore` calls it after each batch
 
 **Open rough edges (not blocking):**
@@ -263,4 +268,4 @@ DNS cutover complete. poet.horse is the primary home of the project. Phase 1 ful
 - Account-action test-account holds — not blocking, test when convenient
 - Editor section label size parity (Poem / Stable labels should be same size) — slot into next small-items session
 
-Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.16, 1.17, 1.19, 1.20, 1.21, 1.23, 1.29. Collection pages verified 2026-05-24. All Phase 1 holds cleared 2026-05-25.
+Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.16, 1.17, 1.19, 1.20, 1.21, 1.23, 1.29, 2.2. Collection pages verified 2026-05-24. All Phase 1 holds cleared 2026-05-25.
