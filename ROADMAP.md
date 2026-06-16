@@ -139,7 +139,7 @@ Resolve before the relevant phase starts.
 
 - **In-pasture horse interaction details** — popover shape confirmed (name, link, poems-featuring, add-to-pasture, ribbon-save). Exact transition / placement / dismissal behavior is a Phase 1.7 design call.
 - **Editor chip interactions (one-page builder)** — drag-primary vs click-primary vs hybrid for the Phase 2 rethink. Phase 1.2 shipped a hybrid pain-fix; Phase 2.1 is the full redesign with prototype routes.
-- **Image-card export technique** — **Resolve before the image-card export build starts (now early Phase 2).** Pick between `html2canvas` client-side (no server dep, lower fidelity, Fancy-mode CSS may not translate) and server-side Playwright (pixel-perfect, any display mode, adds headless-browser dep to VPS). Clover decides.
+- ~~**Image-card export technique**~~ — **RESOLVED 2026-06-16: server-side Playwright** (Clover). Chosen over `html2canvas` because it's the two-for-one with the PQ lazy-cache scrape (PedigreeQuery sits behind Cloudflare, so `requests` can't reach it — needs a real browser session; same dep, same VPS setup). Accepts the headless-browser footprint on the VPS in exchange. **Prerequisite before build:** Jon runs `playwright install-deps chromium` as root (one-time, installs the apt shared libs); `pip install playwright` + `playwright install chromium` are user-space (Clover). Until that's confirmed on the VPS, do not start the image-card or PQ-scrape builds.
 
 ### Surfaced by migration audit (2026-05-17)
 
