@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from 'macros.html' import render_poem %}
+{% macro st(s) %}{% if s == 'posted' %}✓{% elif s == 'failed' %}✗{% else %}—{% endif %}{% endmacro %}
 {% block title %}Cross-post Queue — poet.horse{% endblock %}
 {% block content %}
 
@@ -13,7 +14,11 @@
 .cq-poem  { margin: 10px 0 14px; padding: 26px 14px 14px; background: #fff8e8; border-left: 3px solid #d4c490; border-radius: 3px; }
 .cq-poem-line { margin: 2px 0; line-height: 2.4; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .cq-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
-.cq-no-tumblr { font-size: 13px; color: #9a6a2a; font-style: italic; }
+.cq-status { font-size: 13px; color: #7a6a3a; display: inline-flex; gap: 12px; margin-left: 4px; }
+.cq-status .posted { color: #4a7a2a; font-weight: 600; }
+.cq-status .failed { color: #b03a2a; font-weight: 600; }
+.cq-status .pending { color: #9a8a5a; }
+.cq-none { font-size: 13px; color: #9a6a2a; font-style: italic; }
 </style>
 
 <div class="box">
@@ -27,9 +32,12 @@
     {% endfor %}
   {% endwith %}
 
-  {% if not tumblr_connected %}
-  <div class="msg err">Not connected to Tumblr — <a href="/auth">connect now</a> to dispatch posts.</div>
-  {% endif %}
+  <div class="msg {{ 'ok' if (tumblr_connected or bluesky_connected) else 'err' }}">
+    Tumblr: {% if tumblr_connected %}connected{% else %}<a href="/auth">connect</a>{% endif %}
+    &nbsp;·&nbsp;
+    Bluesky: {% if bluesky_connected %}configured{% else %}not configured (set BLUESKY_HANDLE + BLUESKY_APP_PASSWORD){% endif %}
+    {% if not tumblr_connected and not bluesky_connected %}<br>Connect at least one platform to dispatch.{% endif %}
+  </div>
 
   {% if not items %}
   <div class="msg ok">Queue empty — nothing pending!</div>
@@ -64,22 +72,19 @@
     </div>
 
     <div class="cq-actions">
-      {% if tumblr_connected %}
+      {% if tumblr_connected or bluesky_connected %}
       <form method="post" action="/admin/crosspost-queue/{{ item.cq_id }}/dispatch">
-        <input type="hidden" name="action" value="queue">
-        <button type="submit" class="btn-primary">Add to Tumblr queue</button>
-      </form>
-      <form method="post" action="/admin/crosspost-queue/{{ item.cq_id }}/dispatch">
-        <input type="hidden" name="action" value="post">
-        <button type="submit" class="btn-sec">Post now</button>
-      </form>
-      <form method="post" action="/admin/crosspost-queue/{{ item.cq_id }}/dispatch">
-        <input type="hidden" name="action" value="draft">
-        <button type="submit" class="btn-sec">Save as draft</button>
+        <button type="submit" class="btn-primary">
+          {% if item.tumblr_status == 'failed' or item.bluesky_status == 'failed' %}Retry Crosspost{% else %}Crosspost{% endif %}
+        </button>
       </form>
       {% else %}
-      <span class="cq-no-tumblr">Connect Tumblr to dispatch</span>
+      <span class="cq-none">Connect a platform to dispatch</span>
       {% endif %}
+      <span class="cq-status">
+        <span class="{{ 'posted' if item.tumblr_status == 'posted' else 'failed' if item.tumblr_status == 'failed' else 'pending' }}">Tumblr {{ st(item.tumblr_status) }}</span>
+        <span class="{{ 'posted' if item.bluesky_status == 'posted' else 'failed' if item.bluesky_status == 'failed' else 'pending' }}">Bluesky {{ st(item.bluesky_status) }}</span>
+      </span>
       <form method="post" action="/admin/crosspost-queue/{{ item.cq_id }}/skip"
             onsubmit="return confirm('Skip this poem?')">
         <button type="submit" class="btn-sec btn-danger">Skip</button>

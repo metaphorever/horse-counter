@@ -17,6 +17,13 @@ TUMBLR_REDIRECT_URI    = os.environ.get(
 )
 TUMBLR_BLOG_NAME       = os.environ.get('TUMBLR_BLOG_NAME', 'counting-horses')
 
+# ── Bluesky (AT Protocol) ─────────────────────────────────────────────────────
+# App-password auth — set both in the VPS environment. BLUESKY_APP_PASSWORD is a
+# Bluesky "App Password" (Settings → App Passwords), never the main password, and
+# never committed to the repo.
+BLUESKY_HANDLE       = os.environ.get('BLUESKY_HANDLE', '')
+BLUESKY_APP_PASSWORD = os.environ.get('BLUESKY_APP_PASSWORD', '')
+
 # ── App security ──────────────────────────────────────────────────────────────
 # SECRET_KEY: used for Flask session signing.
 # On PythonAnywhere set this as a stable env var so sessions survive restarts.

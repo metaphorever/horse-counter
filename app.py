@@ -68,6 +68,7 @@ from db.drafts import (
     add_horse_to_draft_stable, delete_user_draft,
 )
 from auth import TumblrManager
+from bluesky import BlueskyManager
 from matcher import (
     HorseDictionary, ChainCounter,
     find_horses_in_text, render_chain_item, compute_stats,
@@ -128,7 +129,7 @@ from horse_collections import (
 )
 from db.reports import create_report, list_reports, resolve_report
 from db.feedback import create_feedback, list_feedback, mark_read as mark_feedback_read, count_unread as count_unread_feedback, set_github_url as set_feedback_github_url
-from db.crosspost import enqueue_poem as enqueue_crosspost, get_pending as get_crosspost_pending, mark_posted as mark_crosspost_posted, mark_skipped as mark_crosspost_skipped
+from db.crosspost import enqueue_poem as enqueue_crosspost, get_pending as get_crosspost_pending, mark_platform as mark_crosspost_platform, skip as skip_crosspost
 from github_issues import create_issue as create_github_issue
 from poem_submissions import (
     create_for_poem      as create_poem_submission,
@@ -195,8 +196,10 @@ init_db()
 dictionary     = HorseDictionary(HORSES_RICH_FILE, HORSES_LEGACY_FILE, HORSE_OVERRIDES_FILE)
 famous_horses  = FamousHorses(FAMOUS_HORSES_FILE)
 tumblr         = TumblrManager()
+bluesky        = BlueskyManager()
 print(f"Ready. Dictionary: {dictionary.source}, "
-      f"Tumblr: {'connected' if tumblr.authenticated else 'not connected'}")
+      f"Tumblr: {'connected' if tumblr.authenticated else 'not connected'}, "
+      f"Bluesky: {'configured' if bluesky.authenticated else 'not configured'}")
 
 
 # ── Request lifecycle ─────────────────────────────────────────────────────────
@@ -2631,6 +2634,7 @@ def admin_crosspost_queue():
         'admin_crosspost_queue.html',
         items=items,
         tumblr_connected=tumblr.authenticated,
+        bluesky_connected=bluesky.authenticated,
     )
 
 
@@ -2677,46 +2681,101 @@ def _build_crosspost(item: dict) -> tuple[str, str]:
     return body, tags
 
 
+def _build_bluesky_post(item: dict) -> tuple[str, str, str, str]:
+    """Build (text, link_url, link_title, link_desc) for a Bluesky link-card post.
+
+    Funnel-to-site: a short hook plus a card to the poem permalink. Form:
+        "{title}" a poem of {count} horses by {author}
+    Title clause dropped when untitled; "by {author}" dropped when anonymous.
+    """
+    title       = (item.get('title') or '').strip()
+    horse_count = item['horse_count']
+    short_code  = item.get('short_code', '') or ''
+    author_name = (item.get('author_display_name') or '').strip()
+    if not author_name and item.get('author_user_id'):
+        user = get_user_by_id(item['author_user_id'])
+        if user:
+            author_name = user.get('display_name', '') or user.get('slug', '')
+
+    plural = 's' if horse_count != 1 else ''
+    if title:
+        text = f'"{title}" a poem of {horse_count} horse{plural}'
+    else:
+        text = f'A poem of {horse_count} horse{plural}'
+    if author_name:
+        text += f' by {author_name}'
+
+    link_url   = f'https://poet.horse/p/{short_code}'
+    link_title = f'"{title}"' if title else 'A poem on poet.horse'
+
+    # Card description: a short preview of horse names from the first line.
+    names = []
+    for line in item['lines']:
+        for h in (line or []):
+            n = h.get('display') or h.get('name') or ''
+            if n:
+                names.append(n)
+        if names:
+            break
+    link_desc = ', '.join(names)[:200]
+
+    return text, link_url, link_title, link_desc
+
+
 @app.route('/admin/crosspost-queue/<int:cq_id>/dispatch', methods=['POST'])
 @login_required
 def admin_crosspost_dispatch(cq_id: int):
-    if not tumblr.authenticated:
-        flash('Not connected to Tumblr.', 'err')
+    """Single 'Crosspost' action: fire every connected platform live.
+
+    Records a per-platform result so a partial failure leaves the item pending
+    and re-dispatch retries only what hasn't posted yet.
+    """
+    if not tumblr.authenticated and not bluesky.authenticated:
+        flash('No platforms connected — connect Tumblr or set the Bluesky env vars.', 'err')
         return redirect(url_for('admin_crosspost_queue'))
 
-    action = request.form.get('action', 'queue')
-
-    # Find the item in pending
     items = get_crosspost_pending()
     item  = next((i for i in items if i['cq_id'] == cq_id), None)
     if not item:
         flash('Item not found or already dispatched.', 'err')
         return redirect(url_for('admin_crosspost_queue'))
 
-    body, tags = _build_crosspost(item)
-    draft = {'is_text_post': True, 'is_fallback': False, 'post_data': {}}
-    success, err = submit_post(
-        draft=draft,
-        action=action,
-        body=body,
-        tags=tags,
-        make_request=tumblr.make_request,
-    )
+    results = []
 
-    if success:
-        mark_crosspost_posted(cq_id)
-        label = {'post': 'published', 'queue': 'queued', 'draft': 'saved as draft'}.get(action, 'queued')
-        flash(f'Post {label}!', 'ok')
-    else:
-        flash(f'Tumblr error: {err}', 'err')
+    # ── Tumblr ──
+    if item.get('tumblr_status') != 'posted':
+        if tumblr.authenticated:
+            body, tags = _build_crosspost(item)
+            draft = {'is_text_post': True, 'is_fallback': False, 'post_data': {}}
+            ok, err = submit_post(
+                draft=draft, action='post', body=body, tags=tags,
+                make_request=tumblr.make_request,
+            )
+            mark_crosspost_platform(cq_id, 'tumblr', 'posted' if ok else 'failed')
+            results.append('Tumblr ✓' if ok else f'Tumblr ✗: {err}')
+        else:
+            mark_crosspost_platform(cq_id, 'tumblr', 'skipped')
 
+    # ── Bluesky ──
+    if item.get('bluesky_status') != 'posted':
+        if bluesky.authenticated:
+            text, link_url, link_title, link_desc = _build_bluesky_post(item)
+            ok, err = bluesky.post_poem(text, link_url, link_title, link_desc)
+            mark_crosspost_platform(cq_id, 'bluesky', 'posted' if ok else 'failed')
+            results.append('Bluesky ✓' if ok else f'Bluesky ✗: {err}')
+        else:
+            mark_crosspost_platform(cq_id, 'bluesky', 'skipped')
+
+    summary  = ' · '.join(results) if results else 'Nothing to dispatch.'
+    category = 'err' if '✗' in summary else 'ok'
+    flash(summary, category)
     return redirect(url_for('admin_crosspost_queue'))
 
 
 @app.route('/admin/crosspost-queue/<int:cq_id>/skip', methods=['POST'])
 @login_required
 def admin_crosspost_skip(cq_id: int):
-    mark_crosspost_skipped(cq_id)
+    skip_crosspost(cq_id)
     flash('Skipped.', 'ok')
     return redirect(url_for('admin_crosspost_queue'))
 

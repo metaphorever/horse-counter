@@ -46,6 +46,10 @@ _COLUMN_MIGRATIONS = [
     # Phase 2 — horse/word ratio: horse_count / total word count across all names
     # 1.0 = all single-word names, 0.5 = all two-word names, etc.
     ('poems', 'horse_ratio', "REAL"),
+    # Phase 2.2 — per-platform crosspost result: NULL → posted / failed / skipped.
+    # An item leaves the queue once both are in (posted, skipped).
+    ('crosspost_queue', 'tumblr_status',  "TEXT"),
+    ('crosspost_queue', 'bluesky_status', "TEXT"),
 ]
 
 
