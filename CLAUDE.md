@@ -250,17 +250,18 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: Live — post-launch, Phase 2 in progress (updated 2026-06-16)**
+**PHASE: Live — post-launch, Phase 2 in progress (updated 2026-06-17)**
 
 DNS cutover complete. poet.horse is the primary home of the project. Phase 1 fully shipped and verified. Phase 2 underway — see ROADMAP.md for current priority picture.
 
-**This session shipped (2026-06-16) — Phase 2.2 Bluesky cross-post connector:**
+**This session shipped (2026-06-17) — Phase 2.3 Crosspost composition & tagging:**
+- Bluesky posts now carry a poem sample (whole-horse truncation to fit 300 chars, `[…]` marker, permalink card-only), reach hashtags as real facets (`#poetry`/`#horses`/`#PoetHorse`; `#micropoetry` swaps in on ≤140-char poems), and a `sexual` self-label for `sex`-tagged poems. `langs=['en']`. Composition in `bluesky.py` `_compose_body`; policy constants + tag selection in `app.py` `_build_bluesky_post`.
+- Tumblr crossposts now include the poet's own site tags (`label.lower()`, CW-prefixed `cw `, spliced before `counting-horses`) via `poetry.py` `site_tags_for_crosspost`. Shared plumbing: `get_pending()` attaches `tags_for_poem`.
+- Live-verified by Clover, all 7 cases. **Bug caught in test:** live tag slugs are namespaced (`content-warnings:sex`) — label map fixed to match the bare suffix. Tag set + 140 cutoff are tunable constants in `app.py` (Clover to tune after watching live feeds before posting at volume). Spec: `spec/phase-2.3-bluesky-composition.md`; session log `sessions/2026-06-17-phase-2.3.md`
+
+**Prior session shipped (2026-06-16) — Phase 2.2 Bluesky cross-post connector:**
 - `bluesky.py` `BlueskyManager` (atproto app-password auth, funnel-to-site text + link card to permalink); account `poethorse.bsky.social`, creds in VPS `.env`
 - Multi-target poem queue: single **Crosspost** action fires all connected platforms live; per-platform status (`tumblr_status`/`bluesky_status`) with Retry; counter's Tumblr post/queue/draft flow untouched
-- Live-verified by Clover: crosspost lands on both Tumblr and Bluesky. Spec: `spec/phase-2.2-bluesky.md`; session log `sessions/2026-06-16-phase-2.2.md`
-
-**Prior session shipped (2026-05-25):**
-- Pasture infinite scroll popover fix: event delegation on `document` replaces `querySelectorAll`-at-load; `window.__mergeHorseStates` for incremental state pre-loading; `loadMore` calls it after each batch
 
 **Open rough edges (not blocking):**
 - PA redirect to poet.horse — owner action, low priority, before PA expires
@@ -268,4 +269,4 @@ DNS cutover complete. poet.horse is the primary home of the project. Phase 1 ful
 - Account-action test-account holds — not blocking, test when convenient
 - Editor section label size parity (Poem / Stable labels should be same size) — slot into next small-items session
 
-Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.16, 1.17, 1.19, 1.20, 1.21, 1.23, 1.29, 2.2. Collection pages verified 2026-05-24. All Phase 1 holds cleared 2026-05-25.
+Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.16, 1.17, 1.19, 1.20, 1.21, 1.23, 1.29, 2.2, 2.3. Collection pages verified 2026-05-24. All Phase 1 holds cleared 2026-05-25.
