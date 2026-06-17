@@ -17,6 +17,7 @@ import json
 import time
 
 from db.conn import get_db
+from db.tags import tags_for_poem
 from poem_db import _enrich_lines
 
 PLATFORMS = ('tumblr', 'bluesky')
@@ -57,6 +58,9 @@ def get_pending() -> list[dict]:
         d = dict(r)
         d['lines'] = json.loads(d.pop('lines_json'))
         _enrich_lines(d['lines'])
+        # Poem's approved tags — feeds the Bluesky CW self-label (content-warnings
+        # rows) and the Tumblr site-tag splice (all non-admin rows). Phase 2.3.
+        d['tags'] = tags_for_poem(d['poem_id'])
         items.append(d)
     return items
 

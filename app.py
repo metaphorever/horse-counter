@@ -141,7 +141,7 @@ from poem_submissions import (
 from poetry import (
     search_dictionary, random_horses, short_horses,
     build_poem_html, compute_poem_stats, format_poem_prefix,
-    POEM_SUFFIX, build_poem_suffix, build_poem_tags, order_tags,
+    POEM_SUFFIX, build_poem_suffix, build_poem_tags, site_tags_for_crosspost, order_tags,
     get_rhymes, search_by_rhyme_terms, RHYME_DEFAULT_ON,
     get_synonyms, search_by_synonym_terms, THESAURUS_DEFAULT_ON,
 )
@@ -2677,16 +2677,52 @@ def _build_crosspost(item: dict) -> tuple[str, str]:
                                inspired_by_url=inspired_url)
     suf  = build_poem_suffix(short_code, author_name, author_url)
     body = build_post_body(pre, linked_html, '', suf)
-    tags = ','.join(build_poem_tags(horse_count, author_name, ''))
+
+    # Splice the poet's own site tags between the identity tags and the trailing
+    # boilerplate (before 'counting-horses'), deduped against the boilerplate.
+    tag_list = build_poem_tags(horse_count, author_name, '')
+    site = [t for t in site_tags_for_crosspost(item.get('tags')) if t not in set(tag_list)]
+    if site:
+        try:
+            idx = tag_list.index('counting-horses')
+        except ValueError:
+            idx = len(tag_list)
+        tag_list[idx:idx] = site
+    tags = ','.join(tag_list)
     return body, tags
 
 
-def _build_bluesky_post(item: dict) -> tuple[str, str, str, str]:
-    """Build (text, link_url, link_title, link_desc) for a Bluesky link-card post.
+# ── Bluesky composition policy (Phase 2.3) ──
+BLUESKY_MICRO_CUTOFF = 140          # full poem body <= this many chars -> #micropoetry
+BLUESKY_BASE_TAGS    = ['horses', 'PoetHorse']
+BLUESKY_POETRY_TAG   = 'poetry'
+BLUESKY_MICRO_TAG    = 'micropoetry'
+BLUESKY_MAX_TAGS     = 5
+BLUESKY_LABEL_MAP    = {'sex': 'sexual'}   # site CW slug -> bsky self-label
 
-    Funnel-to-site: a short hook plus a card to the poem permalink. Form:
-        "{title}" a poem of {count} horses by {author}
-    Title clause dropped when untitled; "by {author}" dropped when anonymous.
+
+def _sanitize_bsky_tags(tags: list[str]) -> list[str]:
+    """No internal whitespace, drop empties, dedup (case-insensitive), cap."""
+    seen, out = set(), []
+    for t in tags:
+        t = ''.join(t.split())
+        if not t or t.lower() in seen:
+            continue
+        seen.add(t.lower())
+        out.append(t)
+        if len(out) >= BLUESKY_MAX_TAGS:
+            break
+    return out
+
+
+def _build_bluesky_post(item: dict) -> dict:
+    """Build the Bluesky crosspost ingredients (Phase 2.3).
+
+    Returns the byline header, the poem as per-line horse displays (the connector
+    samples it to fit the 300-char limit), the reach hashtags, an optional CW
+    self-label, and the link-card fields. The permalink lives in the card only.
+    Header form: "{title}" a poem of {count} horses by {author} — title clause
+    dropped when untitled, "by {author}" dropped when anonymous.
     """
     title       = (item.get('title') or '').strip()
     horse_count = item['horse_count']
@@ -2699,27 +2735,44 @@ def _build_bluesky_post(item: dict) -> tuple[str, str, str, str]:
 
     plural = 's' if horse_count != 1 else ''
     if title:
-        text = f'"{title}" a poem of {horse_count} horse{plural}'
+        header = f'"{title}" a poem of {horse_count} horse{plural}'
     else:
-        text = f'A poem of {horse_count} horse{plural}'
+        header = f'A poem of {horse_count} horse{plural}'
     if author_name:
-        text += f' by {author_name}'
+        header += f' by {author_name}'
 
-    link_url   = f'https://poet.horse/p/{short_code}'
-    link_title = f'"{title}"' if title else 'A poem on poet.horse'
-
-    # Card description: a short preview of horse names from the first line.
-    names = []
+    # Poem as horse-display tokens per line (connector samples to fit).
+    line_horses = []
     for line in item['lines']:
-        for h in (line or []):
-            n = h.get('display') or h.get('name') or ''
-            if n:
-                names.append(n)
+        names = [(h.get('display') or h.get('name') or '') for h in (line or [])]
+        names = [n for n in names if n]
         if names:
-            break
-    link_desc = ', '.join(names)[:200]
+            line_horses.append(names)
 
-    return text, link_url, link_title, link_desc
+    # Micropoetry swap, decided on the FULL poem-body length (pre-truncation).
+    full_body = '\n'.join(' '.join(names) for names in line_horses)
+    poetry_tag = (BLUESKY_MICRO_TAG if len(full_body) <= BLUESKY_MICRO_CUTOFF
+                  else BLUESKY_POETRY_TAG)
+    tags = _sanitize_bsky_tags([poetry_tag] + BLUESKY_BASE_TAGS)
+
+    # Content-warning self-label (only 'sex' -> 'sexual' in v1).
+    self_label = None
+    for t in item.get('tags') or []:
+        if t.get('cat_slug') == 'content-warnings':
+            mapped = BLUESKY_LABEL_MAP.get(t.get('slug'))
+            if mapped:
+                self_label = mapped
+                break
+
+    return {
+        'header':      header,
+        'line_horses': line_horses,
+        'tags':        tags,
+        'self_label':  self_label,
+        'link_url':    f'https://poet.horse/p/{short_code}',
+        'link_title':  f'"{title}"' if title else 'A poem on poet.horse',
+        'link_desc':   ', '.join(line_horses[0])[:200] if line_horses else '',
+    }
 
 
 @app.route('/admin/crosspost-queue/<int:cq_id>/dispatch', methods=['POST'])
@@ -2759,8 +2812,7 @@ def admin_crosspost_dispatch(cq_id: int):
     # ── Bluesky ──
     if item.get('bluesky_status') != 'posted':
         if bluesky.authenticated:
-            text, link_url, link_title, link_desc = _build_bluesky_post(item)
-            ok, err = bluesky.post_poem(text, link_url, link_title, link_desc)
+            ok, err = bluesky.post_poem(**_build_bluesky_post(item))
             mark_crosspost_platform(cq_id, 'bluesky', 'posted' if ok else 'failed')
             results.append('Bluesky ✓' if ok else f'Bluesky ✗: {err}')
         else:

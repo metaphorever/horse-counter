@@ -135,6 +135,28 @@ def build_poem_tags(count: int, name: str = '', tumblr: str = '', is_admin: bool
     return tags
 
 
+def site_tags_for_crosspost(poem_tags: List[Dict]) -> List[str]:
+    """Render a poem's own site tags for a Tumblr crosspost (Phase 2.3).
+
+    Takes `tags_for_poem` rows (slug/label/cat_slug/behavior/admin_only), already
+    ordered by category sort_order. Returns human-readable lowercase tags —
+    `label.lower()` so multi-word tags read with spaces ("free verse", not the
+    "free-verse" slug). Content-warning tags get a `cw ` prefix ("cw death").
+    Admin-only categories are dropped (internal classification, not public).
+    """
+    out = []
+    for t in poem_tags or []:
+        if t.get('admin_only'):
+            continue
+        label = (t.get('label') or '').strip().lower()
+        if not label:
+            continue
+        if t.get('cat_slug') == 'content-warnings':
+            label = f'cw {label}'
+        out.append(label)
+    return out
+
+
 def order_tags(tags_str: str, first: str, *prepend: str, force_first: bool = True) -> str:
     """
     Re-order a comma-separated tag string so `first` leads, followed by any

@@ -88,7 +88,10 @@ purely additive.
    (suggestive, no-image). Not `porn` (image-oriented). Rides on the record at
    zero character cost. No other site tag maps to Bluesky's label vocabulary.
    This is a safety net under Clover's manual final-say, not a posting gate.
-7. **Freebies:** set `langs=['en']` on the post; give the link card alt text.
+7. **Freebie:** set `langs=['en']` on the post. *(Card alt text was planned but
+   dropped — AT Protocol external/link cards have no `alt` field; only image
+   embeds do. The card's title + description already serve that role. Alt text
+   returns with image cards, which are out of scope/Playwright.)*
 
 ---
 
@@ -113,8 +116,8 @@ Build order (all char counts in the ~290 budget):
 7. **Facets** — render the whole text via `TextBuilder` so the tags are real
    tag facets, not plain text.
 
-Card (`embed`) is unchanged: title + horse-name description + permalink, now
-**with alt text**.
+Card (`embed`) is unchanged: title + horse-name description + permalink. (Link
+cards have no alt-text field — see decision 7.)
 
 ---
 
