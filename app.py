@@ -2755,11 +2755,14 @@ def _build_bluesky_post(item: dict) -> dict:
                   else BLUESKY_POETRY_TAG)
     tags = _sanitize_bsky_tags([poetry_tag] + BLUESKY_BASE_TAGS)
 
-    # Content-warning self-label (only 'sex' -> 'sexual' in v1).
+    # Content-warning self-label (only 'sex' -> 'sexual' in v1). Live tag slugs
+    # are namespaced "<category>:<tag>" (e.g. "content-warnings:sex"), so map on
+    # the bare suffix — robust whether or not the slug carries the prefix.
     self_label = None
     for t in item.get('tags') or []:
         if t.get('cat_slug') == 'content-warnings':
-            mapped = BLUESKY_LABEL_MAP.get(t.get('slug'))
+            bare = (t.get('slug') or '').split(':')[-1]
+            mapped = BLUESKY_LABEL_MAP.get(bare)
             if mapped:
                 self_label = mapped
                 break
