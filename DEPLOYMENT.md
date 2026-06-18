@@ -62,6 +62,23 @@ Webroot for ACME challenges: `/home/metaphorever/letsencrypt-webroot/`.
 - **Has** `EnvironmentFile=/data/home/metaphorever/horse-counter/.env`
   (required or env vars don't load)
 
+**Installing Python packages — the venv has NO `pip`.** Use `uv`, the same way
+the deploy workflow does. `python -m pip ...` fails with "No module named pip".
+```bash
+/home/metaphorever/.local/bin/uv pip install <pkg> --python /home/metaphorever/.venv/bin/python
+```
+
+**Playwright / headless Chromium (image-card export + PQ scrape) — noble gotcha.**
+`playwright install-deps chromium` will *always* fail on this Ubuntu 24.04 box
+(exit 100, `Package 'libasound2' has no installation candidate`): the t64 ABI
+transition renamed `libasound2` → `libasound2t64` and Playwright hardcodes the
+old name. **Ignore that command's exit code** — it is not the gate. The system
+libs are installed via an explicit `apt install` of the t64-named packages
+(root, through Jon). The real check is launching Chromium:
+`python -m playwright install chromium` (user-space) then a `chromium.launch()`
+smoke test. If that prints OK, the deps are sufficient regardless of what
+`install-deps` says.
+
 ```bash
 systemctl --user [start|stop|restart|status] poet-horse.service
 ```
