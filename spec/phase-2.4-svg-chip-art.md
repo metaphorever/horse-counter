@@ -291,8 +291,9 @@ still bubble to `.poem-horse`. Geometry/placement math is unchanged.
 
 ## Open questions
 
-1. **Fancy per-coat tilt** — keep or drop once a real horse sits in the chip
-   (decide during live verification). *Still open.*
+1. ~~**Fancy per-coat tilt**~~ ✅ RESOLVED (2026-06-18, session 2) — **dropped**.
+   See Build amendment. Tilt is a motion property, not a coat property; it belongs
+   to the future animation layer, not a per-coat rotate.
 2. ~~Min barrel width~~ ✅ RESOLVED — `min-width: 6ch`, centered (Clover, "Empire" length).
 3. **`<use>`/`currentColor` recolor** in older Safari — confirm, else inline-var
    fallback. *Still open (build-time check).*
@@ -309,3 +310,93 @@ still bubble to `.poem-horse`. Geometry/placement math is unchanged.
 - `prototypes/horse-chip-template.svg` — the drawing frame (already committed).
 - New: the base silhouette SVG asset (Clover's art) → wherever the sprite reads it.
 - **Untouched:** `matcher.py` / `.horse-link` (counter), the editor templates.
+
+---
+
+## Build amendment — 2026-06-18 (session 2: spike → build decisions)
+
+A single-SVG prototype spike was built in-chat and reviewed by Clover. All open
+art/technique questions are resolved below. **This section is authoritative where
+it differs from the original spec above.**
+
+### Render technique — ONE `<svg>` per chip (supersedes "floating `<use>` layers")
+
+The original spec floated separate SVG layers around an HTML barrel box. The
+spike replaced that with a **single `<svg>` per chip** holding all parts in one
+shared coordinate space — required so that (a) one `filter: drop-shadow()` casts
+a single shadow off the whole silhouette, and (b) the famous-horse shimmer sweeps
+continuously across the entire horse. The **name stays HTML** (`.hz-word`) on top
+of the SVG, so the auto-width box, `min-width:6ch` floor, popover delegation, and
+accessibility all behave exactly as before.
+
+Per-chip structure (pixel user-space, `s = barrelPx / 100`):
+- Outer `<svg>` sized to the chip via CSS; `overflow:visible`; `filter:drop-shadow`.
+- **Barrel** = a `<rect>` filling the chip width (the stretchy middle).
+- **Left-anchored** parts (head, front legs) = `<g transform="translate scale">`
+  with fixed offsets from the chip's left edge.
+- **Right-anchored** parts (tail, hind legs) = anchored to the chip's right edge.
+  No-JS path: a nested `<svg x="100%">` with an inner back-translate (JS-built in
+  the spike; production confirms the no-JS nesting on the live site).
+- Coordinate mapping (from the measured bboxes above): art `x=150` → chip-left,
+  art `x=550` → chip-right, art `y=110` (back line) → barrel-band top.
+
+### No-JS core + JS shimmer (web-1.0 commitment preserved)
+
+- **Core horse (every chip)** — body, legs, head, tail, eye, drop-shadow,
+  far-leg shading — renders **with no JS**. Works with JS disabled.
+- **Whole-horse shimmer (famous horses only)** — a single gradient sweep masked
+  to the silhouette, applied by a **light progressive-enhancement script** (Clover
+  approved "JS as a treat"). Degrades to no-shimmer when JS is off; suppressed
+  under `prefers-reduced-motion`, like today.
+
+### Eye + nostril — "Eye A" (round overlay), tweakable in one place
+
+- White sclera ellipse + black pupil drawn **on top** of the head path — the
+  legible, characterful look Clover chose over the literal drawn eye.
+- Nostril = a dark ellipse **behind** the head path, so the art's nostril knockout
+  reads dark, not field-green.
+- All three live **inside the head `<symbol>`** (single source), marked with a
+  comment as the tweak point — Clover fine-tunes geometry there later. Starting
+  values (art coords): eye `cx84 cy51 rx10 ry9`, pupil `cx84 cy51 r4.4`, nostril
+  `cx47 cy99 rx6 ry5`. Positions are approximate; the build locates the exact
+  knockout centroids from the head path.
+
+### Far-leg (off-side) shading — depth cue, **Fore Y / Hind X**
+
+Each leg is its own path, so the two off-side legs take a darkened coat fill
+(~0.6× coat bg, tunable — likely a `--coat-*-shade` var per coat). The mapping
+fixes the jumbled Illustrator leg ids (see the bbox table above):
+- **Front pair:** lit/front = **outer** leg (`lff`, x≈145–220); shaded/back =
+  **inner** leg (`lfn`, x≈175–252).
+- **Hind pair:** lit/front = **inner** leg (`lhn`, x≈482–553); shaded/back =
+  **outer** leg (`lhf`, x≈446–514).
+- Shaded legs draw **behind** the barrel; lit legs draw **in front**. Draw order
+  back→front: `lfn, lhf, tail, barrel, lhn, lff, head`.
+
+### Per-coat tilt — DROPPED
+
+Remove `body.view-fancy .coat-* { transform: rotate(...) }`. Horses render upright
+and consistent across coats; random/animated tilt belongs to the animation phase.
+
+### Text placement — nudge up
+
+Move `.hz-word` up slightly relative to the barrel band (tunable CSS) so the name
+sits higher on the body than the spike's default.
+
+### No pre-rendering (rejected)
+
+Considered baking per-length static SVGs (6–18 chars); rejected: (a) Fancy font is
+**proportional** (Playfair Display SC), so char-count ≠ width — the spec's earlier
+"monospace / self-adjusting 6ch" note was inherited from the Courier prototype and
+is **incorrect** for production; the live stretch sizes to the real text. (b) Pre-
+rendering would **combinatorially explode** once the walk-cycle lands (frames ×
+lengths × coats × facings). The live single-SVG keeps legs as addressable paths,
+so the walk-cycle stays **procedural and length-independent** — one animation,
+every horse, every length.
+
+### Build-time checks carried forward
+
+- **Safari** — confirm `filter: drop-shadow`, the shimmer mask, and nested-svg
+  right-anchoring render on the live site (broadens Open Question #3).
+- Popover click still resolves via `.poem-horse` delegation; `.hz-*` SVG layers
+  `pointer-events:none`; SVG suppressed under `@media print`.
