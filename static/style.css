@@ -1274,7 +1274,7 @@ body.view-decorated .poem-line-out {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
   padding-left: 0; text-indent: 0;
 }
-body.view-fancy .poem-line-out { line-height: 3.6; }  /* 2.4: taller — SVG horses have full legs/head; tune with chip scale */
+body.view-fancy .poem-line-out { line-height: 4.2; }  /* 2.4: clears full SVG legs/head between lines (Clover) */
 body.view-plain .poem-line-out { font: 1.05rem/2.0 'IM Fell English', Georgia, serif; }
 
 /* ── Decorated chips — Fancy mode (SVG horse, Phase 2.4) ───────────────────── */
@@ -1283,7 +1283,7 @@ body.view-fancy .poem-horse {
   position: relative;
   overflow: visible;
   padding: 1px 10px 4px;
-  margin: 4px 4px;
+  margin: 5px 16px;          /* generous horizontal gap so heads/tails don't crowd neighbours */
   min-width: 6ch;
   text-align: center;
   font-family: 'Playfair Display SC', Georgia, serif;
@@ -1338,8 +1338,14 @@ body.view-fancy .poem-horse .hz-r { overflow: visible; }
 body.view-fancy .poem-horse .hz-bar { fill: currentColor; }
 /* off-side (far) legs — a darkened coat for depth (Fore Y / Hind X) */
 body.view-fancy .poem-horse .hz-shade { color: color-mix(in srgb, var(--bg), #000 40%); }
-/* the name floats above the body in the coat's foreground colour */
-body.view-fancy .poem-horse .hz-word { position: relative; z-index: 1; color: var(--fg); }
+/* the name floats above the body in the coat's foreground colour; nudged down
+   the back so it rides on the barrel rather than the crest (Clover, +4px) */
+body.view-fancy .poem-horse .hz-word {
+  position: relative;
+  z-index: 1;
+  color: var(--fg);
+  transform: translateY(4px);
+}
 /* Facing: mirror just the horse art; the HTML name stays unflipped */
 body.view-fancy .poem-horse.rev .hz { transform: translateY(-40%) scaleX(-1); }
 body.view-fancy a.poem-horse:hover { filter: brightness(1.07); }
@@ -1411,7 +1417,7 @@ body.view-plain a.poem-horse:hover { filter: brightness(1.08); }
    (Enlarging chips + harmonising the chip font with the display type is routed
    to the style/font pass, where chip size + font are decided together.) */
 @media (max-width: 520px) {
-  body.view-fancy .poem-line-out { line-height: 3.8; }  /* 2.4: SVG horses need extra vertical clearance */
+  body.view-fancy .poem-line-out { line-height: 4.2; }  /* 2.4: SVG horses need extra vertical clearance */
   body.view-fancy .poem-view-title { font-size: 1.45rem; }
   body.view-fancy .poem-view-body { padding-top: 22px; }
 }
@@ -2484,7 +2490,7 @@ body.view-plain .collection-chips .poem-horse {
 /* 2.4 Fancy: collection chips are full SVG horses. Keep the coat colour driving
    currentColor (the generic .collection-chips a.poem-horse{color:--fg} above is
    for the non-SVG modes), and give the tall horses room so they don't collide. */
-body.view-fancy .collection-chips { gap: 24px 16px; }
+body.view-fancy .collection-chips { gap: 48px 18px; }
 body.view-fancy .collection-chips .poem-horse { color: var(--bg); }
 .collection-chip-wrap { position: relative; }
 .collection-chip-remove {
