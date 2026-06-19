@@ -2364,8 +2364,12 @@ body.view-fancy .profile-page li,
 body.view-fancy .drafts-page  p,
 body.view-fancy .drafts-page  li { color: #e8d5b0; }
 
-/* Links inside the dark panels — light green, readable against dark bg */
-body.view-fancy .profile-page a:not(.btn-sec):not(.btn-pri):not(.btn-primary) { color: #c8e8a0; }
+/* Links inside the dark panels — light green, readable against dark bg.
+   Exclude .poem-horse: horse chips are links too, but they drive their SVG
+   silhouette off `color: var(--bg)` (the coat). Without this exclusion the
+   panel link colour overrides the coat and the currentColor body parts
+   (head/tail/barrel/foreground legs) render in the link green. (Phase 2.4 hold) */
+body.view-fancy .profile-page a:not(.btn-sec):not(.btn-pri):not(.btn-primary):not(.poem-horse) { color: #c8e8a0; }
 body.view-fancy .drafts-page  a:not(.btn-sec):not(.btn-pri)                   { color: #c8e8a0; }
 
 /* Internal borders inside dark panels — warm gold hairlines */

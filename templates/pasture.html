@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from 'macros.html' import render_chip %}
+{% from 'macros.html' import render_chip, horse_svg %}
 {% block title %}Pasture — poet.horse{% endblock %}
 
 {% block content %}
@@ -29,14 +29,21 @@
   const seen     = new Set({{ horses | map(attribute='name') | list | tojson }});
   let   busy     = false;
 
+  // Single source of truth: the same per-chip SVG horse the server emits via
+  // render_chip()/horse_svg(). It carries no chip-specific data (parts are <use>
+  // refs into the page's injected sprite), so one static copy serves every chip.
+  // Fancy shows it; Plain/Reader keep it display:none — matching server output.
+  const HORSE_SVG = {{ horse_svg() | tojson }};
+
   function chipHTML(h){
     const cls = ['poem-horse', 'coat-' + h.coat, h.rev ? 'rev' : '', h.is_famous ? 'famous-horse' : '']
                   .filter(Boolean).join(' ');
     const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const inner = `${HORSE_SVG}<span class="hz-word">${esc(h.display)}</span>`;
     if(h.url){
-      return `<a class="${cls}" data-name="${esc(h.name)}" href="${esc(h.url)}" rel="nofollow noopener" target="_blank">${esc(h.display)}</a>`;
+      return `<a class="${cls}" data-name="${esc(h.name)}" href="${esc(h.url)}" rel="nofollow noopener" target="_blank">${inner}</a>`;
     }
-    return `<span class="${cls}" data-name="${esc(h.name)}">${esc(h.display)}</span>`;
+    return `<span class="${cls}" data-name="${esc(h.name)}">${inner}</span>`;
   }
 
   async function loadMore(){
