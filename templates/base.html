@@ -18,6 +18,7 @@
 {% endif %}
 </head>
 <body class="{% if is_admin_page %}view-plain admin-page{% else %}view-{{ view_mode }}{% if view_decorated %} view-decorated{% endif %}{% endif %}">
+{% if view_mode == 'fancy' and not is_admin_page %}{% include '_horse_sprite.html' %}{% endif %}
 <div class="site-nav-bar">
   <nav class="site-nav" id="site-nav">
     <div class="nav-brand">
@@ -172,6 +173,10 @@
   if (Clerk.user) window.location.href = '/sign-in';
 })();
 </script>
+{% endif %}
+
+{% if view_mode == 'fancy' and not is_admin_page %}
+<script defer src="{{ url_for('static', filename='horse-shimmer.js') }}"></script>
 {% endif %}
 
 <script>
