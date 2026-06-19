@@ -250,11 +250,16 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: Live — post-launch, Phase 2 in progress (updated 2026-06-17)**
+**PHASE: Live — post-launch, Phase 2 in progress (updated 2026-06-19)**
 
 DNS cutover complete. poet.horse is the primary home of the project. Phase 1 fully shipped and verified. Phase 2 underway — see ROADMAP.md for current priority picture.
 
-**This session shipped (2026-06-17) — Phase 2.3 Crosspost composition & tagging:**
+**This session shipped (2026-06-19) — Phase 2.4 SVG horse chips (Fancy view) — LIVE, 3 holds open:**
+- Replaced the Fancy `.poem-horse` glyph hack (`♞`/`∫`/gradient legs) with one `<svg>` per chip: head/tail/legs as `<use>` layers in one coordinate space; chip box = stretchy barrel (`rect width=100%` + nested `<svg x="100%">` for right-anchored parts); HTML name (`.hz-word`) on top; one `filter:drop-shadow` over the whole silhouette; coats via `currentColor`; off-side legs darkened (Fore Y / Hind X); Eye A (white sclera + black pupil) + nostril in the head `<symbol>` (single tweak point); per-coat tilt dropped; famous shimmer = masked whole-horse sweep (`static/horse-shimmer.js`, reduced-motion-aware, no-JS-graceful). Sprite `_horse_sprite.html`; Plain/Reader/editor/counter untouched. Merged to master (`f820097`), auto-deployed.
+- **Holds before 2.4 closes (next session, small/turnkey):** (1) profile bio horses render fallback "sage" colour — **pre-existing** coat bug on `/u/<slug>` bios (Clover: off before the SVG switch; full body just exposes it), **not** a 2.4 regression; bio chips don't resolve `--bg`. (2) infinite-scroll pasture chips render text-only — `templates/pasture.html` `chipHTML()` builds `/pasture/more` JSON chips without the `horse_svg()` SVG (check saved-horses + my-pasture). (3) name a touch high — Clover tunes `.hz-word`/`.hz` `translateY`. Safari **iOS good**; **macOS pending**. Spec: `spec/phase-2.4-svg-chip-art.md`; log: `sessions/2026-06-19-phase-2.4-build.md`.
+- **Session-open misses (logged):** opened on Sonnet instead of Opus/high — Clover caught it (rule-1 miss); skipped git-first at open — the SVG work sat on an unmerged branch, so the first status report wrongly said "no SVG work exists" until Clover pointed to it.
+
+**Prior session shipped (2026-06-17) — Phase 2.3 Crosspost composition & tagging:**
 - Bluesky posts now carry a poem sample (whole-horse truncation to fit 300 chars, `[…]` marker, permalink card-only), reach hashtags as real facets (`#poetry`/`#horses`/`#PoetHorse`; `#micropoetry` swaps in on ≤140-char poems), and a `sexual` self-label for `sex`-tagged poems. `langs=['en']`. Composition in `bluesky.py` `_compose_body`; policy constants + tag selection in `app.py` `_build_bluesky_post`.
 - Tumblr crossposts now include the poet's own site tags (`label.lower()`, CW-prefixed `cw `, spliced before `counting-horses`) via `poetry.py` `site_tags_for_crosspost`. Shared plumbing: `get_pending()` attaches `tags_for_poem`.
 - Live-verified by Clover, all 7 cases. **Bug caught in test:** live tag slugs are namespaced (`content-warnings:sex`) — label map fixed to match the bare suffix. Tag set + 140 cutoff are tunable constants in `app.py` (Clover to tune after watching live feeds before posting at volume). Spec: `spec/phase-2.3-bluesky-composition.md`; session log `sessions/2026-06-17-phase-2.3.md`
@@ -269,4 +274,4 @@ DNS cutover complete. poet.horse is the primary home of the project. Phase 1 ful
 - Account-action test-account holds — not blocking, test when convenient
 - Editor section label size parity (Poem / Stable labels should be same size) — slot into next small-items session
 
-Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.16, 1.17, 1.19, 1.20, 1.21, 1.23, 1.29, 2.2, 2.3. Collection pages verified 2026-05-24. All Phase 1 holds cleared 2026-05-25.
+Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.16, 1.17, 1.19, 1.20, 1.21, 1.23, 1.29, 2.2, 2.3. **2.4 live 2026-06-19 (holds open — not yet fully verified).** Collection pages verified 2026-05-24. All Phase 1 holds cleared 2026-05-25.
