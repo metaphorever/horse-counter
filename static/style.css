@@ -1274,16 +1274,18 @@ body.view-decorated .poem-line-out {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
   padding-left: 0; text-indent: 0;
 }
-body.view-fancy .poem-line-out { line-height: 2.75; }
+body.view-fancy .poem-line-out { line-height: 4.2; }  /* 2.4: clears full SVG legs/head between lines (Clover) */
 body.view-plain .poem-line-out { font: 1.05rem/2.0 'IM Fell English', Georgia, serif; }
 
-/* ── Decorated chips — Fancy mode (legs / tail / head, scattered tilt) ─────── */
+/* ── Decorated chips — Fancy mode (SVG horse, Phase 2.4) ───────────────────── */
 body.view-fancy .poem-horse {
   display: inline-block;
   position: relative;
   overflow: visible;
-  padding: 1px 8px 4px;
-  margin: 5px 4px;
+  padding: 1px 10px 4px;
+  margin: 5px 16px;          /* generous horizontal gap so heads/tails don't crowd neighbours */
+  min-width: 6ch;
+  text-align: center;
   font-family: 'Playfair Display SC', Georgia, serif;
   font-size: 1.25rem;
   font-weight: 700;
@@ -1292,13 +1294,10 @@ body.view-fancy .poem-horse {
   letter-spacing: .04em;
   text-decoration: none;
   border: none;
-  border-radius: 8px;
   vertical-align: baseline;
-  background: var(--bg);
-  color: var(--fg);
-  box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.22);
+  color: var(--bg);          /* coat — drives currentColor on the SVG horse parts */
+  background: transparent;    /* the SVG barrel rect is the body now */
   text-shadow: none;
-  transition: transform .1s, box-shadow .1s;
 }
 /* Coat-class wiring — same hash buckets as matcher._tile_appearance. The
    --bg/--fg pair is shared by both decorated modes; only Fancy adds the tilt. */
@@ -1310,53 +1309,53 @@ body.view-decorated .coat-palomino  { --bg: var(--coat-palomino-bg);  --fg: var(
 body.view-decorated .coat-greywhite { --bg: var(--coat-greywhite-bg); --fg: var(--coat-greywhite-fg); }
 body.view-decorated .coat-liver     { --bg: var(--coat-liver-bg);     --fg: var(--coat-liver-fg); }
 body.view-decorated .coat-roan      { --bg: var(--coat-roan-bg);      --fg: var(--coat-roan-fg); }
-body.view-fancy .coat-bay       { transform: rotate(-1.5deg); }
-body.view-fancy .coat-black     { transform: rotate( 1.0deg); }
-body.view-fancy .coat-grey      { transform: rotate(-0.7deg); }
-body.view-fancy .coat-chestnut  { transform: rotate( 1.3deg); }
-body.view-fancy .coat-palomino  { transform: rotate(-1.0deg); }
-body.view-fancy .coat-greywhite { transform: rotate( 0.5deg); }
-body.view-fancy .coat-liver     { transform: rotate(-1.3deg); }
-body.view-fancy .coat-roan      { transform: rotate( 0.8deg); }
+/* Per-coat tilt removed (2.4): tilt is a motion property and belongs to the
+   future animation layer, not a per-coat rotate. Horses render upright. */
 
-/* ::before draws the head glyph (top) plus four leg stubs (bottom) using
-   background gradients. Single pseudo-element keeps the markup clean. */
-body.view-fancy .poem-horse::before {
-  content: '♞';
+/* ── SVG horse (2.4) — one <svg> per chip; head/tail/legs are <use> layers in
+   one coordinate space, the chip box is the barrel band, the name rides on top.
+   A single filter:drop-shadow casts one shadow off the whole silhouette. The
+   .hz height (26px) must match the barrel art-height (100u·S=26) emitted by
+   horse_svg() in macros.html. */
+/* The SVG layers are emitted in every mode but only shown in Fancy — Plain and
+   Reader render the name only (and the sprite isn't even injected there). */
+.poem-horse .hz { display: none; }
+body.view-fancy .poem-horse .hz {
+  display: block;
   position: absolute;
-  pointer-events: none;
-  left: 0; top: -26px;
-  width: 100%; height: calc(100% + 34px);
-  color: var(--bg);
-  font-size: 32px; line-height: 1;
-  background:
-    linear-gradient(var(--bg), var(--bg))  5px 100% / 2px 8px no-repeat,
-    linear-gradient(var(--bg), var(--bg)) 13px 100% / 2px 8px no-repeat,
-    linear-gradient(var(--bg), var(--bg)) calc(100% - 13px) 100% / 2px 8px no-repeat,
-    linear-gradient(var(--bg), var(--bg)) calc(100% -  5px) 100% / 2px 8px no-repeat;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 26px;                  /* barrel band; head/legs overflow this box */
+  transform: translateY(-40%);   /* body sits slightly low so the name rides high on the back — tune */
+  overflow: visible;
+  pointer-events: none;          /* clicks fall through to the chip (popover delegation) */
+  z-index: 0;
+  filter: drop-shadow(1.5px 2px 1.5px rgba(0, 0, 0, 0.34));
 }
-/* ::after draws the tail off the right side. */
-body.view-fancy .poem-horse::after {
-  content: '∫';
-  position: absolute;
-  pointer-events: none;
-  right: -13px; top: 60%;
-  transform: translateY(-50%) scaleY(-1);
-  color: var(--bg);
-  font-size: 28px; line-height: 1;
+body.view-fancy .poem-horse .hz * { pointer-events: none; }
+body.view-fancy .poem-horse .hz-r { overflow: visible; }
+body.view-fancy .poem-horse .hz-bar { fill: currentColor; }
+/* off-side (far) legs — a darkened coat for depth (Fore Y / Hind X) */
+body.view-fancy .poem-horse .hz-shade { color: color-mix(in srgb, var(--bg), #000 40%); }
+/* the name floats above the body in the coat's foreground colour; nudged down
+   the back so it rides on the barrel rather than the crest (Clover, +4px) */
+body.view-fancy .poem-horse .hz-word {
+  position: relative;
+  z-index: 1;
+  color: var(--fg);
+  transform: translateY(4px);
 }
-/* Reversed direction — name-hash parity puts roughly half of horses facing
-   the other way so a line of them doesn't look like a conga line. */
-body.view-fancy .poem-horse.rev::before {
-  left: auto; right: 0; transform: scaleX(-1);
-}
-body.view-fancy .poem-horse.rev::after {
-  right: auto; left: -13px;
-  transform: translateY(-50%) scaleY(-1) scaleX(-1);
-}
-body.view-fancy .poem-horse:hover {
-  transform: scale(1.06) !important;
-  box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.28);
+/* Facing: mirror just the horse art; the HTML name stays unflipped */
+body.view-fancy .poem-horse.rev .hz { transform: translateY(-40%) scaleX(-1); }
+body.view-fancy a.poem-horse:hover { filter: brightness(1.07); }
+body.view-fancy a.poem-horse:hover .hz { filter: drop-shadow(2px 3px 2px rgba(0, 0, 0, 0.4)); }
+
+/* Famous horses (Fancy): a gold-tinted glow; the JS shimmer sweep (horse-shimmer.js)
+   enhances on top of this when motion is allowed. */
+body.view-fancy .poem-horse.famous-horse .hz {
+  filter: drop-shadow(1.5px 2px 1.5px rgba(0, 0, 0, 0.34))
+          drop-shadow(0 0 1.6px rgba(212, 170, 40, 0.95));
 }
 
 /* ── Famous-horse shimmer ────────────────────────────────────────────────── */
@@ -1364,7 +1363,9 @@ body.view-fancy .poem-horse:hover {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
 }
-body.view-decorated .poem-horse.famous-horse {
+/* Plain mode only — Fancy famous horses shimmer via the SVG sweep instead
+   (a coat-coloured background box here would sit behind the SVG horse). */
+body.view-plain .poem-horse.famous-horse {
   background-color: var(--bg);
   background-image: linear-gradient(
     105deg,
@@ -1400,14 +1401,12 @@ body.view-plain a.poem-horse:hover { filter: brightness(1.08); }
    (Motion is decoupled from mode: a reduced-motion visitor keeps their chosen
    mode, just without movement.) */
 @media (prefers-reduced-motion: reduce) {
-  body.view-fancy .poem-horse {
-    transform: none;
-    transition: none;
-  }
-  body.view-decorated .poem-horse.famous-horse {
+  body.view-plain .poem-horse.famous-horse {
     animation: none;
     background-image: none;
   }
+  /* Fancy famous shimmer is JS (horse-shimmer.js), which checks this query and
+     skips the sweep — the static gold glow stays. */
 }
 
 /* Mobile tightening (1.12 step 6) — Fancy holds up on a narrow viewport at the
@@ -1418,9 +1417,16 @@ body.view-plain a.poem-horse:hover { filter: brightness(1.08); }
    (Enlarging chips + harmonising the chip font with the display type is routed
    to the style/font pass, where chip size + font are decided together.) */
 @media (max-width: 520px) {
-  body.view-fancy .poem-line-out { line-height: 3.0; }
+  body.view-fancy .poem-line-out { line-height: 4.2; }  /* 2.4: SVG horses need extra vertical clearance */
   body.view-fancy .poem-view-title { font-size: 1.45rem; }
   body.view-fancy .poem-view-body { padding-top: 22px; }
+}
+
+/* SVG horses are decorative and Fancy-only; keep them out of print (print uses
+   the Reader/plain aesthetic). */
+@media print {
+  .horse-sprite,
+  body.view-fancy .poem-horse .hz { display: none !important; }
 }
 
 /* ───── Reader skin (1.12 step 5) ─────────────────────────────────────────────
@@ -2481,6 +2487,11 @@ body.view-reader .collection-chips .poem-horse {
 body.view-plain .collection-chips .poem-horse {
   font: 1.05rem/2.0 'IM Fell English', Georgia, serif;
 }
+/* 2.4 Fancy: collection chips are full SVG horses. Keep the coat colour driving
+   currentColor (the generic .collection-chips a.poem-horse{color:--fg} above is
+   for the non-SVG modes), and give the tall horses room so they don't collide. */
+body.view-fancy .collection-chips { gap: 48px 18px; }
+body.view-fancy .collection-chips .poem-horse { color: var(--bg); }
 .collection-chip-wrap { position: relative; }
 .collection-chip-remove {
   position: absolute; top: -10px; right: -10px;

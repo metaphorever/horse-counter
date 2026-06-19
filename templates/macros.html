@@ -1,11 +1,27 @@
+{# horse_svg() — the per-chip SVG horse (Phase 2.4). One <svg> per chip, all
+   parts in one coordinate space (so a single filter:drop-shadow covers the whole
+   silhouette and the famous shimmer can sweep it continuously). The chip box IS
+   the barrel band; the HTML name (.hz-word) rides on top.
+
+   Geometry is emitted from scale S = 0.26 (art barrel-height 100u → 26px):
+     left-anchored parts  → translate(-150·S, -110·S) = translate(-39, -28.6)
+     right-anchored parts → nested <svg x="100%"> + translate(-550·S, -110·S)
+                                                  = translate(-143, -28.6)
+   Keep .hz height (style.css) in sync with the 26 barrel height here. Draw order
+   back→front (Fore Y / Hind X): lfn(shaded) lhf(shaded) tail barrel lhn lff head.
+   Shapes live in _horse_sprite.html; this only references them. #}
+{% macro horse_svg() -%}
+<svg class="hz" aria-hidden="true"><use href="#hz-lfn" class="hz-shade" transform="translate(-39,-28.6) scale(.26)"/><svg class="hz-r" x="100%" overflow="visible"><use href="#hz-lhf" class="hz-shade" transform="translate(-143,-28.6) scale(.26)"/><use href="#hz-tail" transform="translate(-143,-28.6) scale(.26)"/></svg><rect class="hz-bar" x="0" y="0" width="100%" height="26"/><svg class="hz-r" x="100%" overflow="visible"><use href="#hz-lhn" transform="translate(-143,-28.6) scale(.26)"/></svg><use href="#hz-lff" transform="translate(-39,-28.6) scale(.26)"/><use href="#hz-head" transform="translate(-39,-28.6) scale(.26)"/></svg>
+{%- endmacro %}
+
 {% macro render_chip(h, linked=true) -%}
 {%- set chip_cls = 'poem-horse coat-' ~ h.coat -%}
 {%- if h.rev %}{% set chip_cls = chip_cls ~ ' rev' %}{% endif -%}
 {%- if h.is_famous %}{% set chip_cls = chip_cls ~ ' famous-horse' %}{% endif -%}
 {%- if linked and h.url -%}
-<a class="{{ chip_cls }}" data-name="{{ h.name }}" href="{{ h.url }}" rel="nofollow noopener" target="_blank">{{ h.display }}</a>
+<a class="{{ chip_cls }}" data-name="{{ h.name }}" href="{{ h.url }}" rel="nofollow noopener" target="_blank">{{ horse_svg() }}<span class="hz-word">{{ h.display }}</span></a>
 {%- else -%}
-<span class="{{ chip_cls }}" data-name="{{ h.name }}">{{ h.display }}</span>
+<span class="{{ chip_cls }}" data-name="{{ h.name }}">{{ horse_svg() }}<span class="hz-word">{{ h.display }}</span></span>
 {%- endif -%}
 {%- endmacro %}
 

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  poet.horse — SVG horse chip drawing template (Phase 2.4)
+  =======================================================
+  Draw ONE coherent horse on this frame. The pieces line up because you draw
+  them touching, on shared guide lines — not because you assemble them blind.
+  Claude slices this into a stretchable 9-slice chip in code afterward.
+
+  CANONICAL COORDINATE FRAME (units = SVG user units, y increases downward):
+    back line   y = 110   barrel top   (head crest + tail dock meet here)
+    belly line  y = 210   barrel bottom (all four leg pivots sit here)
+    ground line y = 315   every hoof lands here
+    front seam  x = 150   head  <-> barrel join
+    rear seam   x = 550   tail  <-> barrel join
+    nominal barrel: x 150..550 (width 400 = a "medium" word; it STRETCHES)
+
+  RULES:
+   1. Barrel back (y110) and belly (y210) stay DEAD STRAIGHT between the seams.
+      That zone stretches horizontally — curves there will smear. Put all
+      shaping (shoulder, haunch, neck rise) in the caps, never the barrel.
+   2. Overlap, don't butt: each appendage runs 8u past its seam INTO the barrel
+      (head right edge -> x158, tail left edge -> x542, leg tops -> y202).
+   3. One layer per part, named exactly as the <g id> values below.
+   4. Legs hinge from their top-center pivot (on the belly line). Keep each
+      leg's swing within ~+/-18u of its pivot. Draw a neutral standing stance.
+   5. Flat fill per part, no gradients. Coat color is swapped to a CSS var in
+      code; coat PATTERNS (spots/blanket) come later as a separate overlay.
+
+  Lock or hide the "GUIDES" layer before exporting.
+-->
+<svg id="horse-chip-template" xmlns="http://www.w3.org/2000/svg"
+     width="680" height="340" viewBox="0 0 680 340">
+
+  <g id="GUIDES" data-name="GUIDES" opacity="0.9">
+    <!-- horizontal guide lines -->
+    <line x1="0" y1="110" x2="680" y2="110" stroke="#b9533a" stroke-width="0.75" stroke-dasharray="5 4"/>
+    <line x1="0" y1="210" x2="680" y2="210" stroke="#b9533a" stroke-width="0.75" stroke-dasharray="5 4"/>
+    <line x1="0" y1="315" x2="680" y2="315" stroke="#7a7a7a" stroke-width="1"/>
+    <!-- vertical seam lines -->
+    <line x1="150" y1="92" x2="150" y2="300" stroke="#185fa5" stroke-width="0.75" stroke-dasharray="4 3"/>
+    <line x1="550" y1="92" x2="550" y2="300" stroke="#185fa5" stroke-width="0.75" stroke-dasharray="4 3"/>
+    <!-- nominal barrel (stretch zone) -->
+    <rect x="150" y="110" width="400" height="100" fill="none" stroke="#185fa5" stroke-width="0.75" stroke-dasharray="6 4"/>
+    <!-- 8u seam overlap zones -->
+    <rect x="142" y="110" width="16" height="100" fill="#d85a30" fill-opacity="0.14"/>
+    <rect x="542" y="110" width="16" height="100" fill="#d85a30" fill-opacity="0.14"/>
+    <!-- corner anchors A B C D -->
+    <circle cx="150" cy="110" r="3.5" fill="#d85a30"/>
+    <circle cx="150" cy="210" r="3.5" fill="#d85a30"/>
+    <circle cx="550" cy="110" r="3.5" fill="#d85a30"/>
+    <circle cx="550" cy="210" r="3.5" fill="#d85a30"/>
+    <!-- leg pivots: front-near, front-far, hind-near, hind-far -->
+    <circle cx="185" cy="210" r="3" fill="#185fa5"/>
+    <circle cx="220" cy="210" r="3" fill="#185fa5"/>
+    <circle cx="480" cy="210" r="3" fill="#185fa5"/>
+    <circle cx="515" cy="210" r="3" fill="#185fa5"/>
+    <!-- labels -->
+    <text x="6" y="106" font-family="sans-serif" font-size="10" fill="#8a5a3a">y110 back</text>
+    <text x="6" y="206" font-family="sans-serif" font-size="10" fill="#8a5a3a">y210 belly</text>
+    <text x="6" y="311" font-family="sans-serif" font-size="10" fill="#5a5a5a">y315 ground</text>
+    <text x="150" y="86" font-family="sans-serif" font-size="10" fill="#185fa5" text-anchor="middle">x150 front seam</text>
+    <text x="550" y="86" font-family="sans-serif" font-size="10" fill="#185fa5" text-anchor="middle">x550 rear seam</text>
+  </g>
+
+  <!-- ===== DRAW YOUR ART IN THE GROUPS BELOW (one solid fill each) ===== -->
+
+  <!-- head + neck. Overlap to x158. Crest reaches A(150,110); chest reaches B(150,210). -->
+  <g id="head" data-name="head"></g>
+
+  <!-- barrel = the word. Spans seam to seam, FLAT top (y110) and bottom (y210). -->
+  <g id="barrel" data-name="barrel"></g>
+
+  <!-- tail. Dock attaches near C(550,110); overlap back to x542. -->
+  <g id="tail" data-name="tail"></g>
+
+  <!-- legs. Each hinges at its pivot on the belly line; hoof to ground y315; top overlaps to y202. -->
+  <g id="leg-front-near" data-name="leg-front-near"></g>
+  <g id="leg-front-far"  data-name="leg-front-far"></g>
+  <g id="leg-hind-near"  data-name="leg-hind-near"></g>
+  <g id="leg-hind-far"   data-name="leg-hind-far"></g>
+
+</svg>
