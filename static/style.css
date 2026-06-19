@@ -1327,7 +1327,8 @@ body.view-fancy .poem-horse .hz {
   top: 50%;
   width: 100%;
   height: 26px;                  /* barrel band; head/legs overflow this box */
-  transform: translateY(-50%);   /* body sits slightly low so the name rides high on the back — tune */
+  --hz-y: -50%;                  /* body vertical offset — TUNE HERE; both facings read this var */
+  transform: translateY(var(--hz-y));
   overflow: visible;
   pointer-events: none;          /* clicks fall through to the chip (popover delegation) */
   z-index: 0;
@@ -1339,15 +1340,18 @@ body.view-fancy .poem-horse .hz-bar { fill: currentColor; }
 /* off-side (far) legs — a darkened coat for depth (Fore Y / Hind X) */
 body.view-fancy .poem-horse .hz-shade { color: color-mix(in srgb, var(--bg), #000 40%); }
 /* the name floats above the body in the coat's foreground colour; nudged down
-   the back so it rides on the barrel rather than the crest (Clover, +4px) */
+   the back so it rides on the barrel rather than the crest. NB inline-block is
+   required — transform is ignored on non-replaced inline elements, so a bare
+   <span> would silently drop the translateY. */
 body.view-fancy .poem-horse .hz-word {
   position: relative;
+  display: inline-block;
   z-index: 1;
   color: var(--fg);
-  transform: translateY(200px);
+  transform: translateY(4px);  /* name vertical offset — TUNE HERE (positive = down) */
 }
 /* Facing: mirror just the horse art; the HTML name stays unflipped */
-body.view-fancy .poem-horse.rev .hz { transform: translateY(-40%) scaleX(-1); }
+body.view-fancy .poem-horse.rev .hz { transform: translateY(var(--hz-y)) scaleX(-1); }
 body.view-fancy a.poem-horse:hover { filter: brightness(1.07); }
 body.view-fancy a.poem-horse:hover .hz { filter: drop-shadow(2px 3px 2px rgba(0, 0, 0, 0.4)); }
 
