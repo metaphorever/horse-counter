@@ -1344,7 +1344,7 @@ body.view-fancy .poem-horse .hz-word {
   position: relative;
   z-index: 1;
   color: var(--fg);
-  transform: translateY(8px);
+  transform: translateY(200px);
 }
 /* Facing: mirror just the horse art; the HTML name stays unflipped */
 body.view-fancy .poem-horse.rev .hz { transform: translateY(-40%) scaleX(-1); }
