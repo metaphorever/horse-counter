@@ -1348,7 +1348,7 @@ body.view-fancy .poem-horse .hz-word {
   display: inline-block;
   z-index: 1;
   color: var(--fg);
-  transform: translateY(4px);  /* name vertical offset — TUNE HERE (positive = down) */
+  transform: translateY(0px);  /* name vertical offset — TUNE HERE (positive = down) */
 }
 /* Facing: mirror just the horse art; the HTML name stays unflipped */
 body.view-fancy .poem-horse.rev .hz { transform: translateY(var(--hz-y)) scaleX(-1); }
