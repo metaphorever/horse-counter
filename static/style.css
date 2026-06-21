@@ -1286,9 +1286,15 @@ body.view-plain .poem-line-out { font: 1.05rem/2.0 'IM Fell English', Georgia, s
    and centres — so the lines keep a clean shared left edge (Clover's pick) while
    the block as a whole sits centred. Fancy only: Plain + Reader keep the 720px
    card unchanged. The head/tags/footer stay capped at the old column width so
-   the dark note-boxes don't stretch into thin bars. */
+   the dark note-boxes don't stretch into thin bars.
+
+   The `max(720px, …)` floor matters: 66vw only *exceeds* the old 720px column
+   above ~1090px viewport, so without the floor this rule would make the canvas
+   NARROWER than before on mobile/tablet — squishing the chips and wrapping the
+   names. Below the floor it just behaves like the old column (fills the small
+   viewport with the existing padding). */
 body.view-fancy .container.poem-permalink,
-body.view-fancy .container.poem-permalink .poem-view { max-width: min(66vw, 1200px); }
+body.view-fancy .container.poem-permalink .poem-view { max-width: max(720px, min(66vw, 1200px)); }
 body.view-fancy .container.poem-permalink .poem-block {
   width: fit-content;
   max-width: 100%;
