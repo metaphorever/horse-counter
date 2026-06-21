@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% from 'macros.html' import render_poem %}
 {% block title %}{{ page_title }} — poet.horse{% endblock %}
+{# Fancy-only full-width horse canvas hangs off this container class; Plain/Reader
+   ignore it and keep the 720px card (see .container.poem-permalink in style.css). #}
+{% block container_class %} poem-permalink{% endblock %}
 
 {% block head %}
 <meta property="og:title" content="{{ page_title }}">
@@ -50,7 +53,9 @@
   </header>
 
   <section class="poem-view-body" aria-label="Poem">
-    {{ render_poem(poem.lines) }}
+    {# .poem-block shrinks to the longest line + centres in Fancy full-width mode;
+       inert (plain wrapper) in Plain/Reader. #}
+    <div class="poem-block">{{ render_poem(poem.lines) }}</div>
   </section>
 
   {% if grouped_tags or (is_admin and editor_pub_cats) %}
