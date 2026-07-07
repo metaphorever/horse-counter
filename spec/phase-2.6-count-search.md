@@ -2,7 +2,7 @@
 
 **Model:** Sonnet · **Effort:** medium *(small, contained backend surface — bump to Opus only if bundled with unrelated work)*
 **Depends on:** nothing — builds on the existing Wildcard search path
-**Status:** spec DRAFT pending Clover review
+**Status:** ✅ FINAL — built + live-verified by Clover 2026-07-06 (commit `e31e451`)
 **Ships:** search the dictionary by *how many horses share a name*, on its own (`>8`) or combined with a name pattern (`*love*>8`), inside the existing Wildcard search box.
 
 Origin: Clover user-suggestion (2026-07-06). "A search that finds names shared by
@@ -62,9 +62,10 @@ Whatever precedes the matched tail is the **name pattern** (today's Wildcard gra
 **`<` and `<=` are deferred** — not because they're hard, but because they're
 degenerate on this data: every "less than" query includes the count-1 bucket
 (1,790,534 names, 84% of the dictionary), so `<5` matches ~2.05M names and returns
-an arbitrary capped sample. Low value, easy to add later if a use emerges. If entered
-in v1, treat as an invalid count expression (fall through to name search, which will
-find nothing and hit the existing 3-char / no-results messaging).
+an arbitrary capped sample. Low value, easy to add later if a use emerges. **As built:**
+a `<`/`<=` query returns a targeted error — *"Count searches support =, > and >= (e.g.
+>8). Less-than isn't supported yet."* — rather than silently falling through to an empty
+name search (better UX; the `<` would otherwise regex-escape to zero matches).
 
 ---
 
@@ -79,11 +80,14 @@ find nothing and hit the existing 3-char / no-results messaging).
 
 2. **The cap does the heavy lifting — order it deliberately.** Almost every count query
    exceeds `SEARCH_HARD_CAP = 2000` (you don't drop under 2000 total until ~`>=24`).
-   Collect with `heapq.nlargest(SEARCH_HARD_CAP, ...)` keyed on **(count desc, name)** so
-   a capped result keeps the *most-shared* names, not whichever the dict happened to
-   iterate first. For `>=`/`>` this makes the cap feel intentional ("top 2000 most-shared").
-   For exact `=N` every match is tied on count, so it falls to alphabetical — a
-   deterministic 2000-name sample; label it as a sample in the results header (below).
+   Order pure-count matches by **(count desc, name)** and slice to the cap, so a capped
+   result keeps the *most-shared* names, not whichever the dict happened to iterate first.
+   For `>=`/`>` this makes the cap feel intentional ("top 2000 most-shared"). For exact
+   `=N` every match is tied on count, so it falls to alphabetical — a deterministic
+   2000-name sample; labelled `(sample)` in the mode line.
+   **As built:** plain `matches.sort(...)[:CAP]` rather than `heapq.nlargest` — equivalent
+   result, and even the worst case (`=2`, ~332k tuples) sorts well inside the 60/min
+   rate-limit budget, so the heap's bounded memory buys nothing here.
 
 3. **Count-first filter (perf + correctness).** In the scan loop, apply the O(1) count
    predicate *before* the regex. For combined queries this makes the search **faster than
