@@ -303,6 +303,7 @@
     <h3>How it works</h3>
     <ol class="help-steps">
       <li><strong>Search for horses.</strong> Type a word or pattern in the search box — <code>*dance*</code> matches anything containing "dance", <code>dance*</code> starts with it, <code>* dance</code> ends with it. Or use <em>Short names</em> to browse 3-letter-or-fewer horses, <em>Random</em> to get a surprise batch, or <em>My pasture</em> to pull from your saved collection.</li>
+      <li><strong>Search by how many horses share a name.</strong> Type a number with an optional <code>&gt;</code> or <code>&gt;=</code>: <a class="suggest-search" onclick="runExample('&gt;8')">&gt;8</a> finds names shared by more than 8 horses, <a class="suggest-search" onclick="runExample('=2')">=2</a> by exactly 2. Combine it with a name pattern — <a class="suggest-search" onclick="runExample('*star*&gt;20')">*star*&gt;20</a> finds the popular "star" names.</li>
       <li><strong>Add to stable.</strong> Click <em>+ stable</em> next to any horse to move it to your working stable for this poem.</li>
       <li><strong>Build the poem.</strong> Drag horses from the stable into poem lines, or click a horse chip to open its menu. Each horse can appear as many times as it shows up in the dictionary.</li>
       <li><strong>Post.</strong> When you're ready, click <em>Post poem</em> to give your poem a title and submit it for review or save a draft to come back to later.</li>
@@ -1003,6 +1004,13 @@ function openHelpModal(){
 }
 function closeHelpModal(){
   document.getElementById('help-modal').classList.remove('open');
+}
+// Run a help-modal example: close the modal, switch to Wildcard, search it.
+function runExample(q){
+  closeHelpModal();
+  if(searchMode !== 'wildcard') setMode('wildcard');
+  document.getElementById('q').value = q;
+  doSearch(q);
 }
 
 function addHistory(q){

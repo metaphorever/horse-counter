@@ -294,7 +294,125 @@ def _describe_mode(query: str) -> str:
     return f'Pattern: {q}'
 
 
+# ── Count search (shared-name search) ─────────────────────────────────────────
+# Search the dictionary by how many horses share a name — on its own (">8") or
+# combined with a name pattern ("*love*>8"). Unambiguous to parse *because* no
+# normalized name contains a digit or <>= (verified against the full dictionary):
+# a trailing count-expression can never collide with a name. If that invariant
+# ever changes (normalization admitting digits/symbols), this grammar breaks.
+COUNT_TAIL_RE = re.compile(r'(>=|<=|>|<|=)?\s*(\d+)\s*$')
+
+
+def _parse_count_query(query: str):
+    """Peel a trailing count-expression off the query.
+
+    Returns {'op', 'n', 'name_part'} or None if there's no trailing count.
+    name_part is None when it's empty or wildcard-only (=> pure count search).
+    """
+    q = query.strip().lower()
+    m = COUNT_TAIL_RE.search(q)
+    if not m:
+        return None
+    op = m.group(1) or '='
+    n  = int(m.group(2))
+    name_part = q[:m.start()].strip()
+    if name_part.replace('*', '').replace(' ', '') == '':
+        name_part = None
+    return {'op': op, 'n': n, 'name_part': name_part}
+
+
+def _count_phrase(op: str, n: int) -> str:
+    if op == '>':
+        return f'more than {n}'
+    if op == '>=':
+        return f'{n} or more'
+    return f'exactly {n}'
+
+
+def _count_search(parsed: Dict, query: str, dictionary) -> Dict:
+    op, n, name_part = parsed['op'], parsed['n'], parsed['name_part']
+
+    def empty(err):
+        return {'results': [], 'total': 0, 'capped': False, 'query': query, 'error': err, 'mode': ''}
+
+    if op in ('<', '<='):
+        return empty("Count searches support =, > and >= (e.g. >8). "
+                     "Less-than isn't supported yet.")
+
+    if op == '=':
+        pred = lambda c: c == n
+    elif op == '>':
+        pred = lambda c: c > n
+    else:
+        pred = lambda c: c >= n
+
+    # Floor: any predicate that includes count==1 would sweep ~84% of the
+    # dictionary (names shared by nobody else). Reject with guidance.
+    if pred(1):
+        return empty('Every horse shares its name with at least itself — '
+                     'try 2 or more (e.g. >8).')
+
+    name_match = None
+    if name_part is not None:
+        name_match, err = _compile_search(name_part)
+        if err:
+            return empty(err)
+
+    # The count check is O(1); run it before the (costly) name regex. For
+    # combined queries this makes the search faster than the plain wildcard.
+    matches = []  # (count, name)
+    for name, registrations in dictionary.horses.items():
+        c = len(registrations)
+        if not pred(c):
+            continue
+        if name_match is not None and not name_match(name):
+            continue
+        matches.append((c, name))
+
+    capped = len(matches) > SEARCH_HARD_CAP
+
+    if name_part is not None:
+        # Name is the primary filter; order by the same relevance rule as a
+        # plain name search (exact → prefix → alpha). Count is just the gate.
+        q_core = name_part.replace('*', '').strip()
+        matches.sort(key=lambda cn: (
+            0 if cn[1] == q_core else 1 if cn[1].startswith(q_core) else 2,
+            cn[1],
+        ))
+        mode = f'{_describe_mode(name_part)} · shared by {_count_phrase(op, n)}'
+    else:
+        # Pure count search: most-shared first, so a capped result keeps the
+        # most-shared names rather than an arbitrary iteration slice.
+        matches.sort(key=lambda cn: (-cn[0], cn[1]))
+        mode = f'Names shared by {_count_phrase(op, n)}'
+        if op == '=' and capped:
+            mode += ' (sample)'
+
+    found = []
+    for c, name in matches[:SEARCH_HARD_CAP]:
+        reg = dictionary.horses[name][0]
+        found.append({
+            'name':    name,
+            'display': reg.get('display_name', ' '.join(w.capitalize() for w in name.split())),
+            'url':     reg.get('url', ''),
+            'count':   c,
+        })
+
+    return {
+        'results': found,
+        'total':   len(found),
+        'capped':  capped,
+        'query':   query,
+        'error':   None,
+        'mode':    mode,
+    }
+
+
 def search_dictionary(query: str, dictionary) -> Dict:
+    count_parsed = _parse_count_query(query)
+    if count_parsed is not None:
+        return _count_search(count_parsed, query, dictionary)
+
     matcher, err = _compile_search(query.strip())
     if err:
         return {'results': [], 'total': 0, 'capped': False, 'query': query, 'error': err, 'mode': ''}
