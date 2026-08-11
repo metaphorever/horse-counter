@@ -250,11 +250,25 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: Live — post-launch, Phase 2 in progress (updated 2026-06-19)**
+**PHASE: Live — post-launch, Phase 2 in progress (updated 2026-08-11)**
 
 DNS cutover complete. poet.horse is the primary home of the project. Phase 1 fully shipped and verified. Phase 2 underway — see ROADMAP.md for current priority picture.
 
-**This session shipped (2026-06-19) — Phase 2.4 holds cleared — 2.4 FULLY VERIFIED (PRs #76, #77):**
+**No open holds.**
+
+**This session (2026-08-11) — Phase 2.7 image-card export SPECCED (no code):**
+- Spec `spec/phase-2.7-image-card-export.md`. Every published poem gets a Fancy-view JPEG card, rendered once at publish by headless Chromium, stored as a static file; Bluesky + Tumblr crossposts carry the image instead of a text sample; card doubles as the site's first `og:image`.
+- **Taken ahead of 2.5.1** at Clover's request — pose variation is a bigger art lift than there's time for now. They don't collide (card reuses `render_poem`/`render_chip`, cards are frozen files), **provided 2.7 builds the regeneration path** (`CARD_ART_VERSION` + admin rebuild-stale).
+- Load-bearing decisions: Bluesky's single `embed` field makes images and the 2.3 external link card **mutually exclusive** → post text goes **info-only** (header + permalink + hashtags), poem lives entirely in the image → **alt text becomes mandatory**; card is **variable-height, capped**, truncation *measured* (`scrollHeight` vs `clientHeight`) not guessed; render is **in-process + request-intercepted, never `goto(poet.horse)`** — 2 sync gunicorn workers means a self-request deadlocks the site; **launch-per-render, not a persistent browser** (~200MB × 2 workers idle beats ~1–2s startup at 1–2 poems/day); cross-process `fcntl` lock.
+- Build has four ordered **verification gates** before it can be called done — see the spec. Notably Chromium must be launch-tested *from inside the systemd user service*, not just an interactive shell (the 2026-06-18 smoke test was interactive).
+- **Housekeeping:** this Current-phase block was three sessions stale (still read as 2.4) — it missed Fancy full-width (2026-06-21), the 2.5 spec (2026-06-28), and 2.6 count search (2026-07-06). ROADMAP was current throughout. This is the file that auto-loads every session; keep it updated at close.
+
+**Prior sessions (2026-06-21 → 2026-07-06):**
+- **2.6 Count search** ✅ shipped + live-verified 2026-07-06 (`e31e451`) — search the dictionary by how many horses share a name, inside the existing Wildcard box: `>8`, `=2`, and combined `*love*>8`. Cheap because `count` is already `len(registrations)` on every result. Grammar is unambiguous because a full-dictionary scan (2,123,231 names) found **zero** names containing a digit or `<>=` — an **invariant** to re-check if normalization ever changes. Spec `spec/phase-2.6-count-search.md`.
+- **2.5 Horse animation specced** (2026-06-28) — umbrella `spec/phase-2.5-horse-animation-overview.md` + `spec/phase-2.5.1-static-pose-variation.md`. Three sub-phases: 2.5.1 static pose variation → 2.5.2 walk-cycle → 2.5.3 wander. **Currently deferred behind 2.7.**
+- **Fancy full-width layout** ✅ verified 2026-06-21 (`aea62a2`, `2ac7c2e`) — Fancy poem permalink widens to `max(720px, min(66vw, 1200px))`; pasture grids go `min(94vw, 1500px)`. Plain + Reader unchanged.
+
+**Earlier (2026-06-19) — Phase 2.4 holds cleared — 2.4 FULLY VERIFIED (PRs #76, #77):**
 - (1) **Profile bio "sage" horses** — root cause was *not* `--bg` (coats resolve fine): the chip `<a class="poem-horse">` is a link inside `.profile-page`, so `body.view-fancy .profile-page a:not(.btn-*)` (0,5,2) beat `.poem-horse { color: var(--bg) }` (0,2,1) and the `currentColor` body parts inherited the panel link colour. Fix: `:not(.poem-horse)` on the panel link rule. (2) **Infinite-scroll pasture text-only** — `pasture.html` `chipHTML()` now emits `horse_svg()` (once, as a JS const) + `.hz-word`, matching `render_chip`; saved-horses/my-pasture are server-only, unaffected. (3) **Vertical placement** — `.rev .hz` hardcoded its own offset (mirror ignored base) → single `--hz-y` var; `.hz-word` was `display:inline` so its `transform` was a no-op → `inline-block`. Tuned live (Clover): `--hz-y:-50%`, `.hz-word translateY(0px)`. **Safari iOS + macOS both verified good.** Log: `sessions/2026-06-19-phase-2.4-holds.md`.
 - **Process note:** two merge conflicts from direct-to-master CSS pushes while a PR was open. Agreed coordination for live tuning: values move behind `--var`/`TUNE HERE` knobs; Clover finds values in devtools (no commit) and hands me the number to bake into the open PR; if pushing directly, push after my PR merges. (Recorded in the session log.)
 
@@ -276,4 +290,6 @@ DNS cutover complete. poet.horse is the primary home of the project. Phase 1 ful
 - Account-action test-account holds — not blocking, test when convenient
 - Editor section label size parity (Poem / Stable labels should be same size) — slot into next small-items session
 
-Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.16, 1.17, 1.19, 1.20, 1.21, 1.23, 1.29, 2.2, 2.3, **2.4 (live + fully verified 2026-06-19, all holds cleared)**. Collection pages verified 2026-05-24. All Phase 1 holds cleared 2026-05-25.
+Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.16, 1.17, 1.19, 1.20, 1.21, 1.23, 1.29, 2.2, 2.3, **2.4** (fully verified 2026-06-19, all holds cleared), Fancy full-width (2026-06-21), **2.6** (2026-07-06). Collection pages verified 2026-05-24. All Phase 1 holds cleared 2026-05-25.
+
+Specced, not built: **2.5** (horse animation — deferred behind 2.7), **2.7** (image-card export — next up).
