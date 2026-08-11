@@ -2,8 +2,13 @@
 
 **Model:** Opus · **Effort:** high *(new render subsystem + new template surface + two connector rewires; the card design itself needs live iteration with Clover)*
 **Depends on:** Playwright + Chromium on the VPS — ✅ **verified working 2026-06-18**; Phase 2.2 (crosspost queue), Phase 2.3 (crosspost composition)
-**Status:** 🟡 DRAFT — specced 2026-08-11, not yet built
-**Ships:** every published poem gets a rendered JPEG card, generated once at publish and stored as a static file; Bluesky and Tumblr crossposts carry the image instead of a text sample; the card doubles as the site's first `og:image`.
+**Status:** 🟡 DRAFT — specced 2026-08-11, amended same day (Tumblr images dropped, download cards added), not yet built
+**Ships:** every published poem gets a rendered card, generated once at publish and stored as static files; **Bluesky** crossposts carry the image instead of a text sample; poems gain a **download** link to a print-quality PNG; the card doubles as the site's first `og:image`. Backfill covers the existing published corpus.
+
+**Scope amendment (2026-08-11, Clover):** Tumblr photo posts are **out** — Tumblr keeps its
+existing 2.2/2.3 **text** crosspost path, completely untouched. The user-facing **download
+card is in**, which the original draft had scoped out; that objection was conditional on
+per-request rendering and is void now that cards are pre-rendered static files.
 
 Origin: backlog item promoted to early Phase 2 on 2026-05-25 ("image posts outperform
 plain-text posts on every platform, sidestep character limits, and avoid link-suppression
@@ -71,9 +76,25 @@ CARD_ART_VERSION  =    1    # bump when horse art changes; drives bulk regen
 - **View mode: Fancy.** The SVG horses are the entire reason an image outperforms text.
   The card body renders under `body.view-fancy` with animation inert (static render — no
   JS-driven shimmer sweep; the static gold glow stays).
-- JPEG, not PNG. Bluesky's blob ceiling is ~1MB and a full-colour PNG of a Fancy poem
-  will exceed it. Playwright emits JPEG directly (`type='jpeg', quality=`), so **no Pillow
-  dependency**.
+### Three artifacts, one page load
+
+The Bluesky image and the poet-facing download want different things: Bluesky needs to fit
+a ~1MB blob, a download of *your own poem* should not look compressed. Both come off the
+same render — extra screenshots cost ~200ms each, and crucially **no extra Chromium
+launch**, which is the only expensive part.
+
+| File | Format | For | Notes |
+|---|---|---|---|
+| `<short>.jpg` | JPEG q85, 2× | Bluesky embed | must clear the ~1MB blob ceiling |
+| `<short>.png` | PNG, 2× | download link | lossless; prints and archives cleanly |
+| `<short>-og.jpg` | JPEG, 1200×630 | `og:image` | clipped from the top of the same page |
+
+A full-colour PNG of a Fancy poem will exceed Bluesky's blob limit, which is why the embed
+gets JPEG — but that constraint has no business degrading the copy a poet keeps. Playwright
+emits both directly (`type='jpeg', quality=` / `type='png'`), so **no Pillow dependency**.
+
+*(The PNG is droppable if the disk cost bothers — serve the JPEG for download instead. At
+~150 poems the PNG set is on the order of tens of MB.)*
 
 ### What goes on the card
 
@@ -179,18 +200,38 @@ alongside it. Unhide needs no render because the card already exists.
   **404s unpublished poems** (public-only, per Clover). A route rather than an Apache alias
   so that gate is enforceable.
 
-### Regeneration — build this on day one
+### Regeneration and backfill — build this on day one
 
-Without it, every future art change strands the entire back catalogue at the old look.
-Cheap now; genuinely annoying to retrofit.
+Two needs, one mechanism (Clover, 2026-08-11):
+
+1. **Backfill.** Rendering happens at publish, so every poem published before 2.7 ships has
+   no card at all. This is not a future nicety — it is required for the feature to work on
+   launch day.
+2. **Regeneration.** When Phase 2.5 changes the horse art, existing cards are frozen at the
+   old look. Without a rebuild path, every art change strands the back catalogue.
 
 - `poems.card_version INTEGER` column, written at render time from `CARD_ART_VERSION`.
   Migration follows the existing `PRAGMA table_info` guard pattern in `db/seed.py`.
+- **Both cases are one query.** Backfilled poems have `card_version IS NULL`; stale poems
+  have `card_version < CARD_ART_VERSION`. The selector is
+  `WHERE status='published' AND (card_version IS NULL OR card_version < CARD_ART_VERSION)`.
 - `POST /admin/poem/<short_code>/rebuild-card` — single rebuild, admin-only.
-- `POST /admin/cards/rebuild-stale` — regenerate every published poem whose
-  `card_version < CARD_ART_VERSION`, serialised one at a time under the same file lock,
-  with a progress flash. At current corpus size this is minutes, and it is admin-triggered
-  only — never automatic, never on a request path.
+
+> **A bulk run cannot live in a request.** The original draft said "minutes, fine" — that
+> was wrong. The site launched 2026-05-25 at roughly a poem or two a day, so the published
+> corpus is on the order of **~150 poems**. At ~2–3s each (Chromium launch dominates,
+> serialised under the file lock) a full backfill is **5–8 minutes** in one HTTP request,
+> which Apache and gunicorn will time out long before it finishes.
+
+Split by job size:
+
+- **`python -m tools.backfill_cards`** — CLI, run on the VPS. The one-time backfill and any
+  full post-art-change regen. No request timeout, resumable (it re-queries the selector
+  each pass, so an interrupted run just continues), `--limit` and `--dry-run` flags.
+  This is the primary bulk path.
+- **`POST /admin/cards/rebuild-stale`** — admin button, processes a **bounded batch**
+  (default 10) per click and redirects back with a "N remaining" flash. Convenient for
+  small drifts; will not hang the site. Never automatic, never on a public request path.
 
 ---
 
@@ -210,15 +251,31 @@ Cheap now; genuinely annoying to retrofit.
   constraint.
 - `self_label` (2.3's `sexual` mapping) and `langs=['en']` carry over unchanged.
 
-### Tumblr (`queue_handler.py` / `auth.py`)
+### Tumblr — unchanged, deliberately
 
-- Legacy `/post` with `type='photo'`, `data64=<base64 jpeg>`, `caption=<body>`, `tags`,
-  `link=<permalink>`.
-- `make_request` (`auth.py:130`) posts JSON, so `data64` should ride along as a field —
-  **this is unverified against the live API.** See *Verification gates*.
-- **Contingency:** if `data64`-over-JSON is rejected, Tumblr's alternative is multipart,
-  which `make_request` cannot do. That would need a small dedicated upload function
-  alongside it — scoped as a contingency, not baseline work.
+**Out of 2.7** (Clover, 2026-08-11). Tumblr continues to crosspost via the existing
+2.2/2.3 **text** path with the external permalink — `queue_handler.py`, `auth.py` and
+`_build_crosspost` are not touched by this phase.
+
+This removes the phase's largest unknown. `make_request` (`auth.py:130`) posts JSON only,
+and whether legacy `/post` `type='photo'` accepts `data64` that way was untested; the
+contingency was a bespoke multipart upload function. All of that is now deferred rather
+than risked. Tumblr image posts remain a clean follow-up once the render subsystem is
+proven in production — the card files will already exist.
+
+### Download card (poem permalink)
+
+`GET /p/<short_code>/download` → `send_file` of `data/cards/<short>.png` with
+`as_attachment=True` and a filename derived from the poem title/short code.
+
+- **Public**, for any published poem — the poems are already public and the permalink
+  already renders them; a download is not a new disclosure. 404s unpublished, same gate as
+  the card route.
+- **This is a static file send. No Chromium, no render, no lock.** The draft scoped this
+  out over a resource-exhaustion concern; that concern was entirely about per-request
+  rendering and does not survive the pre-render decision.
+- Permalink UI: a modest link/button near the existing footer. Placement and label are
+  Clover's call at build time.
 
 ### `og:image` — free, with one wrinkle
 
@@ -251,24 +308,33 @@ Card rendering must never take down a publish or a crosspost.
    blurb to Bluesky.
 3. **Blob upload rejected (size)** → surface the error in the existing per-platform status
    column so Retry Crosspost works; do not silently post without the image.
+4. **No card on disk when the permalink renders** → the download link and `og:image` are
+   simply **absent**, never present-and-broken. Both are emitted conditionally on the file
+   existing. This is also the correct behaviour for the window between deploying 2.7 and
+   finishing the backfill.
+5. **Backfill interrupted** → harmless. The selector re-queries each pass, so a re-run
+   picks up exactly what's still missing. No resume state to corrupt.
 
 ---
 
 ## Scope
 
 **In:** card render subsystem; `poem_card.html` + `card.css`; render-at-publish for the
-three transitions; static storage + serving route; single + bulk regeneration; Bluesky
-image embed with alt text and aspect ratio; Tumblr photo post; `og:image` variant;
-shared chip-enrichment helper; `playwright` added to `requirements.txt`.
+three transitions; static storage + serving routes; **download link on the permalink**;
+single rebuild + bounded-batch admin regen + **`tools.backfill_cards` CLI**; Bluesky image
+embed with alt text and aspect ratio; `og:image` variant; shared chip-enrichment helper;
+`playwright` added to `requirements.txt`.
 
 **Out:**
-- **User-facing "download as image" button** on the permalink. Deferred deliberately — it
-  turns a ~2s / ~250MB Chromium launch into an unauthenticated resource-exhaustion
-  surface. Revisit only with pre-generated cards served purely statically.
+- **Tumblr photo posts** — Tumblr stays on the existing text path, untouched (Clover,
+  2026-08-11). Clean follow-up once the render subsystem is proven; the card files will
+  already be there.
 - Reader / Plain card variants — Fancy only.
 - Animated or GIF cards (downstream of Phase 2.5 at the earliest).
 - Per-horse or per-collection cards.
-- Automatic back-catalogue generation — bulk regen is admin-triggered, always.
+- *Automatic* back-catalogue generation. Backfill and regen are **in** scope, but always
+  operator-initiated — a CLI run or an admin button click, never a cron, never triggered by
+  a page view.
 - The PQ lazy-cache scrape. Same Playwright dep, entirely separate build.
 
 ---
@@ -283,11 +349,15 @@ Ordered. Each is a real unknown, not a checkbox.
 2. **Bluesky blob size in practice** — render the longest realistic poem at
    `CARD_MAX_HEIGHT` and confirm the JPEG lands under 1MB at quality 85. If not, quality
    is the knob, then width.
-3. **Tumblr `data64` over JSON** — post to `state='draft'` first, inspect it on Tumblr,
-   only then wire the live path.
-4. **Chromium under gunicorn, not just under a shell.** The 2026-06-18 smoke test launched
+3. **Chromium under gunicorn, not just under a shell.** The 2026-06-18 smoke test launched
    from an interactive session. Launching from inside a systemd user service with its own
    environment is a different test and must be run before this is called done.
+4. **Backfill timing on the real corpus.** Run `tools.backfill_cards --dry-run` first to
+   get the actual count, then time one render on the VPS. If the per-card cost is far off
+   the ~2–3s estimate, the batch size on the admin button needs revisiting.
+
+*(The Tumblr `data64` gate is gone with the Tumblr scope cut — it was the riskiest of the
+original four.)*
 
 ---
 
@@ -302,11 +372,16 @@ verified on poet.horse after deploy.
 - Publish a poem with a CW tag → Bluesky self-label still fires (2.3 regression check).
 - Crosspost to Bluesky → image appears, alt text carries the full poem, tall card is not
   cropped in-feed, permalink is tappable.
-- Crosspost to Tumblr → photo post with caption and tags.
-- Force a render failure → poem still publishes; crosspost falls back to text + link card.
+- Crosspost to Tumblr → **still a text post, unchanged** (2.2/2.3 regression check — the
+  Tumblr path must be provably untouched by this phase).
+- Download link → PNG downloads, opens clean, prints legibly.
+- Force a render failure → poem still publishes; crosspost falls back to text + link card;
+  download link is absent rather than broken.
 - Two publishes in quick succession → serialise, no deadlock, both cards render.
 - Paste a permalink into a Bluesky/Discord compose box → OG card preview.
-- Rebuild-stale → back catalogue regenerates.
+- **Backfill** — `tools.backfill_cards` on the VPS covers the whole published corpus;
+  spot-check old poems for cards and working download links.
+- Rebuild-stale button → processes its batch, reports remaining, doesn't hang.
 
 ---
 
