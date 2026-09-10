@@ -165,3 +165,12 @@ Not blocking 2.5.1; resolve when its phase is specced.
 - **Frame rate** (2.5.2): 60fps is not assumed. The per-chip `drop-shadow` filter
   re-rasterises on any change inside it, so **15fps costs a quarter of 60fps** and
   lands in the "charming jank" register anyway. Pick it live.
+- **Stride vs body bob** (2.5.2 — found 2026-09-10 in the posing harness): a
+  rigid leg pivoting at the elbow can't keep a stance hoof on the ground through
+  a stride while the body stays fixed — a straight leg only touches down directly
+  under its pivot. The harness pins hooves by bobbing the body: at a 100u stride
+  the bob is 0–11.5u (**~3px** at chip scale); Clover's drawn ~156u stride would
+  need ~9px. Options: accept a small bob (natural — real horses vault over the
+  stance leg), shorten the stride, or add a scapula/femur segment (the
+  static-haunch fallback, at both ends). A bob moves the barrel under the HTML
+  name, so also decide whether the word rides with it.

@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Posable Horse Harness</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display+SC:wght@700&display=swap">
+<!--
+  poet.horse — posable horse POSING HARNESS (Phase 2.5.1 design sprint)
+  Self-contained: open in any browser, no server. Drop an exported parts SVG
+  anywhere on the page (or use "Load SVG…") to pose your own pieces; the last
+  one you loaded is remembered in this browser. The built-in copy of
+  horse-parts-template.svg is refreshed by prototypes/horse-parts-cut.py.
+
+  Angles are SVG degrees relative to the neutral (2.4) pose; + = clockwise on
+  screen. The horse faces left, so + on a leg's top joint swings the hoof forward.
+-->
+<style>
+  :root {
+    --ink: #241c12; --muted: #6f6150; --paper: #fffdf7; --ground: #efe9dc; --line: #d9d2c4;
+    --accent: #7a3520; --pv: #e0218a;
+    --coat-bay-bg: #7a3520;       --coat-bay-fg: #f5ecd7;
+    --coat-black-bg: #1c1c1c;     --coat-black-fg: #e8d5b0;
+    --coat-grey-bg: #7a7a7a;      --coat-grey-fg: #f0ead6;
+    --coat-chestnut-bg: #8b3a1f;  --coat-chestnut-fg: #fae8c8;
+    --coat-palomino-bg: #c8961a;  --coat-palomino-fg: #2a1800;
+    --coat-greywhite-bg: #c8bfaa; --coat-greywhite-fg: #1c1008;
+    --coat-liver-bg: #4a2812;     --coat-liver-fg: #ead8b8;
+    --coat-roan-bg: #8a6a5a;      --coat-roan-fg: #f0e4d0;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font: 13px/1.45 system-ui, -apple-system, sans-serif; }
+  header { position: sticky; top: 0; z-index: 10; background: var(--paper); border-bottom: 1px solid var(--line);
+           padding: 8px 14px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  header h1 { font: 700 15px/1 system-ui; margin: 0; }
+  #source { color: var(--muted); }
+  #source b { color: var(--ink); }
+  #warn { color: #a5361a; font-weight: 600; }
+  button, select { font: inherit; }
+  button { background: #f3ecdb; border: 1px solid #cfc3aa; border-radius: 4px; padding: 3px 9px; cursor: pointer; color: var(--ink); }
+  button:hover { background: #ebe1c9; }
+  button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 10px; padding: 10px 14px; }
+  @media (max-width: 980px) { .wrap { grid-template-columns: minmax(0, 1fr); } }
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 4px; }
+  .card > h2 { margin: 0; padding: 6px 10px; font: 600 12px/1.3 system-ui; background: #f3ecdb; border-bottom: 1px solid #e5ddcc;
+               display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .card > h2 .sp { flex: 1; }
+  .tabs button { margin-right: 2px; }
+  .toggles { padding: 6px 10px; border-bottom: 1px solid #eee5d3; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .toggles label { white-space: nowrap; }
+  #stage { display: block; width: 100%; height: auto; background: #fff; }
+  #stage .horse { color: var(--coat); }
+  #stage .shade { color: color-mix(in srgb, var(--coat), #000 40%); }
+  #stage .cap { fill: none; stroke: var(--pv); stroke-width: .7; stroke-dasharray: 2.5 2; opacity: .8; }
+  #stage .pv { fill: var(--pv); stroke: #fff; stroke-width: 1; }
+  #stage .guide { stroke: #b9533a; stroke-width: .6; stroke-dasharray: 5 4; }
+  #stage .gnd { stroke: #2e8b57; stroke-width: 1.2; }
+  #stage .ref24 use { color: transparent; stroke: #c0392b; stroke-width: 1; fill-opacity: 0; }
+  #stage .onion { opacity: .5; }
+  .readout { padding: 6px 10px; font: 12px/1.5 ui-monospace, Menlo, monospace; color: var(--muted); border-top: 1px solid #eee5d3; }
+  .readout .bad { color: #b3261e; font-weight: 700; }
+  .readout .ok { color: #2e7d32; }
+  .panel { padding: 8px 10px; }
+  .panel h3 { font: 600 11px/1 system-ui; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 12px 0 5px; }
+  .panel h3:first-child { margin-top: 2px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 4px; }
+  .row { display: grid; grid-template-columns: 92px 1fr 44px; gap: 6px; align-items: center; margin: 2px 0; }
+  .row input[type=range] { width: 100%; }
+  .row output { font: 11px ui-monospace, Menlo, monospace; text-align: right; }
+  .row .lbl { font-size: 12px; }
+  .jrow { grid-template-columns: 92px 1fr 40px 22px; }
+  .jrow button { padding: 0 4px; font-size: 11px; }
+  .hint { color: var(--muted); font-size: 12px; margin: 4px 0; }
+  textarea { width: 100%; font: 11px ui-monospace, Menlo, monospace; }
+  [hidden] { display: none !important; }
+
+  /* ── chip rows: a copy of production's Fancy chip CSS (static/style.css, 2.4) ── */
+  .field { background: #6f8f3e repeating-linear-gradient(115deg, #6a8a3a 0 6px, #739543 6px 13px); padding: 6px 4px 14px; }
+  .chips-title { color: #f6efdd; font: 600 12px system-ui; padding: 6px 12px 0; text-shadow: 0 1px 1px rgba(0,0,0,.4);
+                 display: flex; gap: 8px; align-items: center; }
+  .chips-title button { font-size: 11px; padding: 1px 7px; }
+  .chipline { line-height: 1; padding: 22px 8px 18px; }
+  .poem-horse { display: inline-block; position: relative; overflow: visible; padding: 1px 10px 4px; margin: 5px 16px 30px;
+    min-width: 6ch; text-align: center; font-family: 'Playfair Display SC', Georgia, serif; font-size: 1.25rem;
+    font-weight: 700; font-variant: small-caps; line-height: 1; letter-spacing: .04em; color: var(--bg); vertical-align: baseline; }
+  .coat-bay { --bg: var(--coat-bay-bg); --fg: var(--coat-bay-fg); }
+  .coat-black { --bg: var(--coat-black-bg); --fg: var(--coat-black-fg); }
+  .coat-grey { --bg: var(--coat-grey-bg); --fg: var(--coat-grey-fg); }
+  .coat-chestnut { --bg: var(--coat-chestnut-bg); --fg: var(--coat-chestnut-fg); }
+  .coat-palomino { --bg: var(--coat-palomino-bg); --fg: var(--coat-palomino-fg); }
+  .coat-greywhite { --bg: var(--coat-greywhite-bg); --fg: var(--coat-greywhite-fg); }
+  .coat-liver { --bg: var(--coat-liver-bg); --fg: var(--coat-liver-fg); }
+  .coat-roan { --bg: var(--coat-roan-bg); --fg: var(--coat-roan-fg); }
+  .poem-horse .hz { display: block; position: absolute; left: 0; top: 50%; width: 100%; height: 26px; --hz-y: -50%;
+    transform: translateY(calc(var(--hz-y) + var(--bob, 0px))); overflow: visible; pointer-events: none; z-index: 0;
+    filter: drop-shadow(1.5px 2px 1.5px rgba(0, 0, 0, 0.34)); }
+  .poem-horse .hz-r { overflow: visible; }
+  .poem-horse .hz-bar { fill: currentColor; }
+  .poem-horse .hz-shade { color: color-mix(in srgb, var(--bg), #000 40%); }
+  .poem-horse .hz-word { position: relative; display: inline-block; z-index: 1; color: var(--fg); }
+  .poem-horse.rev .hz { transform: translateY(calc(var(--hz-y) + var(--bob, 0px))) scaleX(-1); }
+  .scale-note { color: #e9efd9; font-size: 11px; padding: 0 12px; }
+  #import-host { position: fixed; left: -10000px; top: 0; visibility: hidden; }
+  #drop { position: fixed; inset: 0; background: rgba(122,53,32,.18); border: 4px dashed var(--accent); z-index: 50;
+          display: grid; place-items: center; font: 700 22px system-ui; color: var(--accent); pointer-events: none; }
+</style>
+
+<header>
+  <h1>Posable horse — posing harness</h1>
+  <label><button type="button" id="load-btn">Load SVG…</button><input type="file" id="file" accept=".svg,image/svg+xml" hidden></label>
+  <span id="source"></span>
+  <button type="button" id="reset-src" hidden>Back to built-in template</button>
+  <span id="warn"></span>
+</header>
+<div id="drop" hidden>Drop your exported parts SVG</div>
+
+<div class="wrap">
+  <section class="card">
+    <h2>
+      <span class="tabs"><button type="button" data-mode="stand">Stand</button><button type="button" data-mode="walk">Walk</button><button type="button" data-mode="joints">Joints</button></span>
+      <span class="sp"></span>
+      <label>coat <select id="coat"></select></label>
+    </h2>
+    <div class="toggles">
+      <label><input type="checkbox" id="t-dots" checked> pivots + caps</label>
+      <label><input type="checkbox" id="t-shade" checked> far legs shaded</label>
+      <label><input type="checkbox" id="t-debug"> colour each piece</label>
+      <label><input type="checkbox" id="t-ref"> 2.4 outline</label>
+      <label><input type="checkbox" id="t-face"> face right</label>
+      <label>Clover's walk frame <select id="t-onion"><option value="">off</option><option value="auto">follow walk</option>
+        <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></label>
+    </div>
+    <svg id="stage" viewBox="0 -40 680 400" aria-label="posed horse, art scale">
+      <g id="stage-guides"></g>
+      <g id="stage-onion" class="onion"></g>
+      <g id="stage-body"></g>
+      <g id="stage-ref" class="ref24"></g>
+    </svg>
+    <div class="readout" id="readout"></div>
+  </section>
+
+  <aside class="card">
+    <h2 id="panel-title">Stand</h2>
+    <div class="panel" id="panel-stand">
+      <h3>Stance (standing pool candidates)</h3>
+      <div class="btns" id="stance-btns"></div>
+      <h3>Head</h3>
+      <div class="btns" id="neck-btns"></div>
+      <h3>Tail</h3>
+      <div class="btns" id="tail-btns"></div>
+      <p class="hint">Stances are hoof placements; the legs are solved to reach them with the body held still (as on a chip). A leg that can't reach shows as floating in the readout.</p>
+    </div>
+    <div class="panel" id="panel-walk" hidden>
+      <div class="btns"><button type="button" id="walk-play">Pause</button><button type="button" id="walk-step">Step ▸</button></div>
+      <h3>Timing</h3>
+      <div class="row"><span class="lbl">frames/cycle</span><select id="w-frames"><option>8</option><option>12</option><option selected>16</option><option>24</option><option>32</option></select><output id="w-fps"></output></div>
+      <div id="walk-sliders"></div>
+      <label><input type="checkbox" id="w-pin" checked> keep stance hooves on the ground (body bobs)</label>
+      <h3>Head &amp; tail</h3>
+      <div class="btns" id="walk-neck-btns"></div>
+      <div class="row"><span class="lbl">tail</span><select id="w-tail"><option value="swish">swish (cycles)</option><option value="tail-hang">hang</option><option value="tail-lifted">lifted</option></select><span></span></div>
+      <p class="hint">Lateral-sequence 4-beat walk (near hind → near fore → far hind → far fore), baked-frame style: the phase snaps to whole frames, like the 2.5.2 symbols will.</p>
+    </div>
+    <div class="panel" id="panel-joints" hidden>
+      <div class="btns"><button type="button" id="j-sweep">Sweep every joint</button><button type="button" id="j-zero">Zero all</button><button type="button" id="j-copy">Copy pose</button></div>
+      <div id="joint-sliders"></div>
+      <textarea id="j-out" rows="4" hidden readonly></textarea>
+      <p class="hint">Sweep runs each joint through its whole range so you can check the silhouette stays in one piece at the extremes. ↔ sweeps just that joint.</p>
+    </div>
+  </aside>
+</div>
+
+<div class="field">
+  <div class="chips-title">Current pose — length ladder <span class="scale-note">true chip scale (26px barrel), production CSS</span></div>
+  <div class="chipline" id="row-current"></div>
+  <div class="chips-title">Random standing pose per chip (what 2.5.1 ships) <button type="button" id="reroll">Reroll</button></div>
+  <div class="chipline" id="row-herd"></div>
+  <div class="chips-title">Walking herd <button type="button" id="herd-play">Pause</button></div>
+  <div class="chipline" id="row-walk"></div>
+  <div class="chips-title">Today (2.4 production horse, for comparison)</div>
+  <div class="chipline" id="row-prod"></div>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="rig-defs"></defs><defs id="chip-defs"></defs></svg>
+<div id="import-host"></div>
+
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const DEG = Math.PI / 180;
+const f = v => String(Math.round(v * 100) / 100);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const smoother = t => t * t * t * (t * (t * 6 - 15) + 10);
+const wrap180 = a => ((a + 180) % 360 + 360) % 360 - 180;
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const S = 0.26;  // chip scale: art barrel 100u → 26px (production horse_svg)
+
+// ── The rig contract (matches horse-parts-template.svg) ────────────────────
+const TAILS = ['tail-hang', 'tail-swish-fwd', 'tail-swish-back', 'tail-lifted'];
+const PIECES = ['bumper-front', 'bumper-hind', 'fore-forearm', 'fore-cannon', 'fore-hoof',
+                'hind-gaskin', 'hind-cannon', 'hind-hoof', 'neck', 'head', ...TAILS];
+const REQUIRED = ['fore-forearm', 'fore-cannon', 'fore-hoof', 'hind-gaskin', 'hind-cannon', 'hind-hoof', 'neck', 'head'];
+const PIVOTS = ['elbow', 'knee', 'fore-fetlock', 'stifle', 'hock', 'hind-fetlock', 'withers', 'poll', 'elbow-far', 'stifle-far'];
+const CHAINS = {  // bend: which side of the root→hoof line the middle joint folds to (+1 front, −1 back)
+  fore: { pieces: ['fore-forearm', 'fore-cannon', 'fore-hoof'], pv: ['elbow', 'knee', 'fore-fetlock'], bend: +1, far: 'elbow-far' },
+  hind: { pieces: ['hind-gaskin', 'hind-cannon', 'hind-hoof'], pv: ['stifle', 'hock', 'hind-fetlock'], bend: -1, far: 'stifle-far' },
+};
+const LEGS = [
+  { key: 'foreNear', chain: 'fore', far: false, label: 'near fore' },
+  { key: 'foreFar',  chain: 'fore', far: true,  label: 'far fore' },
+  { key: 'hindNear', chain: 'hind', far: false, label: 'near hind' },
+  { key: 'hindFar',  chain: 'hind', far: true,  label: 'far hind' },
+];
+const LEG = Object.fromEntries(LEGS.map(l => [l.key, l]));
+const LIMITS = {  // SVG degrees from neutral. TUNE HERE.
+  fore: [[-45, 75], [-115, 5], [-100, 30]],  // elbow (+ hoof forward; the walk's swing reaches ~72) · knee (− folds back) · fetlock (− tucks)
+  hind: [[-55, 45], [-25, 95], [-100, 30]],  // stifle · hock (+ folds; − opens at push-off) · fetlock
+  neck: [[-65, 20], [-45, 35]],              // withers (− lowers; past +20 the chest front notches) · poll (− nose down)
+};
+const JNAMES = { fore: ['elbow', 'knee', 'fetlock'], hind: ['stifle', 'hock', 'fetlock'], neck: ['withers', 'poll'] };
+const DEBUG = { 'bumper-front': '#c9a36b', 'bumper-hind': '#c9a36b', 'fore-forearm': '#8e5b2f', 'fore-cannon': '#b5763d',
+  'fore-hoof': '#4d3118', 'hind-gaskin': '#8e5b2f', 'hind-cannon': '#b5763d', 'hind-hoof': '#4d3118',
+  neck: '#a2703f', head: '#7c5428', 'tail-hang': '#6b4a2c', 'tail-swish-fwd': '#6b4a2c', 'tail-swish-back': '#6b4a2c', 'tail-lifted': '#6b4a2c' };
+const COATS = ['bay', 'black', 'grey', 'chestnut', 'palomino', 'greywhite', 'liver', 'roan'];
+
+// Standing-pool candidates: per-leg hoof placement. dx = toe shift (+ back), lift, tilt = hoof angle
+// (− tips it onto the toe — a resting hind). Body held still, as on a chip. TUNE HERE.
+const STANCES = {
+  'Square':         {},
+  'Rest near hind': { hindNear: { dx: -12, tilt: -34 }, hindFar: { dx: 4 } },
+  'Rest far hind':  { hindFar: { dx: -12, tilt: -34 }, hindNear: { dx: 4 } },
+  'Parked out':     { foreNear: { dx: -10 }, foreFar: { dx: -6 }, hindNear: { dx: 8 }, hindFar: { dx: 6 } },
+  'Gathered':       { foreNear: { dx: 4 }, foreFar: { dx: 2 }, hindNear: { dx: -14 }, hindFar: { dx: -10 } },
+  'Mid-step':       { foreNear: { dx: -16 }, foreFar: { dx: 2 }, hindNear: { dx: 4 }, hindFar: { dx: -12 } },
+};
+const NECKS = { Alert: [12, -6], Relaxed: [0, 0], Low: [-28, -10], Graze: [-62, -30] };
+const NECK_WEIGHTS = { Alert: 3, Relaxed: 4, Low: 2, Graze: 1 };
+const TAIL_WEIGHTS = { 'tail-hang': 6, 'tail-swish-fwd': 2, 'tail-swish-back': 2, 'tail-lifted': 1 };
+const NAMES = ['Io', 'Zip', 'Bojo', 'Arkle', 'Phar Lap', 'Red Rum', 'Seabiscuit', 'Secretariat', 'Man o’ War',
+               'Hoof Hearted', 'Northern Dancer', 'Mr Ed', 'Winx', 'Shergar'];
+
+const ui = {
+  mode: 'stand', coat: 'bay', dots: true, shade: true, debug: false, ref: false, face: false, onion: '',
+  stand: { stance: 'Square', neck: 'Relaxed', tail: 'tail-hang' },
+  walk: { playing: true, frames: 16, cycle: 1.1, stride: 100, liftF: 26, liftH: 24, duty: 0.62,
+          cFore: -15, cHind: -14, flex: 70, breakover: 25, pin: true, nod: 3, neck: 'Relaxed', tail: 'swish' },
+  joints: { legs: { foreNear: [0, 0, 0], foreFar: [0, 0, 0], hindNear: [0, 0, 0], hindFar: [0, 0, 0] }, neck: [0, 0], tail: 'tail-hang', bob: 0 },
+};
+const WALK_SLIDERS = [  // key, label, min, max, step
+  ['cycle', 'cycle (s)', 0.5, 2.5, 0.05], ['stride', 'stride', 30, 180, 2], ['liftF', 'fore lift', 5, 90, 1],
+  ['liftH', 'hind lift', 5, 90, 1], ['duty', 'duty factor', 0.5, 0.8, 0.01], ['cFore', 'fore centre', -45, 25, 1],
+  ['cHind', 'hind centre', -45, 25, 1], ['flex', 'hoof tuck°', 20, 110, 1], ['breakover', 'breakover°', 0, 45, 1], ['nod', 'head nod°', 0, 10, 0.5],
+];
+
+let RIG = null;
+
+// ── Loading a parts SVG ─────────────────────────────────────────────────────
+// Illustrator: layer names become ids; "_x2D_" style escapes and duplicate
+// suffixes ("head1") are undone here, and data-name wins over id.
+function normName(s) {
+  return String(s || '').replace(/_x([0-9a-f]{2})_/gi, (m, h) => String.fromCharCode(parseInt(h, 16)))
+    .trim().toLowerCase().replace(/[\s_]+/g, '-').replace(/(\D)\d+$/, '$1').replace(/-+$/, '');
+}
+const KEEP = /^(eye|nostril|pupil|keep)/;
+
+function buildRig(text, label) {
+  const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+  const src = doc.documentElement;
+  if (!src || src.nodeName.toLowerCase() !== 'svg' || doc.querySelector('parsererror')) throw new Error('that file is not a readable SVG');
+  const host = $('#import-host');
+  host.textContent = '';
+  const svg = document.importNode(src, true);
+  if (!svg.getAttribute('viewBox')) svg.setAttribute('viewBox', '0 0 680 360');
+  svg.setAttribute('width', 680); svg.setAttribute('height', 360);
+  host.appendChild(svg);
+  svg.querySelectorAll('[display]').forEach(e => e.removeAttribute('display'));  // hidden layers still count
+  svg.querySelectorAll('[style]').forEach(e => e.style.removeProperty('display'));
+  const shapes = [...svg.querySelectorAll('path,polygon,polyline,rect,circle,ellipse,line')];
+  for (const el of shapes) {  // resolve class/style colours to attributes, then drop the stylesheet
+    const cs = getComputedStyle(el);
+    el.setAttribute('fill', cs.fill); el.setAttribute('stroke', cs.stroke); el.setAttribute('fill-rule', cs.fillRule);
+  }
+  svg.querySelectorAll('style').forEach(s => s.remove());
+  shapes.forEach(el => { el.removeAttribute('class'); el.removeAttribute('style'); });
+
+  const named = new Map();
+  svg.querySelectorAll('[id]').forEach(el => {
+    const n = normName(el.getAttribute('data-name') || el.id);
+    if (n && !named.has(n)) named.set(n, el);
+  });
+  const inv = svg.getScreenCTM().inverse();
+  const toArt = el => inv.multiply(el.getScreenCTM());
+  const warn = [];
+
+  const pv = {}, cap = {};
+  for (const p of PIVOTS) {
+    const el = named.get('pv-' + p);
+    if (!el) { warn.push('pivot pv-' + p); continue; }
+    const b = el.getBBox();
+    const pt = new DOMPoint(b.x + b.width / 2, b.y + b.height / 2).matrixTransform(toArt(el));
+    pv[p] = { x: pt.x, y: pt.y };
+    cap[p] = parseFloat(el.getAttribute('data-cap')) || 0;
+  }
+  const missingPv = ['elbow', 'knee', 'fore-fetlock', 'stifle', 'hock', 'hind-fetlock', 'withers', 'poll'].filter(p => !pv[p]);
+  const missing = REQUIRED.filter(n => !named.has(n));
+  if (missing.length || missingPv.length)
+    throw new Error('missing ' + [...missing, ...missingPv.map(p => 'pv-' + p)].join(', '));
+  pv['elbow-far'] = pv['elbow-far'] || { x: pv.elbow.x + 31.5, y: pv.elbow.y };
+  pv['stifle-far'] = pv['stifle-far'] || { x: pv.stifle.x - 36.5, y: pv.stifle.y };
+
+  const defs = $('#rig-defs');
+  defs.textContent = '';
+  const has = {};
+  for (const name of PIECES) {
+    const el = named.get(name);
+    if (!el) { if (!REQUIRED.includes(name)) warn.push(name); continue; }
+    const m = toArt(el);
+    const clone = el.cloneNode(true);
+    clone.removeAttribute('transform');
+    const kept = new Set();
+    clone.querySelectorAll('*').forEach(n => {  // keep eye/nostril colours; everything else takes the coat
+      for (let a = n; a && a !== clone.parentNode; a = a.parentNode)
+        if (a.getAttribute && KEEP.test(normName(a.getAttribute('data-name') || a.id))) { kept.add(n); break; }
+    });
+    const all = [clone, ...clone.querySelectorAll('*')];
+    for (const n of all) {
+      if (/^(path|polygon|polyline|rect|circle|ellipse|line)$/.test(n.nodeName) && !kept.has(n)) {
+        if (n.getAttribute('fill') !== 'none') n.setAttribute('fill', 'currentColor');
+        n.setAttribute('stroke', 'none');
+      }
+      n.removeAttribute('id'); n.removeAttribute('data-name');
+    }
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.id = 'pc-' + name;
+    g.setAttribute('transform', `matrix(${m.a} ${m.b} ${m.c} ${m.d} ${m.e} ${m.f})`);
+    g.appendChild(clone);
+    defs.appendChild(g);
+    has[name] = true;
+  }
+
+  // Ground line and each hoof's toe (front of its lowest edge) — the IK targets.
+  const gl = named.get('ground-line');
+  let ground = 344;
+  if (gl) { const b = gl.getBBox(); ground = new DOMPoint(b.x, b.y + b.height / 2).matrixTransform(toArt(gl)).y; }
+  const toe = {};
+  for (const chain of ['fore', 'hind']) {
+    const el = named.get(chain + '-hoof');
+    const pts = [];
+    for (const s of [el, ...el.querySelectorAll('*')]) {
+      if (!s.getTotalLength) continue;
+      const mm = toArt(s), L = s.getTotalLength();
+      for (let i = 0; i <= 300; i++) pts.push(s.getPointAtLength(L * i / 300).matrixTransform(mm));
+    }
+    const maxY = Math.max(...pts.map(p => p.y));
+    const low = pts.filter(p => p.y > maxY - 2.5);
+    toe[chain] = { x: Math.min(...low.map(p => p.x)), y: maxY, heel: Math.max(...low.map(p => p.x)) };
+  }
+  host.textContent = '';
+  const farOff = {
+    fore: { x: pv['elbow-far'].x - pv.elbow.x, y: pv['elbow-far'].y - pv.elbow.y },
+    hind: { x: pv['stifle-far'].x - pv.stifle.x, y: pv['stifle-far'].y - pv.stifle.y },
+  };
+  return { pv, cap, has, ground, toe, farOff, warn, label };
+}
+
+// ── Pose → SVG ──────────────────────────────────────────────────────────────
+// Nested rotations about the neutral pivot coordinates — the same transform
+// chain the 2.5.1 bake will flatten into plain symbols.
+const rot = (a, p) => `rotate(${f(a)} ${f(p.x)} ${f(p.y)})`;
+function useP(name, o) {
+  if (!RIG.has[name]) return '';
+  return `<use href="#pc-${name}"${o.debug ? ` style="color:${DEBUG[name]}"` : ''}/>`;
+}
+function dot(name, p) {
+  const r = RIG.cap[name];
+  return (r ? `<circle class="cap" cx="${f(p.x)}" cy="${f(p.y)}" r="${f(r)}"/>` : '') +
+         `<circle class="pv" cx="${f(p.x)}" cy="${f(p.y)}" r="3"/>`;
+}
+function legSVG(leg, a, o) {
+  const c = CHAINS[leg.chain], P = c.pv.map(n => RIG.pv[n]);
+  const off = leg.far ? RIG.farOff[leg.chain] : { x: 0, y: 0 };
+  const d = i => (o.dots ? dot(c.pv[i], P[i]) : '');
+  return `<g transform="translate(${f(off.x)} ${f(off.y)})">` +
+    `<g transform="${rot(a[0], P[0])}">${useP(c.pieces[0], o)}` +
+    `<g transform="${rot(a[1], P[1])}">${useP(c.pieces[1], o)}` +
+    `<g transform="${rot(a[2], P[2])}">${useP(c.pieces[2], o)}${d(2)}</g>${d(1)}</g>${d(0)}</g></g>`;
+}
+function neckSVG(n, o) {
+  const W = RIG.pv.withers, P = RIG.pv.poll;
+  return `<g transform="${rot(n[0], W)}">${useP('neck', o)}<g transform="${rot(n[1], P)}">${useP('head', o)}` +
+    `${o.dots ? dot('poll', P) : ''}</g>${o.dots ? dot('withers', W) : ''}</g>`;
+}
+// Five layers, back→front, split by anchor exactly like production's horse_svg():
+// L* hang off the front seam, R* off the rear seam; the barrel rect sits between.
+function layers(pose, o = {}) {
+  return {
+    Ls: legSVG(LEG.foreFar, pose.legs.foreFar, o),
+    Rs: legSVG(LEG.hindFar, pose.legs.hindFar, o),
+    Rt: useP(pose.tail, o),
+    Rf: useP('bumper-hind', o) + legSVG(LEG.hindNear, pose.legs.hindNear, o),
+    Lf: useP('bumper-front', o) + legSVG(LEG.foreNear, pose.legs.foreNear, o) + neckSVG(pose.neck, o),
+  };
+}
+
+// ── IK: place a hoof, solve the leg ─────────────────────────────────────────
+// Two-bone solve. Of the two mirror solutions, keep the ones inside the middle
+// joint's limits and take the one nearest neutral — so a near-straight leg
+// stays at its drawn pose, and a deep bend can only fold the anatomical way.
+function ik2(A, B0, C0, T, bend, lim) {
+  const L1 = Math.hypot(B0.x - A.x, B0.y - A.y), L2 = Math.hypot(C0.x - B0.x, C0.y - B0.y);
+  const dx = T.x - A.x, dy = T.y - A.y;
+  let d = Math.hypot(dx, dy);
+  const short = Math.max(0, d - (L1 + L2));
+  d = clamp(d, Math.abs(L1 - L2) + 1e-4, L1 + L2 - 1e-4);
+  const base = Math.atan2(dy, dx);
+  const al = Math.acos(clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1));
+  const n1 = Math.atan2(B0.y - A.y, B0.x - A.x), n2 = Math.atan2(C0.y - B0.y, C0.x - B0.x);
+  const sols = [base + al, base - al].map(t1 => {
+    const B = { x: A.x + L1 * Math.cos(t1), y: A.y + L1 * Math.sin(t1) };
+    const t2 = Math.atan2(A.y + d * Math.sin(base) - B.y, A.x + d * Math.cos(base) - B.x);
+    const a1 = wrap180((t1 - n1) / DEG);
+    return { a1, a2: wrap180((t2 - n2) / DEG - a1), side: Math.sign(dx * Math.sin(t1) - dy * Math.cos(t1)) };
+  });
+  const ok = sols.filter(s => s.a2 >= lim[0] - 0.5 && s.a2 <= lim[1] + 0.5);
+  const best = ok.length ? ok.reduce((a, b) => (Math.abs(a.a2) <= Math.abs(b.a2) ? a : b))
+                         : sols.find(s => s.side === bend) || sols[0];
+  return { a1: best.a1, a2: best.a2, short };
+}
+// target = where the toe should be (world) + hoof angle phi. Returns the fetlock
+// target in the leg's own frame (far offset and body bob removed).
+function fetlockTarget(leg, t, bob) {
+  const c = CHAINS[leg.chain], F0 = RIG.pv[c.pv[2]], toe0 = RIG.toe[leg.chain];
+  const off = leg.far ? RIG.farOff[leg.chain] : { x: 0, y: 0 };
+  const vx = F0.x - toe0.x, vy = F0.y - toe0.y, p = t.phi * DEG;
+  return { x: t.x - off.x + vx * Math.cos(p) - vy * Math.sin(p), y: t.y - off.y - bob + vx * Math.sin(p) + vy * Math.cos(p) };
+}
+function solveLeg(leg, t, bob) {
+  const c = CHAINS[leg.chain], [A, B, C] = c.pv.map(n => RIG.pv[n]);
+  const r = ik2(A, B, C, fetlockTarget(leg, t, bob), c.bend, LIMITS[leg.chain][1]);
+  const lim = LIMITS[leg.chain][2];  // the hoof angle is asked for relative to the ground; keep the fetlock legal
+  return { ang: [r.a1, r.a2, clamp(t.phi - r.a1 - r.a2, lim[0], lim[1])], short: r.short };
+}
+// Swing leg: reach for the fetlock target; the hoof tucks by `flex` relative to
+// the cannon mid-swing, blending to the ground-relative angle at lift-off and
+// landing so the two phases join without a pop.
+function solveSwing(leg, t, bob) {
+  const c = CHAINS[leg.chain], [A, B, C] = c.pv.map(n => RIG.pv[n]), W = ui.walk;
+  const r = ik2(A, B, C, { x: t.fx, y: t.fy - bob }, c.bend, LIMITS[leg.chain][1]);
+  const w = Math.sin(Math.PI * Math.min(1, t.v / 0.8));
+  const groundRel = -W.breakover * (1 - smooth(0.5, 0.95, t.v)) - r.a1 - r.a2;
+  const lim = LIMITS[leg.chain][2];
+  return { ang: [r.a1, r.a2, clamp((1 - w) * groundRel - w * W.flex, lim[0], lim[1])], short: 0 };
+}
+function bobNeeded(leg, t) {  // how far the body must drop for this stance leg to reach
+  const c = CHAINS[leg.chain], [A, B, C] = c.pv.map(n => RIG.pv[n]);
+  const F = fetlockTarget(leg, t, 0);
+  const R = Math.hypot(B.x - A.x, B.y - A.y) + Math.hypot(C.x - B.x, C.y - B.y) - 0.05;
+  const dx = F.x - A.x;
+  return Math.max(0, (F.y - A.y) - Math.sqrt(Math.max(0, R * R - dx * dx)));
+}
+function toeWorld(leg, a, bob) {  // forward kinematics, for the contact readout
+  const c = CHAINS[leg.chain], [A, B, C] = c.pv.map(n => RIG.pv[n]);
+  const off = leg.far ? RIG.farOff[leg.chain] : { x: 0, y: 0 };
+  const R = (p, o, d) => { const r = d * DEG, x = p.x - o.x, y = p.y - o.y; return { x: o.x + x * Math.cos(r) - y * Math.sin(r), y: o.y + x * Math.sin(r) + y * Math.cos(r) }; };
+  let t = R(RIG.toe[leg.chain], C, a[2]); t = R(t, B, a[1]); t = R(t, A, a[0]);
+  return { x: t.x + off.x, y: t.y + off.y + bob };
+}
+
+// ── Pose sources ────────────────────────────────────────────────────────────
+function standPose(stance, neck, tail) {
+  const pose = { legs: {}, neck: [...NECKS[neck]], tail, bob: 0, short: {} };
+  for (const leg of LEGS) {
+    const s = STANCES[stance][leg.key] || {};
+    const off = leg.far ? RIG.farOff[leg.chain] : { x: 0, y: 0 };
+    const r = solveLeg(leg, { x: RIG.toe[leg.chain].x + off.x + (s.dx || 0), y: RIG.ground - (s.lift || 0), phi: s.tilt || 0 }, 0);
+    pose.legs[leg.key] = r.ang;
+    pose.short[leg.key] = r.short;
+  }
+  return pose;
+}
+const PHASE = { hindNear: 0, foreNear: 0.25, hindFar: 0.5, foreFar: 0.75 };  // lateral-sequence walk
+function walkTarget(leg, p) {
+  const W = ui.walk, fore = leg.chain === 'fore';
+  const A = W.stride / 2, lift = fore ? W.liftF : W.liftH;
+  const off = leg.far ? RIG.farOff[leg.chain] : { x: 0, y: 0 };
+  const x0 = RIG.toe[leg.chain].x + off.x + (fore ? W.cFore : W.cHind);
+  const q = ((p + PHASE[leg.key]) % 1 + 1) % 1;
+  if (q < W.duty) {  // stance: toe slides back along the ground; heel lifts at breakover
+    const u = q / W.duty;
+    return { x: x0 - A + 2 * A * u, y: RIG.ground, phi: -W.breakover * smooth(0.78, 1, u), stance: true };
+  }
+  // swing: the FETLOCK arcs from where it left the ground to where it will land;
+  // the hoof hangs off it (solveSwing tucks it relative to the cannon)
+  const v = (q - W.duty) / (1 - W.duty);
+  const F = fetlockTarget(leg, { x: x0 + A, y: RIG.ground, phi: -W.breakover }, 0);  // lift-off, leg frame
+  const G = fetlockTarget(leg, { x: x0 - A, y: RIG.ground, phi: 0 }, 0);             // landing, leg frame
+  const s = smoother(v);
+  return { stance: false, v, fx: F.x + (G.x - F.x) * s, fy: F.y + (G.y - F.y) * s - lift * Math.pow(Math.sin(Math.PI * v), 0.9) };
+}
+function walkPose(p) {
+  const T = Object.fromEntries(LEGS.map(l => [l.key, walkTarget(l, p)]));
+  let bob = 0;
+  if (ui.walk.pin) for (const l of LEGS) if (T[l.key].stance) bob = Math.max(bob, bobNeeded(l, T[l.key]));
+  const n = NECKS[ui.walk.neck], nod = ui.walk.nod * Math.sin(4 * Math.PI * (p - 0.25));
+  const tail = ui.walk.tail === 'swish' ? ['tail-swish-fwd', 'tail-hang', 'tail-swish-back', 'tail-hang'][Math.floor(p * 4) % 4] : ui.walk.tail;
+  const pose = { legs: {}, neck: [n[0] - nod, n[1]], tail, bob, short: {} };
+  for (const l of LEGS) {
+    const t = T[l.key], s = t.stance ? solveLeg(l, t, bob) : solveSwing(l, t, bob);
+    pose.legs[l.key] = s.ang; pose.short[l.key] = s.short;
+  }
+  return pose;
+}
+function jointsPose() {
+  const J = ui.joints;
+  return { legs: JSON.parse(JSON.stringify(J.legs)), neck: [...J.neck], tail: J.tail, bob: J.bob, short: {} };
+}
+
+// ── Rendering ───────────────────────────────────────────────────────────────
+function renderStage(pose) {
+  const o = { dots: ui.dots, debug: ui.debug }, L = layers(pose, o), sh = ui.shade ? ' class="shade"' : '';
+  const body = `<g transform="translate(0 ${f(pose.bob || 0)})"><g${sh}>${L.Ls}</g><g${sh}>${L.Rs}</g>${L.Rt}` +
+    `<rect x="150" y="110" width="400" height="100" fill="currentColor"${ui.debug ? ' style="color:#dcc59c"' : ''}/>${L.Rf}${L.Lf}</g>`;
+  const flip = ui.face ? ' transform="translate(680 0) scale(-1 1)"' : '';
+  $('#stage-body').innerHTML = `<g class="horse"${flip}>${body}</g>`;
+  $('#stage-ref').innerHTML = ui.ref ? `<g${flip}><use href="#hz-lfn"/><use href="#hz-lhf"/><use href="#hz-tail"/><use href="#hz-lhn"/><use href="#hz-lff"/><use href="#hz-head"/></g>` : '';
+  $('#stage').style.setProperty('--coat', `var(--coat-${ui.coat}-bg)`);
+}
+function renderGuides() {
+  const g = RIG.ground;
+  $('#stage-guides').innerHTML =
+    `<line class="guide" x1="0" x2="680" y1="110" y2="110"/><line class="guide" x1="0" x2="680" y1="210" y2="210"/>` +
+    `<line class="gnd" x1="0" x2="680" y1="${f(g)}" y2="${f(g)}"/>` +
+    `<text x="6" y="${f(g - 4)}" font-size="9" fill="#2e8b57">ground y${f(g)}</text>`;
+}
+let onionFrames = null;
+function renderOnion(frame) {
+  if (!onionFrames) onionFrames = document.getElementById('embed-walk').textContent;
+  const which = ui.onion === 'auto' ? frame : ui.onion;
+  $('#stage-onion').innerHTML = which ? onionFrames.replace(/<g data-frame="(\d)"/g, (m, n) => `<g data-frame="${n}"${String(n) === String(which) ? '' : ' display="none"'}`) : '';
+}
+function readout(pose) {
+  const bits = [];
+  for (const l of LEGS) {
+    const t = toeWorld(l, pose.legs[l.key], pose.bob || 0), gap = RIG.ground - t.y;
+    const a = pose.legs[l.key].map(v => f(v).padStart(6)).join(' ');
+    const flag = Math.abs(gap) < 0.6 ? '<span class="ok">on ground</span>'
+      : gap > 0 ? `${gap > 1.5 && (ui.mode !== 'walk' || pose.short[l.key] > 0.05) ? '<span class="bad">' : '<span>'}${f(gap)}u up (${f(gap * S)}px)</span>`
+      : `<span class="bad">${f(-gap)}u into ground</span>`;
+    bits.push(`${l.label.padEnd(9)} ${a}°  hoof ${flag}`);
+  }
+  bits.push(`neck ${pose.neck.map(v => f(v)).join(' / ')}°   body bob ${f(pose.bob || 0)}u = ${f((pose.bob || 0) * S)}px at chip scale   tail: ${pose.tail}`);
+  if (ui.mode === 'walk') bits.push(walkStats);
+  $('#readout').innerHTML = bits.map(b => b.replace(/ /g, '&nbsp;')).join('<br>');
+}
+
+function spriteSet(prefix, pose) {
+  const L = layers(pose);
+  return ['Ls', 'Rs', 'Rt', 'Rf', 'Lf'].map(k => `<g id="${prefix}${k}">${L[k]}</g>`).join('');
+}
+function chip(prefix, name, coat, rev, bobVar) {
+  const Lt = 'transform="translate(-39,-28.6) scale(.26)"', Rt = 'transform="translate(-143,-28.6) scale(.26)"';
+  return `<span class="poem-horse coat-${coat}${rev ? ' rev' : ''}"${bobVar ? ` style="--bob:var(${bobVar})"` : ''}><svg class="hz" aria-hidden="true">` +
+    `<use href="#${prefix}Ls" class="hz-shade" ${Lt}/><svg class="hz-r" x="100%" overflow="visible"><use href="#${prefix}Rs" class="hz-shade" ${Rt}/><use href="#${prefix}Rt" ${Rt}/></svg>` +
+    `<rect class="hz-bar" x="0" y="0" width="100%" height="26"/><svg class="hz-r" x="100%" overflow="visible"><use href="#${prefix}Rf" ${Rt}/></svg>` +
+    `<use href="#${prefix}Lf" ${Lt}/></svg><span class="hz-word">${esc(name)}</span></span>`;
+}
+function prodChip(name, coat, rev) {  // verbatim production horse_svg() markup
+  return `<span class="poem-horse coat-${coat}${rev ? ' rev' : ''}"><svg class="hz" aria-hidden="true"><use href="#hz-lfn" class="hz-shade" transform="translate(-39,-28.6) scale(.26)"/><svg class="hz-r" x="100%" overflow="visible"><use href="#hz-lhf" class="hz-shade" transform="translate(-143,-28.6) scale(.26)"/><use href="#hz-tail" transform="translate(-143,-28.6) scale(.26)"/></svg><rect class="hz-bar" x="0" y="0" width="100%" height="26"/><svg class="hz-r" x="100%" overflow="visible"><use href="#hz-lhn" transform="translate(-143,-28.6) scale(.26)"/></svg><use href="#hz-lff" transform="translate(-39,-28.6) scale(.26)"/><use href="#hz-head" transform="translate(-39,-28.6) scale(.26)"/></svg><span class="hz-word">${esc(name)}</span></span>`;
+}
+
+// chip-defs holds three families of sprite sets: C (current pose), H0..Hn (herd), W0..W3 (walking)
+const chipSets = { C: '', H: '', W: '' };
+const flushDefs = () => { $('#chip-defs').innerHTML = chipSets.C + chipSets.H + chipSets.W; };
+const pick = w => { let r = Math.random() * Object.values(w).reduce((a, b) => a + b, 0); for (const [k, v] of Object.entries(w)) if ((r -= v) < 0) return k; return Object.keys(w)[0]; };
+function buildStaticRows() {
+  $('#row-current').innerHTML = NAMES.slice(0, 10).map((n, i) => chip('C', n, 'bay', i % 5 === 4)).join('');
+  $('#row-prod').innerHTML = NAMES.map((n, i) => prodChip(n, COATS[i % COATS.length], i % 3 === 2)).join('');
+  $('#row-walk').innerHTML = NAMES.map((n, i) => chip('W' + (i % 4), n, COATS[(i * 3) % COATS.length], i % 4 === 1, '--bob' + (i % 4))).join('');
+  reroll();
+}
+function reroll() {
+  const stances = Object.keys(STANCES);
+  let defs = '', html = '';
+  NAMES.forEach((n, i) => {
+    defs += spriteSet(`H${i}`, standPose(stances[Math.floor(Math.random() * stances.length)], pick(NECK_WEIGHTS), pick(TAIL_WEIGHTS)));
+    html += chip(`H${i}`, n, COATS[Math.floor(Math.random() * COATS.length)], Math.random() < 0.5);
+  });
+  chipSets.H = defs;
+  $('#row-herd').innerHTML = html;
+  flushDefs();
+}
+
+// ── Main loop ───────────────────────────────────────────────────────────────
+let walkT0 = performance.now(), walkPausedAt = null, lastFrame = -1, herdT0 = performance.now(), herdPausedAt = null, sweep = null, dirty = true;
+let walkStats = '';
+function currentPose(frame) {
+  if (ui.mode === 'stand') return standPose(ui.stand.stance, ui.stand.neck, ui.stand.tail);
+  if (ui.mode === 'walk') return walkPose(frame / ui.walk.frames);
+  return jointsPose();
+}
+function computeWalkStats() {
+  let mx = 0, mn = 1e9, float = 0;
+  for (let i = 0; i < ui.walk.frames; i++) {
+    const p = walkPose(i / ui.walk.frames);
+    mx = Math.max(mx, p.bob); mn = Math.min(mn, p.bob);
+    for (const l of LEGS) if (walkTarget(l, i / ui.walk.frames).stance) float = Math.max(float, RIG.ground - toeWorld(l, p.legs[l.key], p.bob).y);
+  }
+  walkStats = `cycle: body bob ${f(mn)}–${f(mx)}u (range ${f((mx - mn) * S)}px)   worst stance-hoof float ${f(float)}u (${f(float * S)}px)`;
+}
+function tick(now) {
+  requestAnimationFrame(tick);
+  if (!RIG) return;
+  let frame = 0;
+  if (ui.mode === 'walk') {
+    const t = ((walkPausedAt ?? now) - walkT0) / 1000;
+    frame = Math.floor(t / ui.walk.cycle * ui.walk.frames) % ui.walk.frames;
+  }
+  if (sweep) { stepSweep(now); dirty = true; }
+  if (dirty || frame !== lastFrame) {
+    const pose = currentPose(frame);
+    renderStage(pose);
+    renderOnion(Math.floor(frame / ui.walk.frames * 8) + 1);
+    readout(pose);
+    chipSets.C = spriteSet('C', pose);
+    $('#row-current').style.setProperty('--bob', f((pose.bob || 0) * S) + 'px');
+    lastFrame = frame; dirty = false;
+    flushDefsSoon = true;
+  }
+  // walking herd runs on its own clock at the same frame count
+  const ht = ((herdPausedAt ?? now) - herdT0) / 1000, hf = Math.floor(ht / ui.walk.cycle * ui.walk.frames);
+  if (hf !== lastHerdFrame) {
+    lastHerdFrame = hf;
+    let w = '';
+    const row = $('#row-walk');
+    [0, 0.37, 0.61, 0.83].forEach((off, k) => {
+      const p = walkPose(((hf / ui.walk.frames) + off) % 1);
+      w += spriteSet('W' + k, { ...p, bob: 0 });
+      row.style.setProperty('--bob' + k, f(p.bob * S) + 'px');
+    });
+    chipSets.W = w;
+    flushDefsSoon = true;
+  }
+  if (flushDefsSoon) { flushDefs(); flushDefsSoon = false; }
+}
+let lastHerdFrame = -1, flushDefsSoon = false;
+
+// ── Joint sliders + sweep ───────────────────────────────────────────────────
+function jointList() {
+  const out = [];
+  for (const l of LEGS) JNAMES[l.chain].forEach((n, i) => out.push({ id: `${l.key}.${i}`, label: `${l.label.replace(' ', ' ')} ${n}`, lim: LIMITS[l.chain][i],
+    get: () => ui.joints.legs[l.key][i], set: v => { ui.joints.legs[l.key][i] = v; } }));
+  JNAMES.neck.forEach((n, i) => out.push({ id: `neck.${i}`, label: n, lim: LIMITS.neck[i],
+    get: () => ui.joints.neck[i], set: v => { ui.joints.neck[i] = v; } }));
+  return out;
+}
+function buildJointSliders() {
+  const box = $('#joint-sliders');
+  box.innerHTML = '';
+  let group = '';
+  for (const j of jointList()) {
+    const g = j.id.startsWith('neck') ? 'Neck + head' : LEG[j.id.split('.')[0]].label;
+    if (g !== group) { box.insertAdjacentHTML('beforeend', `<h3>${g}</h3>`); group = g; }
+    box.insertAdjacentHTML('beforeend', `<div class="row jrow"><span class="lbl">${j.label.split(' ').pop()}</span>` +
+      `<input type="range" min="${j.lim[0]}" max="${j.lim[1]}" step="0.5" value="${j.get()}" data-j="${j.id}">` +
+      `<output data-o="${j.id}">${f(j.get())}</output><button type="button" data-sw="${j.id}" title="sweep this joint">↔</button></div>`);
+  }
+  box.insertAdjacentHTML('beforeend', `<h3>Body + tail</h3><div class="row"><span class="lbl">body bob</span><input type="range" min="-10" max="30" step="0.5" value="0" id="j-bob"><output id="j-bob-o">0</output></div>` +
+    `<div class="row"><span class="lbl">tail</span><select id="j-tail">${TAILS.map(t => `<option>${t}</option>`).join('')}</select><span></span></div>`);
+  const js = jointList();
+  box.querySelectorAll('input[data-j]').forEach(inp => inp.addEventListener('input', () => {
+    js.find(j => j.id === inp.dataset.j).set(+inp.value); syncJointOutputs(); dirty = true; }));
+  box.querySelectorAll('button[data-sw]').forEach(b => b.addEventListener('click', () => startSweep([b.dataset.sw])));
+  $('#j-bob').addEventListener('input', e => { ui.joints.bob = +e.target.value; $('#j-bob-o').textContent = e.target.value; dirty = true; });
+  $('#j-tail').addEventListener('change', e => { ui.joints.tail = e.target.value; dirty = true; });
+}
+function syncJointOutputs() {
+  for (const j of jointList()) {
+    const inp = document.querySelector(`input[data-j="${j.id}"]`), out = document.querySelector(`output[data-o="${j.id}"]`);
+    if (inp) inp.value = j.get();
+    if (out) out.textContent = f(j.get());
+  }
+}
+function startSweep(ids) { sweep = { ids, i: 0, t0: performance.now() }; $('#j-sweep').textContent = 'Stop sweep'; }
+function stopSweep() { sweep = null; $('#j-sweep').textContent = 'Sweep every joint'; }
+function stepSweep(now) {
+  const js = jointList(), j = js.find(x => x.id === sweep.ids[sweep.i]);
+  const u = (now - sweep.t0) / 2400;  // 0 → min → max → 0 over 2.4s
+  if (u >= 1) { j.set(0); sweep.i++; sweep.t0 = now; if (sweep.i >= sweep.ids.length) stopSweep(); syncJointOutputs(); return; }
+  const [lo, hi] = j.lim;
+  j.set(u < 0.25 ? lo * (u / 0.25) : u < 0.75 ? lo + (hi - lo) * ((u - 0.25) / 0.5) : hi * (1 - (u - 0.75) / 0.25));
+  syncJointOutputs();
+}
+
+// ── UI wiring ───────────────────────────────────────────────────────────────
+function setMode(m) {
+  ui.mode = m;
+  $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+  for (const p of ['stand', 'walk', 'joints']) $('#panel-' + p).hidden = p !== m;
+  $('#panel-title').textContent = { stand: 'Stand', walk: 'Walk', joints: 'Joints' }[m];
+  if (m === 'joints') {  // start from whatever was on screen
+    const pose = currentPoseFor(lastMode);
+    ui.joints.legs = pose.legs; ui.joints.neck = pose.neck; ui.joints.tail = pose.tail; ui.joints.bob = pose.bob || 0;
+    syncJointOutputs(); $('#j-bob').value = ui.joints.bob; $('#j-bob-o').textContent = f(ui.joints.bob); $('#j-tail').value = ui.joints.tail;
+  } else stopSweep();
+  if (m === 'walk') computeWalkStats();
+  lastMode = m; dirty = true;
+}
+let lastMode = 'stand';
+function currentPoseFor(m) { const save = ui.mode; ui.mode = m; const p = currentPose(Math.max(0, lastFrame)); ui.mode = save; return p; }
+function btnGroup(sel, options, get, set) {
+  const box = $(sel);
+  box.innerHTML = options.map(o => `<button type="button" data-v="${esc(o)}">${esc(o.replace(/^tail-/, ''))}</button>`).join('');
+  const sync = () => box.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === get()));
+  box.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; set(b.dataset.v); sync(); dirty = true; if (ui.mode === 'walk') computeWalkStats(); });
+  sync();
+}
+function wireUI() {
+  $$('.tabs button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  $('#coat').innerHTML = COATS.map(c => `<option>${c}</option>`).join('');
+  $('#coat').addEventListener('change', e => { ui.coat = e.target.value; dirty = true; });
+  const tog = (id, key) => $(id).addEventListener('change', e => { ui[key] = e.target.checked; dirty = true; });
+  tog('#t-dots', 'dots'); tog('#t-shade', 'shade'); tog('#t-debug', 'debug'); tog('#t-ref', 'ref'); tog('#t-face', 'face');
+  $('#t-onion').addEventListener('change', e => { ui.onion = e.target.value; dirty = true; });
+  btnGroup('#stance-btns', Object.keys(STANCES), () => ui.stand.stance, v => { ui.stand.stance = v; });
+  btnGroup('#neck-btns', Object.keys(NECKS), () => ui.stand.neck, v => { ui.stand.neck = v; });
+  btnGroup('#tail-btns', TAILS, () => ui.stand.tail, v => { ui.stand.tail = v; });
+  btnGroup('#walk-neck-btns', Object.keys(NECKS), () => ui.walk.neck, v => { ui.walk.neck = v; });
+  $('#walk-sliders').innerHTML = WALK_SLIDERS.map(([k, lbl, lo, hi, st]) =>
+    `<div class="row"><span class="lbl">${lbl}</span><input type="range" min="${lo}" max="${hi}" step="${st}" value="${ui.walk[k]}" data-w="${k}"><output data-wo="${k}">${ui.walk[k]}</output></div>`).join('');
+  $$('#walk-sliders input').forEach(inp => inp.addEventListener('input', () => {
+    ui.walk[inp.dataset.w] = +inp.value; document.querySelector(`output[data-wo="${inp.dataset.w}"]`).textContent = inp.value;
+    computeWalkStats(); dirty = true; lastHerdFrame = -1; updateFps(); }));
+  const updateFps = () => { $('#w-fps').textContent = f(ui.walk.frames / ui.walk.cycle) + 'fps'; };
+  updateFps();
+  $('#w-frames').addEventListener('change', e => { ui.walk.frames = +e.target.value; updateFps(); computeWalkStats(); dirty = true; lastHerdFrame = -1; });
+  $('#w-pin').addEventListener('change', e => { ui.walk.pin = e.target.checked; computeWalkStats(); dirty = true; lastHerdFrame = -1; });
+  $('#w-tail').addEventListener('change', e => { ui.walk.tail = e.target.value; dirty = true; });
+  $('#walk-play').addEventListener('click', e => {
+    if (walkPausedAt === null) { walkPausedAt = performance.now(); e.target.textContent = 'Play'; }
+    else { walkT0 += performance.now() - walkPausedAt; walkPausedAt = null; e.target.textContent = 'Pause'; } });
+  $('#walk-step').addEventListener('click', () => {
+    if (walkPausedAt === null) { walkPausedAt = performance.now(); $('#walk-play').textContent = 'Play'; }
+    walkT0 -= ui.walk.cycle / ui.walk.frames * 1000; });
+  $('#herd-play').addEventListener('click', e => {
+    if (herdPausedAt === null) { herdPausedAt = performance.now(); e.target.textContent = 'Play'; }
+    else { herdT0 += performance.now() - herdPausedAt; herdPausedAt = null; e.target.textContent = 'Pause'; } });
+  $('#reroll').addEventListener('click', reroll);
+  buildJointSliders();
+  $('#j-sweep').addEventListener('click', () => (sweep ? stopSweep() : startSweep(jointList().map(j => j.id))));
+  $('#j-zero').addEventListener('click', () => { for (const j of jointList()) j.set(0); ui.joints.bob = 0; $('#j-bob').value = 0; syncJointOutputs(); dirty = true; });
+  $('#j-copy').addEventListener('click', async () => {
+    const r = a => a.map(v => Math.round(v * 10) / 10);
+    const txt = JSON.stringify({ legs: Object.fromEntries(Object.entries(ui.joints.legs).map(([k, v]) => [k, r(v)])), neck: r(ui.joints.neck), tail: ui.joints.tail, bob: ui.joints.bob });
+    const out = $('#j-out'); out.hidden = false; out.value = txt; out.select();
+    try { await navigator.clipboard.writeText(txt); } catch (e) { /* the textarea is the fallback */ }
+  });
+  // loading
+  $('#load-btn').addEventListener('click', () => $('#file').click());
+  $('#file').addEventListener('change', e => { if (e.target.files[0]) readFile(e.target.files[0]); e.target.value = ''; });
+  let depth = 0;
+  addEventListener('dragenter', e => { e.preventDefault(); depth++; $('#drop').hidden = false; });
+  addEventListener('dragleave', () => { if (--depth <= 0) { depth = 0; $('#drop').hidden = true; } });
+  addEventListener('dragover', e => e.preventDefault());
+  addEventListener('drop', e => { e.preventDefault(); depth = 0; $('#drop').hidden = true; const file = e.dataTransfer.files[0]; if (file) readFile(file); });
+  $('#reset-src').addEventListener('click', () => { try { localStorage.removeItem('posable-horse-svg'); } catch (e) {} useBuiltIn(); });
+}
+function readFile(file) {
+  file.text().then(text => {
+    if (install(text, file.name)) { try { localStorage.setItem('posable-horse-svg', JSON.stringify({ name: file.name, text })); } catch (e) {} }
+  });
+}
+function install(text, label) {
+  let rig;
+  try { rig = buildRig(text, label); }
+  catch (err) {
+    $('#warn').textContent = `Couldn't use ${label}: ${err.message}. Still showing ${RIG ? RIG.label : 'nothing'}.`;
+    if (RIG) buildRigDefsAgain();
+    return false;
+  }
+  RIG = rig;
+  RIG.src = text;
+  $('#source').innerHTML = `Using <b>${esc(label)}</b>`;
+  $('#reset-src').hidden = label.startsWith('built-in');
+  $('#warn').textContent = rig.warn.length ? `Not found (optional): ${rig.warn.join(', ')}` : '';
+  renderGuides(); buildStaticRows(); if (ui.mode === 'walk') computeWalkStats();
+  dirty = true; lastHerdFrame = -1;
+  return true;
+}
+function buildRigDefsAgain() { const cur = RIG; const again = buildRig(cur.src, cur.label); again.src = cur.src; RIG = again; }
+function useBuiltIn() { install(document.getElementById('embed-template').textContent.trim(), 'built-in horse-parts-template.svg'); }
+
+// ── Start ───────────────────────────────────────────────────────────────────
+wireUI();
+setMode('stand');
+addEventListener('DOMContentLoaded', () => {  // the embedded data sits below this script
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem('posable-horse-svg') || 'null'); } catch (e) {}
+  if (!(saved && install(saved.text, saved.name + ' (remembered)'))) useBuiltIn();
+  requestAnimationFrame(tick);
+});
+</script>
+
+<!-- ═══ Embedded data — refreshed by prototypes/horse-parts-cut.py; don't hand-edit ═══ -->
+<!--@PROD:begin--><svg id="prod-sprite" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <g id="hz-head">
+      <ellipse cx="47" cy="99" rx="6" ry="5" fill="#140d05"/>
+      <path fill="currentColor" d="M226.22,105.89l-22.49-8.78,5.05-3.02-8.34-9.04,3.34-5.27-9.71-7.58-.79-1.89,4.45-6.4-11.41-1.23c-.38-.44-1.62-1.5-2.17-1.86l1.41-7.03-10.78.74c-.86-.63-2.14-.85-2.69-1.21v-1.44s1.32-3.67,1.32-3.67l-11.14-5.04-1.19-1.65,2.95-7.27-11.41,1.53c-.47-.33-1.91-1.07-2.52-1.29l-.16-7.16-10.37,3.29c-.97-.4-2.27-.31-2.89-.53l-1.18-5.42-9.39,4.87c-1.25-.81-2.53-1.6-3.86-2.38-1.55-15.08-5.59-23.14-12.14-24.19-.8-.13-1.46.04-1.98.5-.95.79-1.61,2.4-2,4.83l-1.07,8.14c-.24,1.52-1.23,4.45-2.97,8.78-3.22-5.04-6.48-9.31-9.76-12.8-3.29-3.49-5.87-5.39-7.76-5.69-2.25-.36-3.52.34-3.8,2.09-.19,1.22-.09,2.44.31,3.68l2.67,7.1c.61,1.81,1.43,4.56,2.49,8.24-6.16,2.14-10.32,4.15-12.48,6.03-2.17,1.88-4.9,5.91-8.19,12.1-2.43,4.45-4.8,8.1-7.11,10.93l-8.19,9.94c-3.99,4.91-7.78,10.53-11.36,16.87-3.58,6.34-5.62,11.07-6.12,14.19-.45,2.82,1.25,7.23,5.11,13.23,3.85,6,7.05,9.2,9.6,9.61,2.11.34,6.35-1.72,12.73-6.17-2.41,3.44-5.18,6.08-8.31,7.93,1.52.32,2.56.53,3.15.62,3.13.5,6.1-.39,8.93-2.67,2.82-2.28,6.06-6.41,9.69-12.39,18.64,1.26,25.5-4.07,31.61-3.1,12.02,1.92,24.77-.31,31.21,17.65,3.03,26.07,5.41,41.1,6.78,53.18,2.4,21.25,27.08,20.15,60.12,25.42,33.04,5.27,45.96,1.06,62.44-7.25,93.74-47.25-16.55-77.47-39.58-88.08ZM50.61,97.48c-.36,2.28-1.33,3.59-2.89,3.93-.52.11-1.11.12-1.76.01h0c-.12-.02-.3-.12-.43-.15-.64-.15-1.31-.34-2.11-.73.29-.45.63-.81.96-1.18,1.67-1.9,3.77-2.84,6.37-2.69l-.13.8ZM90.3,46.42l-5.11,6.8c-.39.57-1.61,1.07-3.53,1.51-.43.1-.91.19-1.42.29-.56.1-1.11.21-1.77.3l-1.64,1.14c.86-5.41,2.4-9,4.63-10.8,2.22-1.79,6.2-2.66,11.94-2.6-1.49,1.4-2.53,2.52-3.11,3.37Z"/>
+      <ellipse cx="84" cy="51" rx="10" ry="9" fill="#f3ecdb"/>
+      <circle cx="84" cy="51" r="4.4" fill="#140d05"/>
+    </g>
+    <path id="hz-tail" fill="currentColor" d="M604.37,174.19c-12.93-57.45-53.16-64.03-53.16-64.03,0,0-.32-.07-.81-.13-6.99-6.64-18.34-11.1-36.16-11.51-101.75-2.35-138.26,29.65-138.26,29.65,0,0-17.09,29.65,6.99,56.94,24.08,27.29,51.41,35.01,154.89,36,24.71.24,19.79-32.94,22.12-46.59,1.27-7.46,3.53-20.47-.19-45.91,20.61,20.24,17.77,53.92,20.84,75.96,3.17,22.82,18.05,35.7,18.05,35.7l4.79,11.61,3.58,25.24s10.25-45.48-2.68-102.93Z"/>
+    <path id="hz-lff" fill="currentColor" d="M156.93,165.45s-24.92-9.29-3.58,54.76c6.73,20.21,19.05,21.35,19.05,21.35l13.72,40.63,1.91,37.88s-10.67,14.46-11.05,20.32,19.05,3.79,19.05,3.79l.38-11.02s-1.91-7.58,6.1-11.36,5.72-9.3,1.52-15.15-4.64-76.93,14.1-100.55c16.38-20.66-61.2-40.64-61.2-40.64Z"/>
+    <path id="hz-lfn" fill="currentColor" d="M186.13,162.94s-25.44-7.75-.24,54.88c7.95,19.76,20.32,20.15,20.32,20.15l16.17,39.72,4.21,37.69s-9.77,15.09-9.79,20.95,19.25,2.62,19.25,2.62l-.29-11.02s-2.36-7.45,5.39-11.71c7.76-4.27,5.14-9.63.6-15.22s-9.31-76.5,7.95-101.22c15.1-21.62-63.56-36.84-63.56-36.84Z"/>
+    <path id="hz-lhf" fill="currentColor" d="M494.37,170.97s20.52,7.92,17.31,26.32c-3.21,18.4-12.81,23.32-7.99,35.28s11.51,18.41,10.25,29.1-3.21,58.32-3.21,58.32c0,0-8.41,5.7-8.59,10.13s4.99,8.01-.05,11.21l-25.87-.55s16.8-17.55,17.87-23.81c1.07-6.26,5.97-36.07-1.66-49.2-7.64-13.13-102.8-114.66,1.92-96.79Z"/>
+    <path id="hz-lhn" fill="currentColor" d="M529.69,173.54s20.84,7.39,18.39,25.85-11.85,23.64-6.54,35.45c5.31,11.82,12.26,18.1,11.44,28.81-.82,10.71-.82,58.35-.82,58.35,0,0-8.17,5.91-8.17,10.34s5.31,7.88.41,11.2l-25.88.12s16.07-17.97,16.89-24.25,4.5-36.19-3.68-49.12c-8.17-12.93-107.48-111.9-2.04-96.76Z"/>
+  </defs></svg><!--@PROD:end-->
+<!--@WALK:begin--><script type="text/plain" id="embed-walk"><g data-frame="1"><polygon points="480.57 217.87 491.16 237.63 525.04 263.75 529.63 273.99 537.75 302.57 541.28 315.63 538.45 320.57 530.69 325.51 521.51 330.1 518.69 334.69 518.34 338.22 541.98 338.57 542.34 331.16 550.45 327.99 555.39 320.57 551.51 305.75 549.04 284.93 545.16 264.1 532.1 249.28 518.34 230.57 506.69 207.99 479.86 201.63 480.57 217.87" fill="#231f20"/><path d="M477.75,188.45l-6,13.06,1.41,13.06,10.94,13.06,13.76,4.59s20.12-.71,19.76.35-3.18,12.71-3.18,12.71l-16.94,38.12v11.29l2.47,18,3.88,7.76,8.82-12.35,3.53-9.88-7.06-5.29-2.82-7.41,7.06-6,7.06-17.65,8.12-21.88,6.71-9.53-5.65-8.12-5.65-4.94-4.94-14.47-7.41-13.41-33.88-1.06Z" fill="#ec008c"/><polygon points="200.51 179.63 186.39 190.22 185.69 207.51 177.22 209.98 152.16 211.75 150.04 220.92 156.75 251.28 164.87 277.04 175.45 292.92 180.04 291.51 180.04 265.75 171.92 264.69 166.98 244.92 164.51 224.81 184.28 229.39 204.75 232.92 219.22 221.98 228.75 202.57 200.51 179.63" fill="#00aeef"/><polygon points="200.51 171.28 190.98 193.86 192.39 204.81 205.45 224.57 215.69 248.57 222.04 278.92 225.57 303.63 226.98 321.98 222.04 327.28 213.22 332.57 209.69 339.28 233.69 338.92 233.34 331.51 238.98 327.98 240.75 319.16 236.16 311.39 235.45 289.51 236.87 236.57 238.28 218.92 236.51 188.92 200.51 171.28" fill="#fff200"/></g><g data-frame="2"><polygon points="486.81 206.57 505.16 232.69 525.98 248.92 541.16 255.28 547.86 264.45 558.45 289.16 563.75 306.1 564.45 317.75 558.81 324.8 559.51 337.16 565.16 337.51 577.16 327.27 574.69 313.86 577.86 304.33 572.22 291.98 565.86 275.04 558.81 252.8 546.45 239.04 537.98 229.51 534.1 213.63 538.69 193.16 540.81 180.45 532.34 164.22 484.34 173.04 486.81 206.57" fill="#231f20"/><polygon points="475.16 184.92 467.75 203.63 470.92 217.75 483.28 231.51 501.63 243.86 500.57 250.92 484.34 279.16 474.45 289.04 468.81 304.22 467.39 315.51 468.45 325.75 476.92 321.16 484.34 311.28 481.86 303.51 481.51 296.45 488.22 295.75 494.92 285.16 505.16 266.81 516.45 253.75 518.57 244.22 512.22 235.39 509.75 223.39 511.86 215.63 519.63 208.57 534.45 191.63 539.75 178.22 530.22 170.1 475.16 184.92" fill="#ec008c"/><polygon points="209.57 174.69 193.69 195.51 191.92 218.45 173.57 223.39 155.22 231.86 152.39 255.86 148.16 291.16 143.92 309.51 145.69 316.22 159.45 302.1 164.39 293.63 158.39 289.75 158.75 284.1 162.98 282.69 162.28 259.39 170.39 242.45 199.69 242.45 216.63 231.51 232.87 211.75 209.57 174.69" fill="#00aeef"/><polygon points="202.16 168.8 204.28 201.28 223.69 223.86 235.69 245.04 242.39 270.1 255.1 291.98 260.04 308.22 259.69 319.16 254.75 325.51 251.92 337.16 257.22 338.92 272.39 327.63 270.63 318.45 274.51 313.51 273.1 306.8 264.63 293.39 256.51 263.75 255.1 229.86 253.34 204.45 238.87 179.39 202.16 168.8" fill="#fff200"/></g><g data-frame="3"><polygon points="471.69 198.34 502.39 231.16 526.39 245.98 544.04 248.81 549.69 256.22 556.75 273.51 564.51 292.92 571.22 305.98 588.16 324.34 591.34 328.57 597.69 327.86 594.16 302.45 581.1 301.75 580.75 291.86 577.22 283.75 567.69 265.75 563.1 244.22 557.81 232.57 545.81 230.81 536.98 220.92 540.87 199.04 542.28 175.39 529.22 160.92 480.51 179.28 471.69 198.34" fill="#231f20"/><polygon points="466.75 186.69 461.81 208.92 471.69 231.16 486.87 254.1 485.45 261.86 462.16 290.81 449.1 305.28 447.69 315.51 441.69 325.39 441.69 332.45 449.45 330.69 458.28 324.69 465.69 321.86 460.4 313.04 460.04 306.69 469.57 304.57 485.45 281.98 504.51 262.22 504.16 252.69 497.81 236.1 502.04 223.04 522.87 202.57 532.75 187.39 535.22 171.51 497.1 158.45 466.75 186.69" fill="#ec008c"/><polygon points="206.81 182.81 189.87 217.39 164.81 256.22 131.28 302.81 118.22 318.34 116.45 327.16 122.1 328.57 130.22 324.34 140.81 315.51 138.69 307.39 146.1 306.34 149.98 295.04 173.63 268.57 217.4 221.98 235.04 195.16 206.81 182.81" fill="#00aeef"/><polygon points="204.69 196.22 225.87 222.69 228.34 233.63 229.75 249.86 230.45 267.16 245.28 289.75 260.81 313.39 273.16 318.69 280.22 326.1 286.57 325.39 279.51 303.86 273.16 307.39 267.16 306.34 264.34 296.81 247.04 273.86 244.22 259.04 249.16 236.45 252.34 210.34 252.34 192.34 204.69 196.22" fill="#fff200"/></g><g data-frame="4"><polygon points="488.39 207.51 508.51 234.69 519.81 240.69 533.92 242.45 537.45 269.63 538.87 298.22 546.98 313.39 554.75 327.51 560.39 328.57 561.81 303.16 552.98 298.92 550.87 291.86 553.69 285.51 550.51 273.51 548.39 251.98 548.04 229.75 540.98 224.81 532.51 223.04 527.57 209.98 526.51 194.1 488.39 207.51" fill="#231f20"/><polygon points="468.28 192.69 465.45 217.39 474.63 232.92 493.69 262.57 495.45 274.22 492.63 287.28 481.69 315.51 473.92 324.69 460.87 331.39 456.63 335.98 455.57 339.86 476.39 339.86 479.92 334.92 489.45 332.1 493.34 325.04 493.34 317.98 498.63 305.28 508.16 285.16 513.81 275.63 513.81 265.75 509.92 257.63 507.1 242.81 510.28 222.34 520.51 211.04 532.16 195.51 535.34 178.92 468.28 192.69" fill="#ec008c"/><polygon points="209.75 178.45 191.04 181.28 190.69 216.57 187.51 252.93 180.81 288.22 173.75 311.87 165.63 323.87 151.51 331.63 148.69 339.4 170.93 339.04 172.69 332.34 180.1 330.57 184.69 318.57 192.81 293.51 198.81 265.98 219.98 204.93 209.75 178.45" fill="#00aeef"/><polygon points="231.28 197.98 234.45 230.45 229.51 238.22 208.34 257.28 200.22 265.39 206.57 275.28 223.16 296.1 229.16 297.51 233.75 293.28 246.1 308.45 244.34 311.98 224.92 310.57 209.04 292.92 192.45 272.45 186.1 260.45 189.98 250.92 201.63 235.75 203.75 224.1 199.16 211.39 192.1 204.69 193.87 173.28 231.28 197.98" fill="#fff200"/></g><g data-frame="5"><polygon points="491.33 195.16 531.92 219.51 534.39 230.1 509.69 277.39 502.98 287.28 507.57 292.92 512.16 295.04 510.75 308.1 501.22 319.04 495.92 315.51 494.86 295.04 495.22 277.39 505.45 262.92 512.51 236.81 461.33 199.39 491.33 195.16" fill="#231f20"/><polygon points="472.28 190.69 474.39 212.93 491.33 236.22 525.92 263.4 530.51 273.99 538.63 307.87 537.92 319.16 524.86 325.16 518.86 331.87 518.86 336.81 540.04 336.46 541.1 331.16 553.1 321.99 549.57 291.28 544.63 262.69 528.39 242.22 523.81 218.22 523.1 184.69 472.28 190.69" fill="#ec008c"/><polygon points="205.98 209.28 212.34 239.98 219.04 272.45 222.57 302.81 222.57 314.81 207.39 328.57 210.92 330.34 231.39 330.69 232.45 322.22 240.22 316.22 238.45 308.45 234.92 305.63 234.92 239.63 237.04 206.1 216.92 198.34 205.98 209.28" fill="#00aeef"/><polygon points="194.34 166.87 183.04 192.28 183.39 207.81 152.34 208.87 149.86 220.87 159.04 267.1 163.98 275.22 167.86 282.98 175.63 289.34 179.16 282.28 177.39 264.63 169.98 263.57 165.04 240.28 164.34 221.22 188.34 228.63 205.63 227.22 222.22 205.34 228.22 183.81 194.34 166.87" fill="#fff200"/></g><g data-frame="6"><polygon points="453.87 198.34 460.93 221.28 473.28 236.45 488.45 244.57 488.81 249.86 457.75 297.51 452.81 305.63 453.87 329.63 469.4 312.34 465.87 302.81 467.28 297.51 474.34 296.1 488.81 273.16 510.69 243.16 503.28 217.04 477.51 185.63 453.87 198.34" fill="#231f20"/><polygon points="468.34 181.04 474.34 211.75 493.75 236.1 518.81 254.45 529.4 263.63 536.81 278.1 546.69 300.34 548.1 320.1 539.98 338.45 551.28 338.45 562.57 328.57 558.34 322.57 558.69 316.22 561.87 309.51 561.16 303.16 544.93 265.75 544.22 254.81 523.75 234.69 519.51 213.16 526.22 188.1 523.75 172.57 468.34 181.04" fill="#ec008c"/><polygon points="207.69 192.69 217.57 232.57 226.75 265.39 243.34 300.34 246.51 309.86 244.4 319.39 237.34 333.16 239.1 337.39 248.63 336.69 259.93 325.04 258.87 316.22 259.93 308.81 252.51 295.39 244.4 267.86 242.98 211.75 207.69 192.69" fill="#00aeef"/><polygon points="199.57 177.16 179.46 187.39 181.22 214.57 146.63 230.1 136.75 278.1 131.81 310.92 135.69 311.98 149.81 298.22 146.63 286.92 147.69 281.28 150.87 278.1 155.1 241.39 190.75 238.92 209.1 225.86 223.93 184.57 199.57 177.16" fill="#fff200"/></g><g data-frame="7"><polygon points="457.4 196.92 469.75 227.63 484.57 253.39 484.57 258.34 449.63 306.69 441.87 329.63 443.63 334.92 460.57 321.86 460.22 306.69 469.04 304.22 475.75 291.51 505.4 261.16 504.34 247.39 499.75 236.1 498.34 190.92 457.4 196.92" fill="#231f20"/><polygon points="482.81 182.81 485.63 205.04 504.34 232.22 529.4 244.57 544.57 246.69 549.51 250.57 560.81 279.16 570.34 300.34 593.63 326.1 592.22 301.04 578.81 298.22 577.04 285.51 560.81 245.98 558.69 236.45 539.98 224.81 536.81 211.04 543.51 182.45 534.69 159.87 504.69 155.98 482.81 182.81" fill="#ec008c"/><polygon points="229.45 196.87 228.87 267.86 267.69 318.34 286.75 329.28 287.45 322.22 274.4 305.98 265.93 305.63 263.81 295.75 245.46 270.69 245.81 248.81 260.75 199.92 229.45 196.87" fill="#00aeef"/><polygon points="192.87 174.69 186.16 195.86 191.1 219.51 120.87 320.45 123.69 330.34 144.16 314.45 142.04 304.92 151.57 302.45 152.98 291.86 219.34 220.92 228.87 187.75 192.87 174.69" fill="#fff200"/></g><g data-frame="8"><polygon points="461.1 194.45 466.04 214.57 481.92 243.16 494.28 264.34 494.63 277.04 480.51 315.16 465.69 326.81 455.1 333.86 454.75 339.86 478.04 340.57 478.04 331.75 489.69 330.69 492.51 315.16 508.39 279.86 512.63 270.69 510.87 254.45 507.34 238.57 508.39 206.1 490.39 190.92 461.1 194.45" fill="#231f20"/><polygon points="473.1 181.04 479.1 211.04 500.28 232.57 536.28 240.69 540.87 295.39 546.87 312.34 558.51 326.45 559.22 301.39 551.81 297.16 549.34 290.45 552.51 288.69 548.63 256.57 546.87 227.63 538.39 221.28 530.63 218.45 525.69 207.51 521.81 187.75 473.1 181.04" fill="#ec008c"/><polygon points="252.51 198.75 198.69 266.45 222.69 287.28 224.1 296.81 233.28 291.16 248.1 309.16 221.98 308.81 190.92 271.39 189.16 258.69 209.98 184.22 252.51 198.75" fill="#00aeef"/><polygon points="197.98 165.1 184.92 198.28 189.87 225.45 187.4 254.75 177.87 297.45 165.87 322.51 160.57 327.81 150.34 330.98 147.51 339.45 171.87 339.45 171.16 331.69 179.98 329.92 184.92 311.57 198.69 267.45 217.4 224.04 226.57 185.92 197.98 165.1" fill="#fff200"/></g></script><!--@WALK:end-->
+<!--@TEMPLATE:begin--><script type="text/plain" id="embed-template">
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  poet.horse — POSABLE HORSE PARTS TEMPLATE (Phase 2.5.1 design sprint)
+  =====================================================================
+  Generated by prototypes/horse-parts-cut.py from the live 2.4 horse, so the
+  neutral pose IS today's horse. Restyle the pieces over this geometry, export,
+  and drop the SVG onto prototypes/horse-posing-harness.html to see it posed.
+
+  COORDINATE FRAME (same as 2.4; SVG user units, y down):
+    back line y=110 · belly y=210 · GROUND y=344.5 (one number — hooves land here)
+    front seam x=150 · rear seam x=550 · barrel x150..550 stretches, keep it flat
+
+  THE PIECES (one group each — keep these names; Illustrator "Layer Names" IDs):
+    bumper-front   static — chest + shoulder; hides the elbow + neck-root joints
+    bumper-hind    static — haunch; hides the stifle joint
+    fore-forearm   pivots at pv-elbow           fore-cannon  at pv-knee
+    fore-hoof      pivots at pv-fore-fetlock    (pastern + hoof)
+    hind-gaskin    pivots at pv-stifle          hind-cannon  at pv-hock
+    hind-hoof      pivots at pv-hind-fetlock    (pastern + hoof)
+    neck           pivots at pv-withers         head         at pv-poll
+    tail-hang / tail-swish-fwd / tail-swish-back / tail-lifted — 4 hand-drawn
+                   positions, NOT posable; only tail-hang is visible
+    barrel         the stretchy rect — leave it alone
+  One leg set serves all four legs: the far legs are the same pieces, moved to
+  pv-elbow-far / pv-stifle-far and shaded darker in code.
+
+  RULES FOR RESTYLING:
+   1. The PIVOTS are the contract. Keep each piece's joint end round and
+      centred on its pivot dot — the round cap is what keeps the silhouette in
+      one piece at every angle. data-cap on each pivot = the current cap radius.
+      You MAY move a pivot; the harness reads them from this file.
+   2. A piece may overlap its neighbours freely — overlap is how it merges.
+   3. Flat fill, any colour: the harness recolours everything to the coat.
+      Exception: anything whose name starts eye- or nostril- keeps its colour.
+   4. Hooves: the neutral hoof bottom should sit on the GROUND line.
+   5. Don't rename groups. Extra groups are ignored; missing ones are reported.
+
+  Pivots as generated (art units):
+    elbow (182.3,214.0)  knee (190.7,260.0)  fore-fetlock (197.8,316.0)
+    stifle (516.8,214.0)  hock (539.1,262.0)  hind-fetlock (543.7,320.0)
+    withers (187.0,144.7)  poll (127.9,68.4)
+-->
+<svg id="horse-parts-template" xmlns="http://www.w3.org/2000/svg" width="680" height="360" viewBox="0 0 680 360">
+  <g id="GUIDES" opacity=".9">
+    <line x1="0" y1="110" x2="680" y2="110" stroke="#b9533a" stroke-width=".75" stroke-dasharray="5 4"/>
+    <line x1="0" y1="210" x2="680" y2="210" stroke="#b9533a" stroke-width=".75" stroke-dasharray="5 4"/>
+    <line id="ground-line" x1="0" y1="344.5" x2="680" y2="344.5" stroke="#2e8b57" stroke-width="1"/>
+    <line x1="150" y1="92" x2="150" y2="300" stroke="#185fa5" stroke-width=".75" stroke-dasharray="4 3"/>
+    <line x1="550" y1="92" x2="550" y2="300" stroke="#185fa5" stroke-width=".75" stroke-dasharray="4 3"/>
+    <text x="6" y="106" font-family="sans-serif" font-size="9" fill="#8a5a3a">y110 back</text>
+    <text x="6" y="206" font-family="sans-serif" font-size="9" fill="#8a5a3a">y210 belly</text>
+    <text x="6" y="344.5" dy="-3" font-family="sans-serif" font-size="9" fill="#2e8b57">y344.5 ground</text>
+  </g>
+  <g id="REF-2.4" display="none" fill="none" stroke="#c0392b" stroke-width=".8">
+    <path d="M260.6,119.7 203.7,97.1 208.8,94.1 200.4,85.1 203.8,79.8 194.1,72.2 193.3,70.3 197.7,63.9 186.3,62.7 184.2,60.8 185.6,53.8 174.8,54.5 172.1,53.3 172.1,51.9 173.4,48.2 162.3,43.2 161.1,41.5 164.0,34.3 152.6,35.8 150.1,34.5 149.9,27.3 139.6,30.6 136.7,30.1 135.5,24.7 126.1,29.5 122.2,27.2 120.4,16.1 117.8,9.3 114.4,4.9 112.4,3.7 110.1,3.0 108.1,3.5 106.7,5.8 104.9,17.1 102.1,25.2 95.8,16.5 89.3,9.5 85.2,6.9 83.3,6.6 81.6,7.2 80.8,8.8 80.8,11.6 86.2,27.8 75.8,32.4 73.2,34.3 71.0,37.0 61.0,53.5 48.2,69.5 42.1,78.3 35.5,90.3 33.4,95.5 32.7,98.6 33.9,103.8 37.0,109.8 41.5,116.2 45.5,119.9 47.5,120.7 50.3,120.3 54.6,118.2 60.2,114.6 56.3,119.1 51.9,122.5 56.1,123.2 60.1,122.7 64.6,119.9 69.2,114.7 73.7,108.1 86.0,107.9 103.9,104.8 118.4,106.6 125.4,108.8 129.1,111.2 131.6,113.7 134.6,118.2 136.5,122.6 143.6,177.9 145.9,184.1 148.0,186.9 150.6,189.3 157.3,192.9 167.0,195.8 208.7,202.0 219.8,203.2 229.4,203.5 237.6,203.1 244.9,201.9 255.1,198.8 268.0,192.8 279.6,186.2 289.9,178.8 296.2,172.8 300.9,166.0 302.9,159.5 302.6,153.3 300.3,147.5 296.2,142.0 289.8,136.2 281.0,130.1 272.2,125.2ZM49.9,99.8 47.7,101.4 46.0,101.4 43.4,100.5 46.2,97.8 48.3,96.9 50.8,96.7ZM93.4,43.1 84.7,53.6 78.5,55.3 76.8,56.5 78.6,49.7 80.2,47.0 82.1,45.2 86.7,43.6Z"/>
+    <path d="M156.9,165.4 153.1,165.0 149.8,166.1 147.1,168.8 145.5,172.9 144.7,178.9 145.0,185.6 147.9,201.5 153.3,220.2 155.1,224.7 157.9,230.2 160.9,234.3 164.9,238.1 168.4,240.3 172.4,241.6 186.1,282.2 188.0,320.1 179.5,333.4 177.4,338.4 177.1,341.3 179.2,343.2 183.2,344.2 189.5,344.5 196.0,344.2 196.2,331.1 196.8,327.7 199.3,324.0 206.0,319.5 207.3,317.8 207.8,316.0 207.2,312.0 203.2,304.5 201.8,291.5 202.1,268.2 203.1,256.3 204.7,244.3 207.0,232.7 210.1,222.0 214.0,212.7 219.8,203.4 220.3,201.6 220.3,198.9 219.0,195.3 215.5,191.0 210.3,186.9 202.5,182.3 193.7,178.0 182.9,173.7 170.1,169.3Z"/>
+    <path d="M186.1,162.9 182.3,162.7 179.1,164.0 176.6,166.9 175.2,171.0 174.8,177.2 175.4,183.7 179.3,199.4 185.9,217.8 187.9,222.2 191.1,227.5 194.3,231.5 198.5,235.0 202.2,236.9 206.2,238.0 222.4,277.7 226.6,315.4 218.9,329.2 217.1,334.3 217.0,337.2 219.2,339.0 223.3,339.8 229.6,339.7 236.1,338.9 235.4,325.8 235.8,322.4 238.1,318.6 244.5,313.7 245.6,311.9 246.1,310.1 245.2,306.1 240.8,298.9 238.6,286.0 237.8,273.9 237.5,261.2 237.8,249.3 238.8,237.3 240.5,225.6 242.6,216.1 246.0,206.6 251.2,197.0 251.6,195.1 251.4,192.4 249.9,189.0 246.1,184.9 240.8,181.1 232.7,176.9 223.6,173.3 212.6,169.6 199.5,166.0Z"/>
+    <path d="M529.7,173.5 518.3,172.3 508.7,172.0 500.7,172.6 493.2,174.3 487.7,177.2 484.0,181.0 482.0,185.6 481.6,191.8 482.6,197.7 484.7,204.1 487.8,210.8 492.3,218.9 498.4,228.1 506.7,239.4 531.3,269.6 533.3,273.3 535.2,279.2 536.5,287.4 536.9,297.3 536.5,309.2 535.2,320.2 533.3,324.3 530.1,329.4 518.5,343.7 544.4,343.5 546.2,341.7 546.4,339.8 544.1,333.5 544.2,331.2 545.3,328.9 547.1,326.6 552.2,322.0 552.4,283.0 553.0,261.3 552.7,258.1 551.6,254.0 541.5,234.8 540.4,231.6 539.9,227.6 541.0,222.0 546.8,205.9 548.1,199.4 548.1,194.0 546.4,187.9 542.3,181.9 536.3,176.9Z"/>
+    <path d="M494.4,171.0 483.0,169.4 473.3,168.9 465.3,169.3 458.8,170.6 453.7,172.6 449.4,176.1 447.0,179.6 445.7,184.6 445.7,190.3 447.3,197.6 450.2,205.4 454.2,213.6 459.8,223.1 467.6,234.8 492.0,267.1 493.9,270.8 495.5,276.8 496.5,285.0 496.5,294.9 495.6,306.8 493.9,317.8 491.8,321.9 488.3,326.8 476.2,340.8 502.1,341.3 503.9,339.5 504.3,337.7 502.2,331.3 502.3,329.0 503.6,326.7 505.4,324.4 510.7,320.0 514.0,257.2 512.2,250.1 503.7,232.6 502.7,229.3 502.4,226.3 503.4,220.7 508.3,209.2 510.6,202.3 511.9,195.4 512.0,191.9 510.5,185.8 506.6,179.7 500.8,174.5Z"/>
+    <path d="M604.4,174.2 600.0,159.2 593.7,145.2 586.4,134.0 577.7,124.6 572.0,119.9 565.7,115.9 558.0,112.2 550.4,110.0 546.1,106.6 540.9,103.7 532.4,100.8 523.3,99.1 514.2,98.5 497.1,98.4 481.2,99.0 466.7,100.1 453.3,101.6 439.5,103.9 427.2,106.5 415.1,109.8 403.8,113.6 392.9,118.2 383.8,122.9 376.4,127.9 374.7,130.8 372.7,135.9 370.5,145.8 370.1,153.8 371.2,162.8 373.7,170.6 378.0,178.7 384.6,186.9 393.4,195.4 402.0,201.6 411.8,206.8 421.7,210.5 432.2,213.3 444.2,215.6 458.0,217.5 475.3,219.0 495.4,220.1 540.7,221.0 546.7,219.3 551.2,216.1 554.9,210.5 557.4,202.4 558.5,194.8 559.5,178.2 561.2,165.9 561.8,157.7 561.5,144.3 559.8,128.6 564.0,133.3 567.5,138.3 570.8,144.8 573.4,151.6 575.6,159.9 577.2,168.3 580.3,201.6 582.2,212.2 584.5,219.0 587.2,224.9 592.3,233.0 598.7,240.3 603.5,251.9 607.1,277.1 608.9,265.8 610.2,252.7 610.8,239.8 610.8,226.4 609.0,200.9 607.1,187.8Z"/>
+  </g>
+  <g id="tail-hang">
+    <path fill="#735030" d="M604.37,174.19c-12.93-57.45-53.16-64.03-53.16-64.03,0,0-.32-.07-.81-.13-6.99-6.64-18.34-11.1-36.16-11.51-101.75-2.35-138.26,29.65-138.26,29.65,0,0-17.09,29.65,6.99,56.94,24.08,27.29,51.41,35.01,154.89,36,24.71.24,19.79-32.94,22.12-46.59,1.27-7.46,3.53-20.47-.19-45.91,20.61,20.24,17.77,53.92,20.84,75.96,3.17,22.82,18.05,35.7,18.05,35.7l4.79,11.61,3.58,25.24s10.25-45.48-2.68-102.93Z"/>
+  </g>
+  <g id="tail-swish-fwd" display="none">
+    <path fill="#735030" d="M 594.986159275,180.972460816 c -3.73791999948,-62.6158394619 -43.7754951648,-70.8128792837 -43.7754951648,-70.8128792837 c 0,0 -0.319954844912,-0.0700956783826 -0.809913899483,-0.130238114756 c -6.99075021064,-6.63934341727 -18.3407502106,-11.0993434173 -36.1607502106,-11.5093434173 c -101.75,-2.35 -138.26,29.65 -138.26,29.65 c 0,0 -17.09,29.65 6.99,56.94 c 24.08,27.29 51.41,35.01 154.89,36 c -1.86568649555,-0.675768831274 11.3659676633,-32.890932737 16.5161795355,-46.2105902299 c 2.75868962753,-7.37006943845 7.09594106052,-20.3809106088 5.25681539804,-46.2220509935 c 18.7579762014,21.6225217168 8.95357010912,56.3967245694 2.54338683345,79.5291316411 c -11.5856710319,23.2329769284 -10.5575437375,40.0059634895 -10.5575437375,40.0059634895 l -8.07185636051,12.2511542964 l -25.7983085945,21.6934810655 s 54.4924704383,-35.5916820848 77.2374862004,-101.184628453 Z"/>
+  </g>
+  <g id="tail-swish-back" display="none">
+    <path fill="#735030" d="M 615.961389218,162.182887957 c -24.3446041482,-48.5786438979 -64.7547922788,-52.0207402187 -64.7547922788,-52.0207402187 c 0,0 -0.320133109346,-0.0695804297083 -0.810199357296,-0.128990242695 c -6.98639758175,-6.6431574953 -18.3363975818,-11.1031574953 -36.1563975818,-11.5131574953 c -101.75,-2.35 -138.26,29.65 -138.26,29.65 c 0,0 -17.09,29.65 6.99,56.94 c 24.08,27.29 51.41,35.01 154.89,36 c 57.5621536975,-7.95178378351 32.0975520342,-34.7302151202 30.9350326693,-48.2439182594 c -0.753938555315,-7.28936077161 -1.56760932387,-19.9518859583 -8.58799881023,-44.4441861712 c 23.6210819085,17.5266973933 29.9509352091,48.2719018894 43.3957361718,65.7436233731 c 17.4789225559,15.7808334103 42.4900077378,16.9061386723 42.4900077378,16.9061386723 l 14.3430513655,3.37989692357 l 25.371520109,9.08796277104 s -26.2416965238,-27.7524334105 -69.8459600254,-61.3566293527 Z"/>
+  </g>
+  <g id="tail-lifted" display="none">
+    <path fill="#735030" d="M 632.13159044,124.01291943 c -44.4285636402,-27.963469005 -81.1030371049,-13.7301051152 -81.1030371049,-13.7301051152 c 0,0 -0.316101676761,-0.0554164473105 -0.795184507658,-0.0982453574725 c -6.82336882785,-6.7945689571 -18.1733688279,-11.2545689571 -35.9933688279,-11.6645689571 c -101.75,-2.35 -138.26,29.65 -138.26,29.65 c 0,0 -17.09,29.65 6.99,56.94 c 24.08,27.29 51.41,35.01 154.89,36 c 99.0976343331,-38.9549348407 62.2504128173,-49.3498059552 57.77471674,-63.2133216318 c -3.93737546403,-6.25651948953 -11.5276042597,-16.1232504678 -30.6849598888,-32.7731676887 c 30.7517874149,2.45594806497 52.1654268266,24.3025476023 71.7788461892,34.1150320407 c 19.8834892456,11.1918188675 39.4243986871,9.59740865056 39.4243986871,9.59740865056 l 10.8202123063,6.50226500911 l 16.0114788988,23.4602031038 s -20.0536235922,-49.3586497253 -70.8531024922,-74.7855000538 Z"/>
+  </g>
+  <g id="barrel">
+    <rect fill="#c9a676" x="150" y="110" width="400" height="100"/>
+  </g>
+  <g id="bumper-hind">
+    <path fill="#b8905e" d="M529.7,173.5 514.3,172.0 502.2,172.4 496.7,173.3 492.1,174.7 488.5,176.6 485.6,179.0 483.6,181.7 482.2,184.7 481.6,188.1 481.7,192.7 483.9,202.0 489.5,214.0 544.2,214.0 546.4,207.4 548.1,199.4 548.1,194.0 547.0,189.3 544.1,184.1 540.3,180.0 535.3,176.3Z"/>
+  </g>
+  <g id="bumper-front">
+    <path fill="#b8905e" d="M251.4,115.8 203.7,97.1 208.8,94.1 200.4,85.1 203.8,79.8 196.6,74.2 137.1,127.7 143.4,176.9 144.7,181.7 145.8,191.6 147.9,201.5 151.4,214.0 213.3,214.0 219.8,203.2 234.2,203.4 245.9,201.7 256.9,198.1 270.2,191.7 279.6,186.2 288.7,179.9 295.3,173.8 299.8,167.9 301.7,164.1 302.9,159.5 303.0,155.9 302.1,151.6 300.3,147.5 297.5,143.6 289.8,136.2 278.9,128.9 265.3,121.8ZM147.5,168.3 143.7,160.2 141.5,151.5 141.0,142.5 142.1,134.7 144.9,126.1 148.7,119.2 154.4,112.2 160.5,107.1 167.3,103.1 175.8,100.1 184.7,98.8 192.6,99.1 201.4,101.1 208.6,104.2 215.3,108.5 221.2,114.0 162.3,166.9 156.1,165.2 153.6,165.0 150.3,165.8Z"/>
+  </g>
+  <g id="hind-gaskin">
+    <path fill="#9a6a3c" d="M545.2,213.3 544.5,207.8 542.7,202.5 540.0,197.7 536.4,193.5 532.0,190.1 527.0,187.6 521.7,186.1 516.1,185.7 510.6,186.4 505.4,188.1 500.5,190.8 496.3,194.5 492.9,198.8 490.4,203.8 488.9,209.2 488.5,214.7 489.1,219.5 490.2,223.5 492.2,228.0 494.5,231.4 497.3,234.5 500.5,237.2 507.8,240.8 525.1,262.0 553.0,262.0 552.7,258.1 551.2,253.1 542.7,237.4 540.2,230.6 542.7,225.5 544.2,221.6 545.0,217.5Z"/>
+  </g>
+  <g id="hind-cannon">
+    <path fill="#83552c" d="M554.0,261.6 553.0,256.6 550.2,252.0 546.1,248.8 541.3,247.2 536.2,247.3 531.4,249.2 527.3,252.8 524.9,257.3 524.1,262.4 525.3,267.7 526.9,270.6 528.8,272.8 531.4,274.8 534.4,276.2 536.0,283.2 536.8,291.6 536.9,300.1 535.3,320.0 552.2,320.0 552.7,270.3Z"/>
+  </g>
+  <g id="hind-hoof">
+    <path fill="#5e3c1e" d="M553.2,319.8 552.8,317.3 551.7,315.0 550.1,313.0 548.0,311.6 545.6,310.7 543.0,310.6 540.5,311.1 538.3,312.3 536.3,314.2 535.0,316.4 534.3,319.3 534.5,322.1 532.6,325.5 527.2,333.3 518.5,343.7 544.4,343.5 546.2,341.7 546.4,339.8 544.1,333.5 544.2,331.2 545.0,329.4 548.4,328.2 551.2,325.8 552.7,323.0Z"/>
+  </g>
+  <g id="fore-forearm">
+    <path fill="#9a6a3c" d="M214.3,213.2 213.5,207.0 211.6,201.0 208.5,195.6 204.4,190.8 199.4,187.0 193.8,184.2 187.8,182.5 181.5,182.0 175.3,182.8 169.4,184.8 163.9,187.9 159.2,192.0 155.3,196.9 152.5,202.5 150.8,208.5 150.4,214.8 151.7,223.3 155.3,231.1 159.2,236.0 163.3,239.7 168.0,242.6 173.5,244.7 178.6,260.0 202.7,260.0 204.2,247.3 206.5,234.9 209.8,230.4 212.4,224.8 214.0,218.7Z"/>
+  </g>
+  <g id="fore-cannon">
+    <path fill="#83552c" d="M203.7,259.7 202.9,255.3 200.4,251.2 196.8,248.5 192.3,247.0 187.8,247.3 183.4,249.1 180.2,252.2 178.1,256.5 177.6,260.0 178.2,263.8 179.7,267.0 181.9,269.6 186.1,282.2 187.8,316.0 207.8,316.0 207.2,312.0 203.3,305.0 202.0,295.6 201.7,284.5 202.0,271.0 202.3,266.0 203.4,262.9Z"/>
+  </g>
+  <g id="fore-hoof">
+    <path fill="#5e3c1e" d="M208.8,315.7 208.3,312.8 207.0,309.9 204.8,307.5 202.3,306.0 199.2,305.1 196.2,305.1 193.4,306.0 190.6,307.7 188.4,310.4 187.1,313.6 186.9,317.1 187.8,320.4 182.6,328.0 178.9,334.7 177.1,339.4 177.1,341.3 177.5,342.1 179.2,343.2 183.2,344.2 189.5,344.5 196.0,344.2 196.3,330.0 197.1,327.0 201.5,326.3 205.4,324.0 208.0,320.2Z"/>
+  </g>
+  <g id="neck">
+    <path fill="#a87a48" d="M196.6,74.2 194.1,72.2 193.3,70.3 197.7,63.9 186.3,62.7 184.2,60.8 185.6,53.8 174.8,54.5 172.1,53.3 172.1,51.9 173.4,48.2 162.3,43.2 161.1,41.5 164.0,34.3 152.6,35.8 150.1,34.5 149.9,27.3 139.2,30.5 116.5,106.3 124.5,108.3 128.2,110.5 130.8,112.8 133.9,116.9 135.9,121.0 136.5,122.6 137.1,127.7ZM233.0,143.6 231.8,134.7 229.0,126.1 224.6,118.2 218.7,111.4 211.6,105.9 203.5,101.8 194.8,99.4 185.8,98.7 176.9,99.8 168.3,102.7 160.5,107.1 153.7,113.0 148.1,120.1 144.0,128.2 141.6,136.9 141.0,145.9 142.1,154.8 144.9,163.4 149.4,171.2 155.2,178.0 162.4,183.6 170.4,187.6 179.1,190.1 188.1,190.7 197.0,189.6 205.6,186.8 213.5,182.3 220.3,176.4 225.8,169.3 229.9,161.3 232.3,152.6Z"/>
+  </g>
+  <g id="head">
+    <ellipse id="nostril" cx="47" cy="99" rx="6" ry="5" fill="#140d05"/>
+    <path fill="#8e6234" d="M136.4,28.8 135.5,24.7 129.3,27.9 123.8,28.1 122.2,27.2 120.7,17.5 118.3,10.3 115.0,5.5 111.6,3.4 109.0,3.0 107.1,4.8 106.1,8.3 104.9,17.1 102.1,25.2 95.8,16.5 89.3,9.5 85.2,6.9 83.3,6.6 81.6,7.2 80.8,8.8 80.8,11.6 86.2,27.8 76.6,31.9 73.8,33.9 71.6,36.2 60.4,54.4 48.9,68.6 43.4,76.2 37.4,86.5 33.7,94.6 32.7,99.3 33.9,103.8 37.9,111.1 43.2,118.0 46.2,120.3 48.7,120.7 53.4,118.9 60.2,114.6 56.3,119.1 51.9,122.5 58.1,123.2 62.1,121.8 65.2,119.4 69.2,114.7 73.7,108.1 86.0,107.9 103.9,104.8 112.1,105.8 117.1,107.5 122.9,108.6 127.9,108.9 132.8,108.6 138.7,107.5 145.2,105.1 150.4,102.1 155.8,97.8 159.8,93.4 162.7,89.3 165.3,83.9 166.9,79.2 168.0,74.4 168.4,68.4 168.0,62.5 166.9,57.6 164.9,52.0 162.7,47.6 159.8,43.5 155.8,39.0 152.0,35.8 147.9,33.1 142.5,30.6ZM48.6,101.1 46.0,101.4 43.4,100.5 46.2,97.8 48.3,96.9 50.8,96.7 49.9,99.8ZM93.4,43.1 84.7,53.6 78.5,55.3 76.8,56.5 78.6,49.7 81.5,45.7 83.7,44.4 86.7,43.6Z"/>
+    <ellipse id="eye-white" cx="84" cy="51" rx="10" ry="9" fill="#f3ecdb"/>
+    <circle id="eye-pupil" cx="84" cy="51" r="4.4" fill="#140d05"/>
+  </g>
+  <g id="PIVOTS">
+    <circle id="pv-elbow" cx="182.3" cy="214.0" r="3.5" data-cap="32.0" fill="#e0218a" stroke="#fff" stroke-width="1"/>
+    <circle id="pv-knee" cx="190.7" cy="260.0" r="3.5" data-cap="13.1" fill="#e0218a" stroke="#fff" stroke-width="1"/>
+    <circle id="pv-fore-fetlock" cx="197.8" cy="316.0" r="3.5" data-cap="11.0" fill="#e0218a" stroke="#fff" stroke-width="1"/>
+    <circle id="pv-stifle" cx="516.8" cy="214.0" r="3.5" data-cap="28.3" fill="#e0218a" stroke="#fff" stroke-width="1"/>
+    <circle id="pv-hock" cx="539.1" cy="262.0" r="3.5" data-cap="14.9" fill="#e0218a" stroke="#fff" stroke-width="1"/>
+    <circle id="pv-hind-fetlock" cx="543.7" cy="320.0" r="3.5" data-cap="9.4" fill="#e0218a" stroke="#fff" stroke-width="1"/>
+    <circle id="pv-withers" cx="187.0" cy="144.7" r="3.5" data-cap="46.0" fill="#e0218a" stroke="#fff" stroke-width="1"/>
+    <circle id="pv-poll" cx="127.9" cy="68.4" r="3.5" data-cap="40.5" fill="#e0218a" stroke="#fff" stroke-width="1"/>
+    <circle id="pv-elbow-far" cx="213.8" cy="214.0" r="3.5" fill="#e0218a" stroke="#fff" stroke-width="1"/>
+    <circle id="pv-stifle-far" cx="480.3" cy="214.0" r="3.5" fill="#e0218a" stroke="#fff" stroke-width="1"/>
+    <circle id="pv-dock" cx="553.0" cy="113.0" r="3.5" fill="#e0218a" stroke="#fff" stroke-width="1"/>
+  </g>
+</svg>
+</script><!--@TEMPLATE:end-->
+</html>
