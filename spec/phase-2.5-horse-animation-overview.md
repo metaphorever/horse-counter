@@ -2,7 +2,8 @@
 
 **Model:** Opus · **Effort:** high
 **Depends on:** 2.4 (SVG chip art system — separable parts, single-`<svg>`-per-chip render)
-**Status:** overview FINAL; Phase 2.5.1 specced; 2.5.2 / 2.5.3 to spec after 2.5.1 ships
+**Status:** overview FINAL; **asset shape AMENDED 2026-09-10** (posable segments,
+posed and baked by Claude — see 2.5.1); 2.5.2 / 2.5.3 to spec after 2.5.1 ships
 **Promotes:** the "Fancy-mode motion + roaming sub-toggles" backlog item (Clover, 2026-05-23)
 
 This is the umbrella for bringing the Fancy-view horses to life: varied static
@@ -25,7 +26,7 @@ the lowest stakes**:
 
 | Phase | Name | Ships | Risk it retires |
 |---|---|---|---|
-| **2.5.1** | Static pose variation | Per-render varied stance + head angle + facing; no animation, no layout change | The sprite rework + the asset pipeline |
+| **2.5.1** | Static pose variation | Per-render varied stance + head angle + facing; no animation, no layout change | The posable horse + the pose/bake pipeline — **the art gate for the whole arc** |
 | **2.5.2** | Walk-cycle | Frame-animated legs + tail swish + head motion; "Hold Your Horses" (animate in place) | Animation technique + perf at herd scale |
 | **2.5.3** | Wander | Horses roam the grass field; "Set Horses Loose" + gaits + Return to Formation | The layout break-out + the roaming controller |
 
@@ -84,21 +85,38 @@ The 2.4 render survives largely intact; animation rides on top of it:
   JS / under reduced-motion). Wander is the one genuinely JS-dependent layer —
   no-JS users get the static poem, which is the correct graceful fallback.
 
-**Asset shape (Clover draws; gated before full production):**
-- **Legs** — frame-based walk-cycle: a front-leg set + a hind-leg set, ~6 frames
-  each. These frames double as the **static pose pool**.
-- **Head** — a *single* drawing with a defined neck pivot, pivotable across ~6
-  angles (all-the-way-up ↔ all-the-way-down/grazing). Not frames.
-- **Tail** — 4–6 swish frames (can start with fewer; static picks one).
+**Asset shape — AMENDED 2026-09-10 (Clover draws the parts; gated before full
+production).** Clover draws **posable segments once**; Claude poses them and
+**bakes flat frame symbols at build time**. The runtime is unchanged — the browser
+still gets ordinary `<use>` refs, no JS posing. Full rationale and measurements in
+`spec/phase-2.5.1-static-pose-variation.md`.
+- **Legs** — posable: fore = forearm/cannon/hoof (elbow, knee, fetlock); hind =
+  gaskin/cannon/hoof (stifle, hock, fetlock). **One set, shaded and phase-offset
+  for near/far.** Baked into a purpose-built **standing pool** (static) and a
+  **16-frame walk cycle** (2.5.2) — two pools, different natural sizes.
+- **Bumpers** — front (chest/shoulder) + hind (haunch), static. **Structural:**
+  they hide the shoulder and hip joints so those never have to merge, and they
+  fill the barrel's square bottom corners.
+- **Head** — **neck + head, 2 segments**, runtime-posed via CSS rotate (the split
+  is what makes grazing work). Not frames.
+- **Tail** — **stays hand-drawn**, 4 static positions. Swish is timing, not pose
+  vocabulary; a segmented chain is where a big flowing shape most reads as a
+  puppet.
 - **Barrel** — unchanged stretchy `<rect>`.
+- **Superseded:** the original "~6 whole-leg frames per set, Clover draws each
+  frame" plan. Reason: frames drawn in isolation drift on ground reference and
+  body anchors (the 2026-09-09 walk cycle came out a **trot**, with unpinned
+  hooves and uneven stance spacing), and the arc would cost ~38 drawings against
+  ~10 posable pieces.
 
 ---
 
 ## Build order
 
-1. **2.5.1 Static pose variation** — rework the sprite into frame-sets, draw the
-   leg cycle + head + tail frames (the art gate), render a server-side random
-   rule-constrained pose per horse. *Full spec: `spec/phase-2.5.1-static-pose-variation.md`.*
+1. **2.5.1 Static pose variation** — build the posable horse (Claude ships the
+   parts template + harness → Clover's design sprint → Claude poses and bakes),
+   then render a server-side random rule-constrained pose per horse. *Full spec:
+   `spec/phase-2.5.1-static-pose-variation.md`.*
 2. **2.5.2 Walk-cycle** — animate the frames; wire "Horse Animations / Hold Your
    Horses"; the View-menu tree + persistence; tail swish + head motion. *Spec
    after 2.5.1 ships.*
@@ -133,6 +151,17 @@ Not blocking 2.5.1; resolve when its phase is specced.
   pass through — "no complicated pathfinding.")
 - **Clicking a roaming horse pauses it** (settled) — define what "pause" means
   (this horse only? resumes how?) at 2.5.3 spec time.
-- **Per-gait timing / phase offsets** (2.5.2): walk = 4-beat, trot = 2-beat
-  diagonal, graze = slow + grazing pauses. Mostly a timing-param library over the
-  shared frames, not 3× the art.
+- **Per-gait poses** (2.5.2): walk = 4-beat lateral-sequence (LH→LF→RH→RF), trot =
+  2-beat diagonal, graze = slow + grazing pauses. **Corrected 2026-09-10:** this
+  previously read "mostly a timing-param library over the shared frames, not 3×
+  the art". That is wrong for the trot — a trot has a **suspension phase and much
+  higher hoof flight**, so retiming walk frames yields a fast walk, not a trot.
+  Under the frame-based plan that was a second full art library; under the posable
+  model it is a second pose table and costs no art at all. (This correction is a
+  large part of why the asset shape changed.)
+- **Frame-swap mechanism** (2.5.2): CSS cannot animate `<use href>` — SMIL
+  `calcMode="discrete"`, a sprite-strip translate, or JS, each with different
+  reduced-motion / no-JS behaviour. Interacts with frame count and frame rate.
+- **Frame rate** (2.5.2): 60fps is not assumed. The per-chip `drop-shadow` filter
+  re-rasterises on any change inside it, so **15fps costs a quarter of 60fps** and
+  lands in the "charming jank" register anyway. Pick it live.

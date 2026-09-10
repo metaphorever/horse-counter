@@ -2,18 +2,22 @@
 
 **Model:** Opus · **Effort:** high
 **Depends on:** 2.4 (SVG chip art, separable parts), umbrella `spec/phase-2.5-horse-animation-overview.md`
-**Status:** spec FINAL pending Clover review; **art gate before full production**
+**Status:** **AMENDED 2026-09-10** — art model changed from hand-drawn frame-sets
+to *posable segments, posed and baked by Claude*. See **The art**. Runtime plan
+unchanged. **Design sprint before full production.**
 **Ships:** per-render varied leg stance + head angle + facing for every server-rendered Fancy chip. **No animation, no layout change.**
 
 The first move of the horse-animation arc. A poem of Fancy horses currently renders
 every horse in the *same* pose — same legs, same head, same facing logic — so a
 herd looks like clones. This phase gives each rendered horse a **plausible, varied
-static pose** by selecting frames from the (about-to-exist) walk-cycle library.
+static pose**, selected from a purpose-built standing pool.
 
-It is deliberately the **first** phase because it does the scary part — reworking
-the 2.4 sprite into frame-sets and standing up the asset pipeline — at the lowest
-stakes: no motion, no layout, no JS dependency. Everything 2.5.2 (walk-cycle) needs
-is built and proven here, statically.
+It is deliberately the **first** phase because it does the scary part — building
+the posable horse and standing up the pose/bake pipeline — at the lowest stakes:
+no motion, no layout, no JS dependency. Everything 2.5.2 (walk-cycle) and 2.5.3
+(wander) need is built and proven here, statically. **That makes 2.5.1 the art
+gate for the whole arc, not just for this phase:** every gait and every stance
+downstream inherits these segments and these pivots.
 
 ---
 
@@ -49,31 +53,136 @@ global — there's no reason to gate them per surface.)
 
 ---
 
-## The art (Clover draws — this is the gate)
+## The art (Clover draws the parts — this is the gate)
 
-This phase establishes the **full leg frame library**, because static poses are
-drawn *from* the walk-cycle frames (one library serves both static and 2.5.2's
-animation). Per the umbrella asset shape:
+**Amended 2026-09-10 (walk-cycle review session).** This phase originally asked
+Clover to draw ~6 whole-leg frames per set, with static poses plucked from them.
+That is **superseded**. Clover draws a small set of **posable segments** once;
+Claude poses them numerically and **bakes the results into flat frame symbols at
+build time**. The runtime is unchanged from the original plan — the browser still
+gets ordinary `<use href="#hz-…">` refs. No JS posing, no per-chip transform
+chains, no change to the no-JS story.
 
-| Part | What to draw | Notes |
+### Why the change
+
+The walk cycle Clover drew (`prototypes/horse-chip-art-walk.svg` — 8 frames × 4
+legs) was measured leg by leg and is a **trot**, not a walk: both diagonal pairs
+land and lift in unison 4 frames apart, where a walk is 4-beat LH→LF→RH→RF.
+Normalised hoof position is effectively identical frame-for-frame between
+fore-near/hind-far and fore-far/hind-near.
+
+Three further defects share one root cause — drawing frames in isolation, so the
+ground reference and body anchors drift between them:
+
+| Defect | Measured |
+|---|---|
+| Stance hooves not on one ground line | only 8 of 32 drawings land within 3u of y=339; stance ends float 4–13u high |
+| Uneven stance spacing (the horse skates) | per-frame travel 17.8u–63.8u where all should be ~38u; fore stride 156–161u vs hind 145–147u |
+| Hind legs skim | peak hoof clearance 20u hind vs 50u fore |
+
+Posing from fixed pivots makes those three **impossible by construction** rather
+than fixed by eye: the pivot does not move, and the hoof position is computed.
+
+The deciding argument, though, is volume rather than correctness. Staying
+frame-based costs Clover **~38 drawings** across the arc — walk ≈16, trot ≈16
+(**a trot is not a retimed walk**: it has a suspension phase and much higher
+flight), plus graze/idle/turning. Posable costs **~10 pieces once**, and every
+later pose is a script run. Clover's drawing availability is the stated bottleneck
+for the whole arc, so this is the constraint that matters.
+
+### The pieces (10)
+
+| Piece | Segments | Pivots / notes |
 |---|---|---|
-| **Front legs** | ~6-frame walk-cycle set | one set; near/far share it (far = shaded + phase-offset later). Each frame on the 2.4 coordinate frame (belly-line pivot `y=210`, hooves land `y≈343`). |
-| **Hind legs** | ~6-frame walk-cycle set | same. |
-| **Head** | one drawing + a marked **neck pivot point** | pivots across ~6 angles up↔down; grazing = fully lowered. A single `<use>`, rotated — *not* frames. |
-| **Tail** | 2–4 static positions to start | static picks one; the full 4–6 swish set can finish in 2.5.2. |
-| **Barrel** | unchanged | the stretchy `<rect>` from 2.4. |
+| **Front bumper** | 1 (static) | none — chest + shoulder mass; fills the barrel's front bottom corner |
+| **Hind bumper** | 1 (static) | none — haunch; fills the rear bottom corner |
+| **Fore leg** | 3 — forearm, cannon, hoof/pastern | elbow, knee, fetlock |
+| **Hind leg** | 3 — gaskin, cannon, hoof/pastern | stifle, hock, fetlock |
+| **Neck** + **Head** | 2 | withers, poll |
+| **Tail** | hand-drawn, 4 static positions | none — not posable, see below |
+| **Barrel** | unchanged stretchy `<rect>` | none |
 
-**Drawing rules carry over from 2.4:** flat fill per part (coat applied in code via
-`currentColor`); 8u seam overlap so parts merge into one flat silhouette; back
-line `y=110`, belly `y=210`, seams `x=150 / x=550`. **Each leg frame must keep its
-top anchored at its belly-line pivot** so swapping frames doesn't shift the leg's
-attachment — only the hoof end moves. Mark the head's neck pivot in art coords so
-CSS `transform-origin` can rotate it cleanly.
+**The bumpers are structural, not cosmetic.** They cover the shoulder and the hip,
+so those two joints — the hardest to keep merged at every angle — are never
+visible and never have to be drawn at all. That is why the posable chains start at
+the **elbow** and the **stifle** rather than at the body. The bumpers also fix a
+real defect found in review: the barrel's square bottom corners show on several
+frames, because whole-leg art carries shoulder/haunch padding that leg-only art
+lost (production `hz-lfn` spans 64u across the belly line; the walk frames vary
+35u–75u).
 
-**Frame count is a starting point, tunable at the gate** — fewer if 6 reads as
-busy, the framework (front-set / hind-set / pivot-head / tail-set) is fixed.
+**Static haunch is a deliberate simplification with a named fallback.** It may read
+stiff at full hind extension. At 26px it should be fine; if it looks locked in
+preview, promote the haunch to a fourth posable segment — additive, not a
+redesign. **Clover checks this at the first prototype.**
 
----
+**Head split into neck + head is justified specifically by Graze.** A rigid
+head+neck rotating about a withers pivot points the muzzle down at grazing depth
+instead of levelling at the ground, and drags the chest with it. If Graze were
+ever dropped, one segment would do.
+
+### Tail — stays hand-drawn (4 positions)
+
+Posability buys least here and risks most: a big flowing shape is where a
+segmented chain most obviously reads as a puppet, and the pose vocabulary needed
+is tiny (swish is *timing*, not pose variety). Four positions, all from the
+existing dock at the rear seam:
+
+1. **Neutral hang** — the current tail, unchanged. Standing, grazing, slow walk.
+2. **Forward swish** — lower two-thirds swung toward the head, tip curling under.
+3. **Back swish** — swung away, tip trailing. The opposite beat.
+4. **Lifted** — dock raised, carried higher and flagged out. Trot; alert/famous.
+
+Alternating 2/3 reads as a swish, 1 is rest, 4 is gait-dependent. **Claude ships
+rough warped versions of the existing tail path with the parts template**; Clover
+cleans up or redraws keeping the rough shape. Low priority, easy to swap later.
+
+### Drawing rules
+
+Carried from 2.4: flat fill per part (coat applied in code via `currentColor`);
+back line `y=110`, belly `y=210`, seams `x=150 / x=550`; the barrel zone stretches
+so all shaping lives in the caps.
+
+**Ground line is `y≈342`** — production's actual value (`hz-lff` 344.5, `hz-lhn`
+343.7, `hz-lhf` 341.3, `hz-lfn` 339.8). The 2.4 template's `y=315` guide is
+vestigial and the walk cycle drifted to 339. **One number, stated once in the
+template.** Re-check the `--hz-y` tuning knob after the swap — the whole horse
+shifts ~1px if this moves.
+
+New and load-bearing for posable:
+
+- **Every segment carries a circular cap at its pivot end**, radius ≥ half the
+  segment width, centred exactly on the pivot. This is what keeps the silhouette
+  merged at every angle. At 26px a leg is 4–6px wide, so the rounding is
+  sub-pixel — and `.hz` is **26px on every surface sitewide** (verified: the Fancy
+  full-width work widened the *container*, not the horse), so there is no larger
+  scale where it would show.
+- **Pivots are marked in art coordinates and are the contract.** Moving one later
+  invalidates every baked pose — cheap to regenerate, but all poses need
+  re-validating.
+- Segments must read correctly across their **whole** joint range, not in one
+  pose. The harness shows the range live so this is checkable *during* the sprint.
+
+## Two frame pools, not one
+
+The original spec drew static poses from the walk-cycle frames because that was
+the only art available. Posable removes the constraint, and the two pools have
+genuinely different natural sizes:
+
+| Pool | Size | Why |
+|---|---|---|
+| **Standing** (ships this phase) | as many as read well | Purpose-built: weight on all four, one hind resting, head at various heights. **A standing horse is not a walk frame held still** — this pool is what 2.5.1 actually ships and it reads considerably better than paused cycle frames. |
+| **Walk cycle** (2.5.2) | **16** | Displayed frames per cycle = fps × stride duration. A horse walks ~1 stride/sec, so 16 frames ⇒ 16fps — which is also the "charming jank" register we want. Baking beyond that renders frames nobody sees. |
+
+Frame-count arithmetic at chip scale (stride 304u = 79px of hoof travel):
+8 frames ≈ 10px/step · **16 ≈ 5px** · 32 ≈ 2.5px · 64 ≈ 1.2px. Below ~2px per
+step nothing is perceptible at 26px, so 32+ buys smoothness only at frame rates
+we are deliberately not running.
+
+**Page weight:** ~6 paths per baked frame at ~400 bytes ⇒ 16 frames ≈ 38KB raw in
+`<defs>`, 64 ≈ 154KB, injected on every Fancy page. *Mitigation (2.5.2):* gate the
+walk frames behind the animation setting so static-only pages carry the standing
+pool alone.
 
 ## Pose selection (server-side, per render)
 
@@ -81,11 +190,11 @@ Pose is computed in Python during the **existing per-horse enrichment** (routes
 already enrich `coat` / `rev` / `is_famous` before render — pose joins them). New
 fields on the enriched horse dict:
 
-- `leg_stance` — one entry from a **curated stance set**: a list of
-  `(front_frame, hind_frame)` combinations hand-validated to look like a real
-  standing horse. The validation rule of thumb is **"≥3 of 4 hooves on the
-  ground"** — start with a small curated set, then experiment to find what reads
-  best (the rule is a tunable, not a hard constraint baked in code).
+- `leg_stance` — one entry from the **standing pool** (see *Two frame pools*).
+  Each entry is a whole validated four-leg stance baked as symbols, not a per-leg
+  roll, so implausible combinations cannot occur. Ground contact is exact by
+  construction; the old **"≥3 of 4 hooves on the ground"** rule of thumb is now a
+  *generation* constraint in the posing script rather than a hand-validation step.
 - `head_angle` — one of the ~6 head pivot steps (weight toward neutral so most
   horses look alert, a few graze/look-up).
 - `tail_frame` — one of the static tail positions.
@@ -106,10 +215,18 @@ change.
 
 ## Sprite & macro changes
 
-- **`_horse_sprite.html`** — legs become frame-sets: `#hz-lff-0..N`,
-  `#hz-lhf-0..N` (front/hind). Head symbol gains a documented neck-pivot origin.
-  Tail gains its static positions `#hz-tail-0..M`. Eye/nostril stay inside the
-  head symbol (single tweak point, 2.4).
+- **`_horse_sprite.html`** — **generated, not hand-edited.** Legs become baked
+  frame-sets `#hz-lff-0..N` / `#hz-lhf-0..N` (front/hind), each symbol holding the
+  posed segments as flat paths. Bumpers get their own symbols. Head/neck stay
+  *runtime*-posed (a CSS rotate, as originally specced) — they are the one part
+  where continuous range beats baked steps, and it is 2 joints, not 14. Tail gains
+  its static positions `#hz-tail-0..3`. Eye/nostril stay inside the head symbol
+  (single tweak point, 2.4).
+- **`tools/pose_horse.py`** (new) — the posing/bake step. Holds the segment
+  geometry, the joint-limit constraints, the pose tables (standing pool + walk
+  cycle) and emits `_horse_sprite.html`. **The pose tables are a plain list of
+  angles — a knob set Clover can scrub**, in the same idiom as the `--hz-y`
+  live-tuning knob from 2.4. Re-running it is the whole cost of a new pose.
 - **`macros.html`** — `horse_svg(h)` reads `h.leg_stance / h.head_angle /
   h.tail_frame / h.rev`, emits the chosen `<use>`s and the head rotate transform.
   Draw order from 2.4 preserved (back→front: shaded far legs, tail, barrel, near
@@ -130,10 +247,19 @@ change.
 - **Facing flip × head pivot.** `rev` applies `scaleX(-1)` to the chip; confirm the
   head rotate composes correctly under the flip (a rotate inside a mirrored frame
   flips sign — verify the grazing head still lowers, not raises, when reversed).
-- **Stance plausibility at speed.** Independent per-leg random can produce
-  floating/impossible stances. Mitigation: the **curated stance set** (pick a whole
-  validated combo, not per-leg) — this is the safe default; per-leg-with-reroll is
-  a fallback only if the curated set feels too repetitive.
+- **Style drift — the highest-weighted risk.** Segmented limbs pull toward smooth
+  and mechanical; the 2.4 look is chunky and hand-cut. **Claude cannot self-assess
+  this** — measuring a generated SVG is reliable, judging whether it reads as a
+  puppet is not. Clover is the eyes on every posed output, not just on the parts.
+- **Numerically correct can be lifeless.** Joint angles derived from real gait data
+  give an accurate medical-illustration walk; hand-drawn frames had character.
+  Mitigation: the pose table is a tunable angle list, not a re-render.
+- **Longer feedback loop.** Segments look like nothing on their own — correctness
+  only appears after posing. Mitigation: **placeholder parts ship inside the
+  harness first**, so Clover styles over geometry that is already proven and sees
+  a wrong pivot immediately.
+- **Stance plausibility** is now a generation constraint (whole validated stances
+  are baked as symbols), so implausible per-leg combinations cannot be emitted.
 - **Shimmer mask drift.** If the mask still points at old single-pose ids, famous
   horses shimmer a *different* silhouette than they render. Covered by the
   shimmer.js change above — verify on a famous horse in several poses.
@@ -149,42 +275,68 @@ change.
   clicks still bubble to `.poem-horse`. Unchanged from 2.4 — verify.
 
 ---
+- **`filter: drop-shadow` under animation (2.5.2 risk, flagged early).** Each chip
+  `<svg>` carries a drop-shadow, and a filter re-rasterises its whole region on
+  *any* change inside it. That cost is identical for frame-swapping and for
+  runtime posing, so it is not an argument between them — but it is the thing most
+  likely to make 2.5.2 stutter with 150 chips on screen. **Lower frame rate is the
+  cheapest lever**: 15fps costs a quarter of 60fps, and lands in the "charming
+  jank" register anyway. Test before committing to gait art.
+- **Frame-swap mechanism is still open (2.5.2).** CSS cannot animate `<use href>`,
+  so it is SMIL `calcMode="discrete"`, a sprite-strip translate, or JS — each with
+  different reduced-motion and no-JS behaviour. Interacts with frame count. Not
+  this phase's problem; recorded so it is not rediscovered.
 
-## Art gate (before full production — same discipline as 2.4)
+## Design sprint (before full production — same discipline as 2.4)
 
-Clover draws a **starter set**: one front + one hind leg frame set (or a partial
-set), the pivot head, and 1–2 tail positions. Claude wires the random
-rule-constrained selection and renders a **herd-density + length-ladder preview**
-at chip scale. Gate checks:
-1. Poses read as **plausible standing horses** (the ground-contact rule looks
-   right), and the silhouette still **merges into one flat coat shape** at every
-   word length.
-2. Variety is **legible, not chaotic** — a poem looks like a herd of individuals,
-   not a glitch.
-3. Head pivot range (up↔down) and facing flip both compose cleanly with coats and
-   the famous shimmer.
+Not a single pass — a **design sprint**. Claude goes first this time:
 
-**Gate passes → Clover finishes the full frame library → wire-in + live
-verification.** No full art production before the gate clears.
+1. **Claude ships the parts template** — best-guess shapes for all 10 pieces with
+   pivots marked in art coordinates, **proportions measured out of Clover's 32
+   walk drawings** (so it is in-style and in-proportion, not invented), plus rough
+   warped tail positions, plus the posing harness with those placeholders already
+   posed and moving.
+2. **Clover's design sprint** — style over proven geometry, adjust where needed.
+   Because the placeholders are derived from Clover's own art, the template may be
+   substantially usable as-is.
+3. **Claude poses** — standing pool + a corrected 4-beat walk, targeting Clover's
+   own hoof positions from the walk cycle (corrected for the trot, the pinning and
+   the spacing). Herd-density + length-ladder preview at chip scale.
 
----
+Gate checks (carried from 2.4):
+1. Poses read as **plausible standing horses**, and the silhouette still **merges
+   into one flat coat shape** at every word length and every joint angle.
+2. Variety is **legible, not chaotic** — a poem looks like a herd of individuals.
+3. Head pivot range and facing flip compose cleanly with coats and the shimmer.
+4. **New:** joints do not read as a puppet in motion, and the static haunch does
+   not read as locked.
+
+**Expect two rounds, not one** — pass 1 validates proportions and pivots, pass 2
+fixes what only shows in motion. That is the normal shape of this work, not a
+failure. **No full pose production before the sprint clears.**
 
 ## Build order
 
-1. **Art gate** (Clover starter set → Claude preview → Clover "looks right").
-2. **Sprite rework** — frame-set symbols, head pivot origin, tail positions.
-3. **Pose enrichment + macro** — `_assign_pose`, `horse_svg(h)`, curated stance set.
-4. **Shimmer mask fix** + style (head transform-origin) + print/popover checks.
-5. **Live verification** (Clover) — Fancy permalink + pasture + saved-horses +
+1. **Parts template + harness** (Claude) — 10 pieces with pivots, rough tails,
+   placeholder-posed harness. *This is the next session.*
+2. **Design sprint** (Clover) — style the parts; check the static haunch.
+3. **Posing + bake** — `tools/pose_horse.py`; standing pool, corrected walk;
+   generate `_horse_sprite.html`.
+4. **Pose enrichment + macro** — `_assign_pose`, `horse_svg(h)` (unchanged from
+   the original plan — it still just picks symbol ids).
+5. **Shimmer mask fix** + style (head `transform-origin`) + print/popover checks.
+6. **Live verification** (Clover) — Fancy permalink + pasture + saved-horses +
    profile bio + queue show varied plausible poses; Plain/Reader/editor/counter
-   unchanged; famous shimmer correct; reduced-motion + no-JS still render a
-   (static) pose.
-
----
+   unchanged; famous shimmer correct; reduced-motion + no-JS still render a pose.
 
 ## Files touched
 
-- `templates/_horse_sprite.html` — leg frame-sets, head pivot, tail positions.
+- `templates/_horse_sprite.html` — **generated** by the posing script: baked leg
+  frame-sets, bumper symbols, head/neck pivot, tail positions.
+- `tools/pose_horse.py` **(new)** — segment geometry, joint limits, pose tables,
+  sprite emitter. The pose tables are the tuning surface.
+- `prototypes/` — parts template, posing harness, and the 2026-09-09 gait
+  reference kit (walk SVG + analysis).
 - `templates/macros.html` — `horse_svg(h)` emits selected frames + head rotate.
 - `app.py` / `poetry.py` — `_assign_pose(h)` in the enrichment path.
 - `static/style.css` — head `transform-origin`; per-angle rules.
@@ -197,9 +349,13 @@ verification.** No full art production before the gate clears.
 
 ## Open questions
 
-1. **Frame count** — ~6 front / ~6 hind a good starting target, or fewer? *Resolve
-   at the art gate.*
-2. **Curated stance set size** — how many validated standing combos before it feels
-   varied enough? *Tune at the gate.*
-3. **Head-angle distribution** — weight toward neutral, or flat random across the 6
-   steps? *Tune at the gate (low-stakes, code-side knob).*
+1. **Static haunch** — does it read stiff at full hind extension? *Clover checks at
+   first prototype; fallback is a fourth hind segment.*
+2. **Standing-pool size** — how many stances before it feels varied enough?
+   *Tune at the sprint; it is a script parameter now, not art.*
+3. **Head-angle distribution** — weight toward neutral, or flat random across the
+   range? *Tune at the sprint (code-side knob).*
+4. **Resolved (2026-09-10):** frame count ⇒ **16** for the walk. Near/far leg sets
+   ⇒ **one set, shaded and phase-offset** (the posable model dissolves the
+   question). Tail ⇒ **hand-drawn**, 4 positions.
+
