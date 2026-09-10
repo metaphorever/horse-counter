@@ -250,9 +250,30 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: Live — post-launch, Phase 2 in progress (updated 2026-06-19)**
+**PHASE: Live — post-launch, Phase 2 in progress (updated 2026-09-10)**
 
 DNS cutover complete. poet.horse is the primary home of the project. Phase 1 fully shipped and verified. Phase 2 underway — see ROADMAP.md for current priority picture.
+
+**This session (2026-09-10) — Phase 2.5.1 art model amended, no code:**
+- Reviewed Clover's hand-drawn walk cycle (`prototypes/horse-chip-art-walk.svg`).
+  Measured all 32 leg drawings: it is a **trot**, not a walk — both diagonal pairs
+  land and lift in unison. Plus unpinned stance hooves (8 of 32 within 3u of the
+  ground line), uneven stance spacing (17.8u–63.8u where all should be ~38u), and
+  hind hoof clearance at 40% of the fore's. One root cause: frames drawn in
+  isolation, so ground reference and body anchors drift between them.
+- **Art contract changed** from hand-drawn frame-sets to **posable segments —
+  Clover draws ~10 pieces once, Claude poses them and bakes flat frame symbols at
+  build time.** Runtime unchanged (plain `<use>` refs, no-JS-safe, so 2.5.1's
+  server-emitted static variety still works). ~10 pieces vs ~38 drawings across
+  the arc. Specs amended: `spec/phase-2.5.1-static-pose-variation.md` (art,
+  pools, sprint, build order) and `spec/phase-2.5-horse-animation-overview.md`
+  (asset shape + a corrected error: a trot is **not** a retimed walk).
+- Clover's 32 drawings are now **reference, not deliverable** — the gait target and
+  the source of segment proportions. No interim 2.5.1 on the current art.
+- **Next session: Claude ships the parts template + posing harness** (10 pieces,
+  pivots in art coords, proportions measured from Clover's drawings, rough warped
+  tail positions, placeholders already posed and moving) → then Clover's design
+  sprint. Log: `sessions/2026-09-10-phase-2.5.1-art-model.md`.
 
 **This session shipped (2026-06-19) — Phase 2.4 holds cleared — 2.4 FULLY VERIFIED (PRs #76, #77):**
 - (1) **Profile bio "sage" horses** — root cause was *not* `--bg` (coats resolve fine): the chip `<a class="poem-horse">` is a link inside `.profile-page`, so `body.view-fancy .profile-page a:not(.btn-*)` (0,5,2) beat `.poem-horse { color: var(--bg) }` (0,2,1) and the `currentColor` body parts inherited the panel link colour. Fix: `:not(.poem-horse)` on the panel link rule. (2) **Infinite-scroll pasture text-only** — `pasture.html` `chipHTML()` now emits `horse_svg()` (once, as a JS const) + `.hz-word`, matching `render_chip`; saved-horses/my-pasture are server-only, unaffected. (3) **Vertical placement** — `.rev .hz` hardcoded its own offset (mirror ignored base) → single `--hz-y` var; `.hz-word` was `display:inline` so its `transform` was a no-op → `inline-block`. Tuned live (Clover): `--hz-y:-50%`, `.hz-word translateY(0px)`. **Safari iOS + macOS both verified good.** Log: `sessions/2026-06-19-phase-2.4-holds.md`.
