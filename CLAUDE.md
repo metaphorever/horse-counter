@@ -259,6 +259,7 @@ DNS cutover complete. poet.horse is the primary home of the project. Phase 1 ful
 - `prototypes/horse-posing-harness.html` — one file, opens from disk; drop an Illustrator export on it (round-trip tested: `_x2D_` escapes, duplicate suffixes, class styles, hidden layers, group transforms). Stand / Walk / Joints modes + chip rows at true 26px with production CSS (current pose, random standing herd = what 2.5.1 ships, walking herd, 2.4 baseline).
 - Findings for the sprint: graze reaches chest height only; static withers mane tuft; stride↔bob tradeoff (~3px bob at stride 100) logged for 2.5.2.
 - **Next: Clover's design sprint** (holds + questions in `sessions/2026-09-10-phase-2.5.1-parts-template.md`), then Claude pass 2 + posing/bake. Housekeeping: PR #85 merged; the parked Phase 2.7 image-export spec is draft PR #86.
+- **2026-09-11:** Clover's first art pass committed as `prototypes/horse-parts-template-Edit.svg` — pivots unchanged, verified clean in the harness; tail still WIP. Clover keeps editing that file in place; the next session commits the final version and starts posing/bake (`sessions/2026-09-11-phase-2.5.1-art-pass-1.md`).
 
 **Prior session (2026-09-09/10) — Phase 2.5.1 art model amended, no code:**
 - Reviewed Clover's hand-drawn walk cycle (`prototypes/horse-chip-art-walk.svg`).
