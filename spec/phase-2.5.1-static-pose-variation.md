@@ -167,7 +167,11 @@ New and load-bearing for posable:
   scale where it would show. *Exception (2026-09-10):* the neck root is ~114u
   wide, and a full-width cap made the chest a ball. The withers cap is r=46; the
   band just past the cut that it can't reach belongs to the static front bumper,
-  so the rotating neck's root is exactly its round cap.
+  so the rotating neck's root is exactly its round cap. *Amended 2026-09-14:*
+  `pv-withers` moved to the **base of the neck**, (190, 169.7), 25u lower and 3u
+  further back. The neck carries a second r=46 disc at the old pivot, bridged to
+  the new one. That capsule is hidden in the front bumper at neutral and becomes
+  the neck's base when the head drops. See open question 5.
 - **Pivots are marked in art coordinates and are the contract.** Moving one later
   invalidates every baked pose — cheap to regenerate, but all poses need
   re-validating.
@@ -372,11 +376,20 @@ failure. **No full pose production before the sprint clears.**
 4. **Resolved (2026-09-10):** frame count ⇒ **16** for the walk. Near/far leg sets
    ⇒ **one set, shaded and phase-offset** (the posable model dissolves the
    question). Tail ⇒ **hand-drawn**, 4 positions.
-5. **Graze reach** *(found 2026-09-10)* — with the 2.4 neck, the lowest head
-   position hangs at chest height, not at the grass, even with the neck-root pivot
-   (`pv-withers`) placed deep in the chest for the longest lever. Lengthen the
-   neck in the design sprint, or accept "head low" as graze? *Clover at the sprint.*
-6. **Withers mane tuft** *(found 2026-09-10)* — the last mane teeth past the
-   neck-root cut belong to the static front bumper, so they stay put as a tuft
-   when the head drops. Keep, trim, or redraw? *Clover at the sprint.*
+5. **Resolved (2026-09-14): Graze reaches the grass.** Lengthening alone doesn't
+   do it. A 40u longer neck still needed a 107° drop, and it pushed the head 29u
+   off the artboard. The pivot was the real problem: it sat in the upper chest,
+   but a neck swings from its base. Clover picked, from rendered options, **pivot
+   down 25u plus a visible neck 20u longer**. The head moved out with it and was
+   not reshaped: `pv-poll` (127.9, 68.4) → (115.65, 52.59); lever 96.5 → 138.7u.
+   Graze solves at about withers −96° / poll +66°, with the muzzle ~140u ahead of
+   the front hooves. Cost: at neutral the ears sit ~13u above the artboard (~3px at
+   chip size). Check poem line spacing when the bake lands. Made by
+   `prototypes/horse-parts-neck.py` from Clover's art pass. The harness now solves
+   Graze from the loaded art (muzzle on the grass), so it is no longer a fixed pair
+   of angles.
+6. **Resolved (2026-09-14): withers.** Clover's art pass moved the mane teeth onto
+   the neck piece, so there is no static tuft any more. What showed instead was
+   the front bumper's rounded top, as a dome over the withers once the head drops.
+   At Clover's call it was squashed toward the back line (top y≈99 → 105).
 
