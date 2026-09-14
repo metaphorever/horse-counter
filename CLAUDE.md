@@ -260,6 +260,7 @@ DNS cutover complete. poet.horse is the primary home of the project. Phase 1 ful
 - Findings for the sprint: graze reaches chest height only; static withers mane tuft; stride↔bob tradeoff (~3px bob at stride 100) logged for 2.5.2.
 - **Next: Clover's design sprint** (holds + questions in `sessions/2026-09-10-phase-2.5.1-parts-template.md`), then Claude pass 2 + posing/bake. Housekeeping: PR #85 merged; the parked Phase 2.7 image-export spec is draft PR #86.
 - **2026-09-11:** Clover's first art pass committed as `prototypes/horse-parts-template-Edit.svg` — pivots unchanged, verified clean in the harness; tail still WIP. Clover keeps editing that file in place; the next session commits the final version and starts posing/bake (`sessions/2026-09-11-phase-2.5.1-art-pass-1.md`).
+- **2026-09-14:** Long neck for Graze. `prototypes/horse-parts-template-Edit2.svg` is Clover's art pass with `pv-withers` moved down to the base of the neck (190, 169.7), a neck 20u longer (the head moved out, not reshaped), and the front bumper's dome squashed. Made by `prototypes/horse-parts-neck.py`; Clover picked the option from rendered comparisons. Graze now puts the muzzle on the grass, and the harness solves it from the loaded art. **Edit2 is now the working file:** Clover pastes her revised tails into it, then Claude pass 2 + posing/bake (`sessions/2026-09-14-phase-2.5.1-graze-neck.md`).
 
 **Prior session (2026-09-09/10) — Phase 2.5.1 art model amended, no code:**
 - Reviewed Clover's hand-drawn walk cycle (`prototypes/horse-chip-art-walk.svg`).

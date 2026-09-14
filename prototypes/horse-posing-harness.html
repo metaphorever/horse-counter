@@ -217,7 +217,7 @@ const LEG = Object.fromEntries(LEGS.map(l => [l.key, l]));
 const LIMITS = {  // SVG degrees from neutral. TUNE HERE.
   fore: [[-45, 75], [-115, 5], [-100, 30]],  // elbow (+ hoof forward; the walk's swing reaches ~72) · knee (− folds back) · fetlock (− tucks)
   hind: [[-55, 45], [-25, 95], [-100, 30]],  // stifle · hock (+ folds; − opens at push-off) · fetlock
-  neck: [[-65, 20], [-45, 35]],              // withers (− lowers; past +20 the chest front notches) · poll (− nose down)
+  neck: [[-105, 20], [-45, 80]],             // withers (− lowers; Graze sits near −96) · poll (− nose down; Graze opens it to ~+66)
 };
 const JNAMES = { fore: ['elbow', 'knee', 'fetlock'], hind: ['stifle', 'hock', 'fetlock'], neck: ['withers', 'poll'] };
 const DEBUG = { 'bumper-front': '#c9a36b', 'bumper-hind': '#c9a36b', 'fore-forearm': '#8e5b2f', 'fore-cannon': '#b5763d',
@@ -235,7 +235,11 @@ const STANCES = {
   'Gathered':       { foreNear: { dx: 4 }, foreFar: { dx: 2 }, hindNear: { dx: -14 }, hindFar: { dx: -10 } },
   'Mid-step':       { foreNear: { dx: -16 }, foreFar: { dx: 2 }, hindNear: { dx: 4 }, hindFar: { dx: -12 } },
 };
-const NECKS = { Alert: [12, -6], Relaxed: [0, 0], Low: [-28, -10], Graze: [-62, -30] };
+const NECKS = { Alert: [12, -6], Relaxed: [0, 0], Low: [-28, -10], Graze: null };  // Graze is solved per rig (below)
+// Graze = muzzle on the grass: the head is held at GRAZE.head° (world) and the withers
+// lowers until the head's lowest point is GRAZE.clear above the ground. Solved from the
+// loaded art, so a redrawn neck or head never needs these retuned. TUNE HERE.
+const GRAZE = { head: -30, clear: 2 };
 const NECK_WEIGHTS = { Alert: 3, Relaxed: 4, Low: 2, Graze: 1 };
 const TAIL_WEIGHTS = { 'tail-hang': 6, 'tail-swish-fwd': 2, 'tail-swish-back': 2, 'tail-lifted': 1 };
 const NAMES = ['Io', 'Zip', 'Bojo', 'Arkle', 'Phar Lap', 'Red Rum', 'Seabiscuit', 'Secretariat', 'Man o’ War',
@@ -357,12 +361,19 @@ function buildRig(text, label) {
     const low = pts.filter(p => p.y > maxY - 2.5);
     toe[chain] = { x: Math.min(...low.map(p => p.x)), y: maxY, heel: Math.max(...low.map(p => p.x)) };
   }
+  // Head outline in art coords — for the Graze solver and the muzzle readout.
+  const headPts = [], headEl = named.get('head');
+  for (const s of [headEl, ...headEl.querySelectorAll('*')]) {
+    if (!s.getTotalLength || KEEP.test(normName(s.getAttribute('data-name') || s.id))) continue;
+    const mm = toArt(s), L = s.getTotalLength();
+    for (let i = 0; i <= 200; i++) headPts.push(s.getPointAtLength(L * i / 200).matrixTransform(mm));
+  }
   host.textContent = '';
   const farOff = {
     fore: { x: pv['elbow-far'].x - pv.elbow.x, y: pv['elbow-far'].y - pv.elbow.y },
     hind: { x: pv['stifle-far'].x - pv.stifle.x, y: pv['stifle-far'].y - pv.stifle.y },
   };
-  return { pv, cap, has, ground, toe, farOff, warn, label };
+  return { pv, cap, has, ground, toe, farOff, headPts, warn, label };
 }
 
 // ── Pose → SVG ──────────────────────────────────────────────────────────────
@@ -467,10 +478,29 @@ function toeWorld(leg, a, bob) {  // forward kinematics, for the contact readout
   let t = R(RIG.toe[leg.chain], C, a[2]); t = R(t, B, a[1]); t = R(t, A, a[0]);
   return { x: t.x + off.x, y: t.y + off.y + bob };
 }
+const rotPt = (p, o, d) => { const r = d * DEG, x = p.x - o.x, y = p.y - o.y; return { x: o.x + x * Math.cos(r) - y * Math.sin(r), y: o.y + x * Math.sin(r) + y * Math.cos(r) }; };
+function muzzle(n, bob = 0) {  // the head's lowest point for neck angles n = [withers, poll]
+  const W = RIG.pv.withers, P = RIG.pv.poll;
+  let low = { x: 0, y: -Infinity };
+  for (const q of RIG.headPts) { const p = rotPt(rotPt(q, P, n[1]), W, n[0]); if (p.y > low.y) low = p; }
+  return { x: low.x, y: low.y + bob };
+}
+// The least withers drop that lands the muzzle, by bisection (the muzzle only sinks as
+// the withers lowers). If the art can't reach, the lowest legal pose; the readout shows the gap.
+function grazeAngles() {
+  if (RIG.graze) return RIG.graze;
+  const lo = LIMITS.neck[0][0], goal = RIG.ground - GRAZE.clear;
+  const at = a => [a, clamp(GRAZE.head - a, ...LIMITS.neck[1])];
+  if (muzzle(at(lo)).y < goal) return (RIG.graze = at(lo));
+  let a = 0, b = lo;
+  for (let i = 0; i < 40; i++) { const m = (a + b) / 2; if (muzzle(at(m)).y >= goal) b = m; else a = m; }
+  return (RIG.graze = at(b));
+}
+const neckAngles = name => (name === 'Graze' ? [...grazeAngles()] : [...NECKS[name]]);
 
 // ── Pose sources ────────────────────────────────────────────────────────────
 function standPose(stance, neck, tail) {
-  const pose = { legs: {}, neck: [...NECKS[neck]], tail, bob: 0, short: {} };
+  const pose = { legs: {}, neck: neckAngles(neck), tail, bob: 0, short: {} };
   for (const leg of LEGS) {
     const s = STANCES[stance][leg.key] || {};
     const off = leg.far ? RIG.farOff[leg.chain] : { x: 0, y: 0 };
@@ -503,7 +533,7 @@ function walkPose(p) {
   const T = Object.fromEntries(LEGS.map(l => [l.key, walkTarget(l, p)]));
   let bob = 0;
   if (ui.walk.pin) for (const l of LEGS) if (T[l.key].stance) bob = Math.max(bob, bobNeeded(l, T[l.key]));
-  const n = NECKS[ui.walk.neck], nod = ui.walk.nod * Math.sin(4 * Math.PI * (p - 0.25));
+  const n = neckAngles(ui.walk.neck), nod =ui.walk.nod * Math.sin(4 * Math.PI * (p - 0.25));
   const tail = ui.walk.tail === 'swish' ? ['tail-swish-fwd', 'tail-hang', 'tail-swish-back', 'tail-hang'][Math.floor(p * 4) % 4] : ui.walk.tail;
   const pose = { legs: {}, neck: [n[0] - nod, n[1]], tail, bob, short: {} };
   for (const l of LEGS) {
@@ -550,6 +580,9 @@ function readout(pose) {
       : `<span class="bad">${f(-gap)}u into ground</span>`;
     bits.push(`${l.label.padEnd(9)} ${a}°  hoof ${flag}`);
   }
+  const mz = RIG.ground - muzzle(pose.neck, pose.bob || 0).y;
+  bits.push(`muzzle ${f(mz)}u above the grass (${f(mz * S)}px)` +
+    (ui.mode === 'stand' && ui.stand.neck === 'Graze' && mz > GRAZE.clear + 0.5 ? ' — Graze can’t reach: lengthen the neck or lower pv-withers' : ''));
   bits.push(`neck ${pose.neck.map(v => f(v)).join(' / ')}°   body bob ${f(pose.bob || 0)}u = ${f((pose.bob || 0) * S)}px at chip scale   tail: ${pose.tail}`);
   if (ui.mode === 'walk') bits.push(walkStats);
   $('#readout').innerHTML = bits.map(b => b.replace(/ /g, '&nbsp;')).join('<br>');
