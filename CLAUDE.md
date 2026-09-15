@@ -261,14 +261,14 @@ DNS cutover complete. poet.horse is the primary home of the project. Phase 1 ful
 - **Next: Clover's design sprint** (holds + questions in `sessions/2026-09-10-phase-2.5.1-parts-template.md`), then Claude pass 2 + posing/bake. Housekeeping: PR #85 merged; the parked Phase 2.7 image-export spec is draft PR #86.
 - **2026-09-11:** Clover's first art pass committed as `prototypes/horse-parts-template-Edit.svg` — pivots unchanged, verified clean in the harness; tail still WIP. Clover keeps editing that file in place; the next session commits the final version and starts posing/bake (`sessions/2026-09-11-phase-2.5.1-art-pass-1.md`).
 - **2026-09-14:** Long neck for Graze. `prototypes/horse-parts-template-Edit2.svg` is Clover's art pass with `pv-withers` moved down to the base of the neck (190, 169.7), a neck 20u longer (the head moved out, not reshaped), and the front bumper's dome squashed. Made by `prototypes/horse-parts-neck.py`; Clover picked the option from rendered comparisons. Graze now puts the muzzle on the grass, and the harness solves it from the loaded art. Log: `sessions/2026-09-14-phase-2.5.1-graze-neck.md`. Later that day Clover's art pass 2 (new tails, flowing mane) was committed as **`prototypes/horse-parts-template-Edit-NewTail-Mane.svg` — now the working file**, verified clean in the harness (`sessions/2026-09-14-phase-2.5.1-art-pass-2.md`). **Next:** Claude pass 2 + posing/bake · Opus · high.
-- **2026-09-15: build steps 3–5 done, PR pending** (`sessions/2026-09-15-phase-2.5.1-pose-bake.md`).
+- **2026-09-15: build steps 3–5 done, live** (`sessions/2026-09-15-phase-2.5.1-pose-bake.md`).
   - The harness bakes `templates/_horse_sprite.html` (**Bake sprite…**).
   - `horse_pose.py` picks each server-rendered Fancy chip's pose and facing on every render, and `horse_svg(h)` emits it.
   - The famous shimmer follows the chip's pose.
   - Spacing knobs, tuned by Clover: `--hz-line` 4, `--hz-gap-x` 20px, `--hz-grid-row` 48px, `--hz-grid-col` 30px.
   - The 2.5.2 walk decisions are in the overview: the name rides the bob, and the bob is a user toggle.
-  - **Next:** merge, Clover's live verification (holds in the log), close 2.5.1, then spec 2.5.2 · Opus · high.
-  - Also open: PRs #91 and #92 (fresh-DB fix, retire `--seed-tags`). They're stacked: merge #91 without deleting its branch.
+  - **Live 2026-09-15** (#93; #91 and #92 merged the same day). Clover's live test passed except one item: **on iPhone the famous shimmer shows but doesn't sweep.** Details and next steps are in ROADMAP's 2.5 notes.
+  - **Next:** fix the iOS shimmer, confirm macOS Safari, print preview and Bake → Download, close 2.5.1, then spec 2.5.2 · Opus · high.
 
 **Prior session (2026-09-09/10) — Phase 2.5.1 art model amended, no code:**
 - Reviewed Clover's hand-drawn walk cycle (`prototypes/horse-chip-art-walk.svg`).
