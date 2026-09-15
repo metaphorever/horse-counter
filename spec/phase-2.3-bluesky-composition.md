@@ -147,7 +147,7 @@ SITE_LABEL_MAP = {'sex': 'sexual'}                 # site CW slug → bsky self-
 
 The site stores content warnings as tags in the `content-warnings` category;
 the authoritative slug is **`sex`** (per `db/seed.py` — `tools/seed_tags.py`'s
-`cw-sex` is stale). Applied as a `com.atproto.label.defs#selfLabels` value on
+`cw-sex` is stale; that script was retired 2026-09-15). Applied as a `com.atproto.label.defs#selfLabels` value on
 the post record. Independent of text; costs no characters.
 
 **Shared plumbing (serves both Bluesky labels and Tumblr tags):**

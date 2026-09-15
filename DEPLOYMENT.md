@@ -123,12 +123,20 @@ Required keys:
 - Initialise schema:
   ```bash
   cd /data/home/metaphorever/horse-counter
-  /home/metaphorever/.venv/bin/python -m tools.init_db --seed-tags
+  /home/metaphorever/.venv/bin/python -m tools.init_db
   ```
+  The app also runs this at import, so a normal deploy doesn't need it. It
+  seeds the tag taxonomy from `db/seed.py`. (The old `--seed-tags` flag is
+  gone: it wrote a second, legacy set of tags.)
 - No `sqlite3` CLI on the server — use Python:
   ```bash
   python3 -c "import sqlite3; c=sqlite3.connect('/data/home/metaphorever/horse-counter/data/poet.db'); print(list(c.execute('SELECT slug, role FROM users')))"
   ```
+- For checks that must not write, open it read-only:
+  `sqlite3.connect('file:data/poet.db?mode=ro', uri=True)`. Keep each command
+  to one line that starts with `cd /data/home/metaphorever/horse-counter &&`,
+  and make it print something even when no rows match. On 2026-09-15 a
+  multi-line heredoc paste failed over SSH, and an empty result looked like a hang.
 - Grant admin:
   ```bash
   python3 -c "import sqlite3; c=sqlite3.connect('/data/home/metaphorever/horse-counter/data/poet.db'); c.execute(\"UPDATE users SET role='admin' WHERE slug='clover'\"); c.commit()"

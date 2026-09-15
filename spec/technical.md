@@ -128,8 +128,8 @@ uv pip install -r requirements.txt
 # Or standard:
 pip install -r requirements.txt
 
-# Initialize / migrate the database (idempotent)
-python -m tools.init_db --seed-tags
+# Initialize / migrate the database (idempotent; also seeds the tag taxonomy)
+python -m tools.init_db
 
 # Run dev server
 python app.py
