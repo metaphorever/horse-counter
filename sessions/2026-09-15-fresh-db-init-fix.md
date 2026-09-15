@@ -32,7 +32,7 @@
 - **No "skip tables that don't exist" guard in `apply_migrations()`.** Clover floated it as optional. Claude pushed back, and it's **awaiting Clover's call.** Concern: a silent skip trades a loud boot crash for a quiet schema gap. If the ordering trap came back, a missing table's migrations would be skipped. Its `ensure_*()` would then create it *without* those columns, and the app would fail at query time with `no such column` until the next restart re-ran the migrations. The crash we just fixed was loud, caught before production, and pointed straight at the cause. Instead, the rule is written next to `_COLUMN_MIGRATIONS`, where the next migration gets added. If Clover wants a guard anyway, the better version raises a clear error naming the ordering rule rather than skipping.
 
 ## Uncertainty flags
-- **Uncertain:** whether production ever had `--seed-tags` run, and so carries the legacy duplicate taxonomy · resolve with the read-only query in the ROADMAP entry. Out of scope here.
+- **Uncertain:** whether production carries the legacy duplicate taxonomy. It probably does, because `DEPLOYMENT.md` gives `--seed-tags` as the production setup command · resolve with the read-only query in the ROADMAP entry. Out of scope here.
 
 ## Testing holds
 Production's `crosspost_queue` already exists, so the reorder is a no-op there. The hold is a smoke check that boot still works after the auto-deploy.
@@ -43,5 +43,5 @@ Production's `crosspost_queue` already exists, so the reorder is a no-op there. 
 - A task chip is pending for the `--seed-tags` legacy taxonomy (details in ROADMAP Bugs).
 
 ## Deferred / added to roadmap
-- **`--seed-tags` writes a second, legacy tag taxonomy** → ROADMAP Bugs, plus a task chip. `tools/seed_tags.py` dates from Phase 0.2. Its slugs don't collide with `seed.py`'s namespaced ones, so on a fresh DB it added 35 duplicate-ish tags and a singular `content-warning` category. Deploy doesn't run it, but both docs give it as the migrate command.
+- **`--seed-tags` writes a second, legacy tag taxonomy** → ROADMAP Bugs, plus a task chip. `tools/seed_tags.py` dates from Phase 0.2. Its slugs don't collide with `seed.py`'s namespaced ones, so on a fresh DB it added 35 duplicate-ish tags and a singular `content-warning` category. Deploy doesn't run it, but three docs give it as the command to use, including `DEPLOYMENT.md` for production setup. After this log was written, Clover asked to fold the fix into PR #91. I named the close rule, and Clover chose to defer it (**Deferred** — Clover's call).
 - **Deferred:** `crosspost_queue` is the one table created in `seed.py` instead of `schema.sql`. Consolidating it there would remove this class of trap. The natural time is the Mastodon trigger, when the status columns graduate to a `crosspost_targets` child table (ROADMAP 2.2 note). No separate entry.
