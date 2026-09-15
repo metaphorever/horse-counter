@@ -174,3 +174,25 @@ Not blocking 2.5.1; resolve when its phase is specced.
   stance leg), shorten the stride, or add a scapula/femur segment (the
   static-haunch fallback, at both ends). A bob moves the barrel under the HTML
   name, so also decide whether the word rides with it.
+  **Decided 2026-09-14 (Clover, from the harness "name" picker):**
+  - **The name rides the bob, smoothly.** "Whole px" was rejected: the text
+    snaps while the body slides, so they visibly drift apart.
+  - **The bob becomes a user toggle.** Riding text is a little harder to read,
+    and may cross the line for motion-sensitive readers who still want walking.
+  - **No-bob = the unpinned walk**, the harness's "keep stance hooves on the
+    ground" box unticked. Clover: it "looked fine to my eyes"; the bob is a
+    little more real, and that's the tradeoff for readability.
+  - **Cost to carry into the spec:** the pinned and unpinned walks solve the legs
+    differently, so offering both means two baked walk sets (2 × 16 frames), or
+    one walk if we ship only the unpinned one.
+- **Idle animations (2.5.2)** — *Clover, 2026-09-14:* standing horses that
+  still move now and then: lean down to graze, flick the tail, shift a leg,
+  stretch. This is only partly covered today. 2.5.2 lists tail swish and head
+  motion, and the Graze gait pauses to graze (2.5.3), but standing idles aren't
+  named anywhere. Under the posable model they're cheap: head and tail are pose
+  swaps, and a weight shift is a move between two standing-pool stances, so the
+  2.5.1 pool doubles as idle keyframes. Scope them at 2.5.2 spec time.
+- **Parade mode (2.5.3 candidate)** — *Clover, 2026-09-14,* prompted by the
+  harness's lock-step length ladder: every horse in a poem walks the same way in
+  lock-step, parading back and forth across the screen. The no-bob toggle
+  applies here too. Place it when 2.5.3 is specced.

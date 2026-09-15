@@ -8,10 +8,17 @@
      right-anchored parts → nested <svg x="100%"> + translate(-550·S, -110·S)
                                                   = translate(-143, -28.6)
    Keep .hz height (style.css) in sync with the 26 barrel height here. Draw order
-   back→front (Fore Y / Hind X): lfn(shaded) lhf(shaded) tail barrel lhn lff head.
-   Shapes live in _horse_sprite.html; this only references them. #}
-{% macro horse_svg() -%}
-<svg class="hz" aria-hidden="true"><use href="#hz-lfn" class="hz-shade" transform="translate(-39,-28.6) scale(.26)"/><svg class="hz-r" x="100%" overflow="visible"><use href="#hz-lhf" class="hz-shade" transform="translate(-143,-28.6) scale(.26)"/><use href="#hz-tail" transform="translate(-143,-28.6) scale(.26)"/></svg><rect class="hz-bar" x="0" y="0" width="100%" height="26"/><svg class="hz-r" x="100%" overflow="visible"><use href="#hz-lhn" transform="translate(-143,-28.6) scale(.26)"/></svg><use href="#hz-lff" transform="translate(-39,-28.6) scale(.26)"/><use href="#hz-head" transform="translate(-39,-28.6) scale(.26)"/></svg>
+   back→front (Fore Y / Hind X): far fore(shaded) far hind(shaded) tail barrel
+   near hind(+haunch) near fore(+chest) head.
+
+   Pose (2.5.1): h.pose = {stance, head, tail}, picked per render by
+   horse_pose.assign_pose(); each names a baked group in _horse_sprite.html
+   (hz-st-<stance>-ff/-hf/-hn/-fn, hz-hd-<head>, hz-tl-<tail>). No pose (the JS
+   infinite pasture calls horse_svg() bare) → the default below, which matches
+   horse_pose.DEFAULT_POSE. Shapes live in the sprite; this only references them. #}
+{% macro horse_svg(h=none) -%}
+{%- set p = h.pose if h and h.pose else {'stance': 'square', 'head': 'relaxed', 'tail': 'hang'} -%}
+<svg class="hz" aria-hidden="true"><use href="#hz-st-{{ p.stance }}-ff" class="hz-shade" transform="translate(-39,-28.6) scale(.26)"/><svg class="hz-r" x="100%" overflow="visible"><use href="#hz-st-{{ p.stance }}-hf" class="hz-shade" transform="translate(-143,-28.6) scale(.26)"/><use href="#hz-tl-{{ p.tail }}" transform="translate(-143,-28.6) scale(.26)"/></svg><rect class="hz-bar" x="0" y="0" width="100%" height="26"/><svg class="hz-r" x="100%" overflow="visible"><use href="#hz-st-{{ p.stance }}-hn" transform="translate(-143,-28.6) scale(.26)"/></svg><use href="#hz-st-{{ p.stance }}-fn" transform="translate(-39,-28.6) scale(.26)"/><use href="#hz-hd-{{ p.head }}" transform="translate(-39,-28.6) scale(.26)"/></svg>
 {%- endmacro %}
 
 {% macro render_chip(h, linked=true) -%}
@@ -19,9 +26,9 @@
 {%- if h.rev %}{% set chip_cls = chip_cls ~ ' rev' %}{% endif -%}
 {%- if h.is_famous %}{% set chip_cls = chip_cls ~ ' famous-horse' %}{% endif -%}
 {%- if linked and h.url -%}
-<a class="{{ chip_cls }}" data-name="{{ h.name }}" href="{{ h.url }}" rel="nofollow noopener" target="_blank">{{ horse_svg() }}<span class="hz-word">{{ h.display }}</span></a>
+<a class="{{ chip_cls }}" data-name="{{ h.name }}" href="{{ h.url }}" rel="nofollow noopener" target="_blank">{{ horse_svg(h) }}<span class="hz-word">{{ h.display }}</span></a>
 {%- else -%}
-<span class="{{ chip_cls }}" data-name="{{ h.name }}">{{ horse_svg() }}<span class="hz-word">{{ h.display }}</span></span>
+<span class="{{ chip_cls }}" data-name="{{ h.name }}">{{ horse_svg(h) }}<span class="hz-word">{{ h.display }}</span></span>
 {%- endif -%}
 {%- endmacro %}
 
