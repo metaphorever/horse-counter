@@ -11,6 +11,9 @@
   one you loaded is remembered in this browser. The built-in copy of
   horse-parts-template.svg is refreshed by prototypes/horse-parts-cut.py.
 
+  "Bake sprite…" (2.5.1) turns the loaded art + the pose tables below into
+  templates/_horse_sprite.html, the file the site's Fancy horses are drawn from.
+
   Angles are SVG degrees relative to the neutral (2.4) pose; + = clockwise on
   screen. The horse faces left, so + on a leg's top joint swings the hoof forward.
 -->
@@ -99,6 +102,13 @@
   .poem-horse .hz-shade { color: color-mix(in srgb, var(--bg), #000 40%); }
   .poem-horse .hz-word { position: relative; display: inline-block; z-index: 1; color: var(--fg); }
   .poem-horse.rev .hz { transform: translateY(calc(var(--hz-y) + var(--bob, 0px))) scaleX(-1); }
+  /* does the name ride the body bob? (2.5.2 question) — the "name" picker on the Walking herd row sets data-word */
+  .chipline[data-word] .hz-word { transform: translateY(var(--wbob, 0px)); }
+  .chips-title select { font-size: 11px; }
+  #bake-panel { margin: 10px 14px 0; }
+  #bake-status { margin: 0; padding: 6px 10px; }
+  #bake-status .bad { color: #a5361a; font-weight: 600; }
+  #bake-out { display: block; width: calc(100% - 20px); margin: 0 10px; font: 11px/1.35 ui-monospace, Menlo, monospace; }
   .scale-note { color: #e9efd9; font-size: 11px; padding: 0 12px; }
   #import-host { position: fixed; left: -10000px; top: 0; visibility: hidden; }
   #drop { position: fixed; inset: 0; background: rgba(122,53,32,.18); border: 4px dashed var(--accent); z-index: 50;
@@ -109,9 +119,16 @@
   <h1>Posable horse — posing harness</h1>
   <label><button type="button" id="load-btn">Load SVG…</button><input type="file" id="file" accept=".svg,image/svg+xml" hidden></label>
   <span id="source"></span>
+  <button type="button" id="bake-btn" title="write templates/_horse_sprite.html from this art + the pose tables">Bake sprite…</button>
   <button type="button" id="reset-src" hidden>Back to built-in template</button>
   <span id="warn"></span>
 </header>
+<section class="card" id="bake-panel" hidden>
+  <h2>Bake → templates/_horse_sprite.html <span class="sp"></span><button type="button" id="bake-copy">Copy</button><button type="button" id="bake-dl">Download</button><button type="button" id="bake-close">Close</button></h2>
+  <p id="bake-status"></p>
+  <textarea id="bake-out" rows="7" readonly spellcheck="false"></textarea>
+  <p class="hint">Save this over <code>templates/_horse_sprite.html</code> (Download names it for you) and commit; the site's Fancy horses then pick from these poses. Every stance, head and tail in the tables is baked, weighted by STANCE_WEIGHTS / NECK_WEIGHTS / TAIL_WEIGHTS.</p>
+</section>
 <div id="drop" hidden>Drop your exported parts SVG</div>
 
 <div class="wrap">
@@ -175,7 +192,8 @@
   <div class="chipline" id="row-current"></div>
   <div class="chips-title">Random standing pose per chip (what 2.5.1 ships) <button type="button" id="reroll">Reroll</button></div>
   <div class="chipline" id="row-herd"></div>
-  <div class="chips-title">Walking herd <button type="button" id="herd-play">Pause</button></div>
+  <div class="chips-title">Walking herd <button type="button" id="herd-play">Pause</button>
+    <label>name <select id="word-ride"><option value="">stays put</option><option value="ride">rides the bob</option><option value="snap">rides, whole px</option></select></label></div>
   <div class="chipline" id="row-walk"></div>
   <div class="chips-title">Today (2.4 production horse, for comparison)</div>
   <div class="chipline" id="row-prod"></div>
@@ -242,6 +260,8 @@ const NECKS = { Alert: [12, -6], Relaxed: [0, 0], Low: [-28, -10], Graze: null }
 const GRAZE = { head: -30, clear: 2 };
 const NECK_WEIGHTS = { Alert: 3, Relaxed: 4, Low: 2, Graze: 1 };
 const TAIL_WEIGHTS = { 'tail-hang': 6, 'tail-swish-fwd': 2, 'tail-swish-back': 2, 'tail-lifted': 1 };
+const STANCE_WEIGHTS = { 'Square': 2, 'Rest near hind': 2, 'Rest far hind': 2, 'Parked out': 1, 'Gathered': 1, 'Mid-step': 1 };
+// ↑ the three *_WEIGHTS are how often each pose comes up in the random herd — and on the site: Bake writes them into the sprite. TUNE HERE.
 const NAMES = ['Io', 'Zip', 'Bojo', 'Arkle', 'Phar Lap', 'Red Rum', 'Seabiscuit', 'Secretariat', 'Man o’ War',
                'Hoof Hearted', 'Northern Dancer', 'Mr Ed', 'Winx', 'Shergar'];
 
@@ -337,8 +357,9 @@ function buildRig(text, label) {
       n.removeAttribute('id'); n.removeAttribute('data-name');
     }
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.id = 'pc-' + name;
-    g.setAttribute('transform', `matrix(${m.a} ${m.b} ${m.c} ${m.d} ${m.e} ${m.f})`);
+    g.id = 'hz-pc-' + name;  // the baked sprite uses these ids too
+    const mm = [m.a, m.b, m.c, m.d, m.e, m.f].map(v => Math.round(v * 1e4) / 1e4);
+    if (mm.join(' ') !== '1 0 0 1 0 0') g.setAttribute('transform', `matrix(${mm.join(' ')})`);
     g.appendChild(clone);
     defs.appendChild(g);
     has[name] = true;
@@ -377,12 +398,12 @@ function buildRig(text, label) {
 }
 
 // ── Pose → SVG ──────────────────────────────────────────────────────────────
-// Nested rotations about the neutral pivot coordinates — the same transform
-// chain the 2.5.1 bake will flatten into plain symbols.
+// Nested rotations about the neutral pivot coordinates. Bake writes exactly
+// these groups into the site's sprite, so the chip rows are what ships.
 const rot = (a, p) => `rotate(${f(a)} ${f(p.x)} ${f(p.y)})`;
 function useP(name, o) {
   if (!RIG.has[name]) return '';
-  return `<use href="#pc-${name}"${o.debug ? ` style="color:${DEBUG[name]}"` : ''}/>`;
+  return `<use href="#hz-pc-${name}"${o.debug ? ` style="color:${DEBUG[name]}"` : ''}/>`;
 }
 function dot(name, p) {
   const r = RIG.cap[name];
@@ -594,7 +615,7 @@ function spriteSet(prefix, pose) {
 }
 function chip(prefix, name, coat, rev, bobVar) {
   const Lt = 'transform="translate(-39,-28.6) scale(.26)"', Rt = 'transform="translate(-143,-28.6) scale(.26)"';
-  return `<span class="poem-horse coat-${coat}${rev ? ' rev' : ''}"${bobVar ? ` style="--bob:var(${bobVar})"` : ''}><svg class="hz" aria-hidden="true">` +
+  return `<span class="poem-horse coat-${coat}${rev ? ' rev' : ''}"${bobVar ? ` style="--bob:var(${bobVar});--wbob:var(--w${bobVar.slice(2)})"` : ''}><svg class="hz" aria-hidden="true">` +
     `<use href="#${prefix}Ls" class="hz-shade" ${Lt}/><svg class="hz-r" x="100%" overflow="visible"><use href="#${prefix}Rs" class="hz-shade" ${Rt}/><use href="#${prefix}Rt" ${Rt}/></svg>` +
     `<rect class="hz-bar" x="0" y="0" width="100%" height="26"/><svg class="hz-r" x="100%" overflow="visible"><use href="#${prefix}Rf" ${Rt}/></svg>` +
     `<use href="#${prefix}Lf" ${Lt}/></svg><span class="hz-word">${esc(name)}</span></span>`;
@@ -614,15 +635,116 @@ function buildStaticRows() {
   reroll();
 }
 function reroll() {
-  const stances = Object.keys(STANCES);
   let defs = '', html = '';
   NAMES.forEach((n, i) => {
-    defs += spriteSet(`H${i}`, standPose(stances[Math.floor(Math.random() * stances.length)], pick(NECK_WEIGHTS), pick(TAIL_WEIGHTS)));
+    defs += spriteSet(`H${i}`, standPose(pick(STANCE_WEIGHTS), pick(NECK_WEIGHTS), pick(TAIL_WEIGHTS)));
     html += chip(`H${i}`, n, COATS[Math.floor(Math.random() * COATS.length)], Math.random() < 0.5);
   });
   chipSets.H = defs;
   $('#row-herd').innerHTML = html;
   flushDefs();
+}
+
+// ── Bake (2.5.1): the loaded art + the pose tables → templates/_horse_sprite.html ──
+// Built from the same legSVG / neckSVG / useP as the chip rows, so the rows are an
+// exact preview of what ships. Refuses to bake if a piece is missing, a standing
+// hoof misses the ground, or Graze can't reach the grass.
+const BAKE_TOL = 1.5;  // u — the most a standing hoof may miss the ground (0.4px at chip scale)
+const slug = s => s.toLowerCase().replace(/^tail-/, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+function pieceMarkup(name) {
+  return new XMLSerializer().serializeToString(document.getElementById('hz-pc-' + name))
+    .replace(/ xmlns(:\w+)?="[^"]*"/g, '').replace(/ (?:stroke="none"|fill-rule="nonzero")/g, '');
+}
+function bboxOf(markup) {  // art-unit bounds of a baked group (it <use>s the rig's pieces)
+  const host = $('#import-host');
+  host.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="680" height="400"><g>${markup}</g></svg>`;
+  const b = host.querySelector('g').getBBox();
+  host.textContent = '';
+  return { x: b.x, y: b.y, x2: b.x + b.width, y2: b.y + b.height };
+}
+function bakeSprite() {
+  const o = {}, problems = [], ids = new Set(), bodies = [];
+  for (const p of PIECES) if (!RIG.has[p]) problems.push(`missing piece ${p}`);
+  const entry = (kind, pool, name, weight, body) => {
+    const id = `hz-${kind}-${slug(name)}`;
+    if (ids.has(id)) problems.push(`two poses would share the id ${id}`);
+    ids.add(id); bodies.push(body);
+    return `    <g id="${id}" data-pool="${pool}" data-weight="${weight ?? 1}">${body}</g>`;
+  };
+  const stances = Object.keys(STANCES).map(name => {
+    const pose = standPose(name, 'Relaxed', 'tail-hang'), id = `hz-st-${slug(name)}`;
+    for (const l of LEGS) {
+      const gap = RIG.ground - toeWorld(l, pose.legs[l.key], 0).y;
+      if (Math.abs(gap) > BAKE_TOL) problems.push(`${name}: ${l.label} hoof ${f(Math.abs(gap))}u ${gap > 0 ? 'above' : 'below'} the ground`);
+    }
+    const g = (k, body) => `<g id="${id}-${k}">${body}</g>`;
+    return entry('st', 'stance', name, STANCE_WEIGHTS[name],
+      g('ff', legSVG(LEG.foreFar, pose.legs.foreFar, o)) + g('hf', legSVG(LEG.hindFar, pose.legs.hindFar, o)) +
+      g('hn', useP('bumper-hind', o) + legSVG(LEG.hindNear, pose.legs.hindNear, o)) +
+      g('fn', useP('bumper-front', o) + legSVG(LEG.foreNear, pose.legs.foreNear, o)));
+  });
+  const heads = Object.keys(NECKS).map(name => {
+    const n = neckAngles(name);
+    if (name === 'Graze') { const mz = RIG.ground - muzzle(n).y; if (mz > GRAZE.clear + 1) problems.push(`Graze: the muzzle stops ${f(mz)}u above the grass`); }
+    return entry('hd', 'head', name, NECK_WEIGHTS[name], neckSVG(n, o));
+  });
+  const tails = TAILS.map(t => entry('tl', 'tail', t, TAIL_WEIGHTS[t], useP(t, o)));
+  if (problems.length) return { ok: false, problems };
+
+  // How far any pose reaches past the barrel (x150–550, y110–210), at chip scale — for chip spacing.
+  const bb = bodies.map(bboxOf), px = v => f(v * S) + 'px';
+  const reach = `above ${px(110 - Math.min(...bb.map(b => b.y)))} · below ${px(Math.max(...bb.map(b => b.y2)) - 210)} · ` +
+    `ahead ${px(150 - Math.min(...bb.map(b => b.x)))} · behind ${px(Math.max(...bb.map(b => b.x2)) - 550)}`;
+  const label = RIG.label.replace(/ \(remembered\)$/, '');
+  const text = `{# GENERATED — Phase 2.5.1 posable horse. Baked by prototypes/horse-posing-harness.html
+   ("Bake sprite") from ${label} on ${new Date().toISOString().slice(0, 10)}. Don't hand-edit the
+   shapes: change the art or the harness's pose tables and bake again. data-weight is how often
+   the server picks each pose (horse_pose.py reads the pool from this file); safe to edit here.
+
+   Injected once per Fancy page (base.html); every chip points into it with <use>
+   (horse_svg() in macros.html). Art frame: back line y=110, belly y=210, seams x=150 / x=550,
+   ground y=${f(RIG.ground)}; chips draw it at scale ${S}.
+     hz-pc-*                         the pieces as drawn (eye + nostril keep their colours)
+     hz-st-<stance>-ff/-hf/-hn/-fn   legs: far fore · far hind · near hind + haunch · near fore + chest
+     hz-hd-<head>                    neck + head          hz-tl-<tail>   tail
+   Furthest reach past the barrel at chip scale: ${reach}. #}
+<svg class="horse-sprite" aria-hidden="true" focusable="false" width="0" height="0"
+     style="position:absolute;width:0;height:0;overflow:hidden">
+  <defs>
+${PIECES.map(p => '    ' + pieceMarkup(p)).join('\n')}
+${stances.join('\n')}
+${heads.join('\n')}
+${tails.join('\n')}
+  </defs>
+</svg>
+`;
+  return { ok: true, text, reach, label, counts: `${stances.length} stances · ${heads.length} heads · ${tails.length} tails` };
+}
+function openBake() {
+  const r = bakeSprite();
+  $('#bake-panel').hidden = false;
+  $('#bake-status').innerHTML = r.ok
+    ? `Baked <b>${esc(r.counts)}</b> from ${esc(r.label)} (${f(r.text.length / 1024)} KB). Furthest reach past the barrel at chip scale: ${esc(r.reach)}.`
+    : `<span class="bad">Not baked:</span> ${r.problems.map(esc).join(' · ')}`;
+  $('#bake-out').value = r.ok ? r.text : '';
+  $('#bake-copy').disabled = $('#bake-dl').disabled = !r.ok;
+}
+// Terminal bake, reading the art file named in the URL (not whatever was last dropped):
+//   chrome --headless --allow-file-access-from-files --dump-dom 'file://…/horse-posing-harness.html#bake=<art>.svg'
+// The dumped page carries the sprite (or BAKE FAILED + reasons) in <script id="bake-result">.
+function headlessBake(path) {
+  let out;
+  try {
+    const x = new XMLHttpRequest();
+    x.open('GET', path, false); x.send();
+    if (!x.responseText) throw new Error(`couldn't read ${path}`);
+    if (!install(x.responseText, path.split('/').pop())) throw new Error($('#warn').textContent);
+    const r = bakeSprite();
+    out = r.ok ? r.text : 'BAKE FAILED\n' + r.problems.join('\n');
+  } catch (e) { out = 'BAKE FAILED\n' + e.message; }
+  const s = document.createElement('script');
+  s.type = 'text/plain'; s.id = 'bake-result'; s.textContent = out;
+  document.body.appendChild(s);
 }
 
 // ── Main loop ───────────────────────────────────────────────────────────────
@@ -658,6 +780,7 @@ function tick(now) {
     readout(pose);
     chipSets.C = spriteSet('C', pose);
     $('#row-current').style.setProperty('--bob', f((pose.bob || 0) * S) + 'px');
+    $('#row-current').style.setProperty('--wbob', wordBob((pose.bob || 0) * S) + 'px');
     lastFrame = frame; dirty = false;
     flushDefsSoon = true;
   }
@@ -671,6 +794,7 @@ function tick(now) {
       const p = walkPose(((hf / ui.walk.frames) + off) % 1);
       w += spriteSet('W' + k, { ...p, bob: 0 });
       row.style.setProperty('--bob' + k, f(p.bob * S) + 'px');
+      row.style.setProperty('--wbob' + k, wordBob(p.bob * S) + 'px');
     });
     chipSets.W = w;
     flushDefsSoon = true;
@@ -678,6 +802,7 @@ function tick(now) {
   if (flushDefsSoon) { flushDefs(); flushDefsSoon = false; }
 }
 let lastHerdFrame = -1, flushDefsSoon = false;
+const wordBob = px => (ui.word === 'snap' ? Math.round(px) : f(px));  // whole px keeps the text crisp
 
 // ── Joint sliders + sweep ───────────────────────────────────────────────────
 function jointList() {
@@ -779,7 +904,21 @@ function wireUI() {
   $('#herd-play').addEventListener('click', e => {
     if (herdPausedAt === null) { herdPausedAt = performance.now(); e.target.textContent = 'Play'; }
     else { herdT0 += performance.now() - herdPausedAt; herdPausedAt = null; e.target.textContent = 'Pause'; } });
+  $('#word-ride').addEventListener('change', e => {
+    ui.word = e.target.value;
+    for (const r of ['#row-walk', '#row-current']) { if (ui.word) $(r).dataset.word = ui.word; else delete $(r).dataset.word; }
+    dirty = true; lastHerdFrame = -1; });
   $('#reroll').addEventListener('click', reroll);
+  $('#bake-btn').addEventListener('click', openBake);
+  $('#bake-close').addEventListener('click', () => { $('#bake-panel').hidden = true; });
+  $('#bake-copy').addEventListener('click', async () => {
+    const t = $('#bake-out'); t.select();
+    try { await navigator.clipboard.writeText(t.value); } catch (e) { document.execCommand('copy'); } });
+  $('#bake-dl').addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([$('#bake-out').value], { type: 'text/html' }));
+    a.download = '_horse_sprite.html'; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000); });
   buildJointSliders();
   $('#j-sweep').addEventListener('click', () => (sweep ? stopSweep() : startSweep(jointList().map(j => j.id))));
   $('#j-zero').addEventListener('click', () => { for (const j of jointList()) j.set(0); ui.joints.bob = 0; $('#j-bob').value = 0; syncJointOutputs(); dirty = true; });
@@ -828,6 +967,8 @@ function useBuiltIn() { install(document.getElementById('embed-template').textCo
 wireUI();
 setMode('stand');
 addEventListener('DOMContentLoaded', () => {  // the embedded data sits below this script
+  const bake = location.hash.match(/^#bake=(.+)$/);
+  if (bake) { headlessBake(decodeURIComponent(bake[1])); return; }
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem('posable-horse-svg') || 'null'); } catch (e) {}
   if (!(saved && install(saved.text, saved.name + ' (remembered)'))) useBuiltIn();

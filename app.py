@@ -74,6 +74,7 @@ from matcher import (
     find_horses_in_text, render_chain_item, compute_stats,
     horse_appearance,
 )
+from horse_pose import assign_pose
 from post_builder import extract_post
 from famous import FamousHorses
 from db.conn import init_db, get_db
@@ -969,8 +970,8 @@ def pasture():
     for h in horses:
         app_ = horse_appearance(h['name'])
         h['coat']     = app_['coat']
-        h['rev']      = app_['rev']
         h['is_famous'] = famous_horses.lookup(h['name']) is not None
+        assign_pose(h)  # pose + facing (2.5.1); /pasture/more's JS chips keep the default pose
     return render_template('pasture.html', horses=horses)
 
 
@@ -1222,8 +1223,8 @@ def me_pasture():
         name = h.get('name', '')
         app_ = horse_appearance(name)
         h['coat'] = app_['coat']
-        h['rev']  = app_['rev']
         h['is_famous'] = bool(name) and famous_horses.lookup(name) is not None
+        assign_pose(h)
     return render_template('my_pasture.html', horses=horses)
 
 
@@ -1279,8 +1280,8 @@ def me_saved_horses():
         name = h.get('name', '')
         app_ = horse_appearance(name)
         h['coat'] = app_['coat']
-        h['rev']  = app_['rev']
         h['is_famous'] = bool(name) and famous_horses.lookup(name) is not None
+        assign_pose(h)
     return render_template('saved_horses.html', horses=horses)
 
 

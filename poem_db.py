@@ -23,19 +23,21 @@ from db.conn import get_db
 from matcher import horse_appearance
 from famous import FamousHorses
 from config import FAMOUS_HORSES_FILE
+from horse_pose import assign_pose
 
 _famous = FamousHorses(FAMOUS_HORSES_FILE)
 
 
 def _enrich_lines(lines: list) -> None:
-    """Add coat/rev/is_famous to every horse dict in a lines structure in-place."""
+    """Add coat/is_famous plus a per-render pose + facing (assign_pose sets
+    pose and rev) to every horse dict in a lines structure in-place."""
     for line in lines:
         for h in line:
             name = h.get('name', '')
             app = horse_appearance(name)
             h['coat']      = app['coat']
-            h['rev']       = app['rev']
             h['is_famous'] = bool(name) and _famous.lookup(name) is not None
+            assign_pose(h)
 
 
 SHORT_CODE_BYTES = 8  # secrets.token_urlsafe(8) -> ~11 chars, ~64 bits entropy

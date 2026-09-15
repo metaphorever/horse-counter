@@ -5,7 +5,9 @@
 **Status:** **AMENDED 2026-09-10** — art model changed from hand-drawn frame-sets
 to *posable segments, posed and baked by Claude*. See **The art**. Runtime plan
 unchanged. **Design sprint before full production.** Parts template + posing
-harness shipped 2026-09-10 (see *Build order*, step 1).
+harness shipped 2026-09-10 (see *Build order*, step 1). **Built 2026-09-14**
+(posing/bake session): the harness bakes the sprite, heads are baked too, and the
+server reads the pose pool from the sprite. See *Build amendment (2026-09-14)*.
 **Ships:** per-render varied leg stance + head angle + facing for every server-rendered Fancy chip. **No animation, no layout change.**
 
 The first move of the horse-animation arc. A poem of Fancy horses currently renders
@@ -230,6 +232,10 @@ change.
 
 ## Sprite & macro changes
 
+*Superseded in part by the build amendment (2026-09-14) below: the harness bakes
+(no `tools/pose_horse.py`), heads are baked rather than rotated per chip, and the
+pose pool lives in the sprite.*
+
 - **`_horse_sprite.html`** — **generated, not hand-edited.** Legs become baked
   frame-sets `#hz-lff-0..N` / `#hz-lhf-0..N` (front/hind), each symbol holding the
   posed segments as flat paths. Bumpers get their own symbols. Head/neck stay
@@ -339,13 +345,65 @@ failure. **No full pose production before the sprint clears.**
    Session log `sessions/2026-09-10-phase-2.5.1-parts-template.md`.
 2. **Design sprint** (Clover) — style the parts; check the static haunch.
 3. **Posing + bake** — `tools/pose_horse.py`; standing pool, corrected walk;
-   generate `_horse_sprite.html`.
+   generate `_horse_sprite.html`. ✅ **Built 2026-09-14** as the harness's Bake
+   step; standing pool only (the walk bakes in 2.5.2). See the amendment below.
 4. **Pose enrichment + macro** — `_assign_pose`, `horse_svg(h)` (unchanged from
-   the original plan — it still just picks symbol ids).
+   the original plan — it still just picks symbol ids). ✅ **Built 2026-09-14**
+   (`horse_pose.assign_pose`).
 5. **Shimmer mask fix** + style (head `transform-origin`) + print/popover checks.
+   ✅ **Built 2026-09-14.** No `transform-origin` needed (heads are baked); spacing
+   knobs added instead.
 6. **Live verification** (Clover) — Fancy permalink + pasture + saved-horses +
    profile bio + queue show varied plausible poses; Plain/Reader/editor/counter
    unchanged; famous shimmer correct; reduced-motion + no-JS still render a pose.
+
+## Build amendment (2026-09-14)
+
+Three changes from the plan above. The first was confirmed by Clover before the
+build; Clover didn't comment on the other two.
+
+1. **The harness bakes the sprite; there is no `tools/pose_horse.py`.** "Bake
+   sprite…" in `prototypes/horse-posing-harness.html` turns the loaded art and the
+   harness's pose tables into `templates/_horse_sprite.html`. The tables are
+   `STANCES`, `NECKS` (Graze solved from the art), `TAILS`, and the three
+   `*_WEIGHTS`. The same functions draw the harness chip rows, so those rows are
+   an exact preview of what ships. Bake refuses when a piece is missing, when a
+   standing hoof is more than 1.5u off the ground, or when Graze can't reach the
+   grass. It can also run from a terminal: open the harness with
+   `#bake=<art>.svg` in headless Chrome with `--allow-file-access-from-files`.
+   The result lands in `<script id="bake-result">`.
+   *Why:* a Python port would duplicate the art loader, the leg solver and the
+   Graze solver, and drift away from what Clover approves in the harness. Clover:
+   "I like the idea of being able to test new edits and then publish all from
+   the same place."
+2. **Heads are baked, not rotated per chip.** There are 4 head groups (alert,
+   relaxed, low, graze), and every chip is 7 `<use>` refs. That means no
+   `transform-origin` quirks, the facing flip is right by construction, and the
+   shimmer mask simply copies the chip's refs. The cost: head angles come in fixed
+   steps, which is all 2.5.1 picks from anyway. Head motion is a 2.5.2 decision.
+3. **The sprite carries the pool.** Each pose group has `data-pool` and
+   `data-weight`, and `horse_pose.py` reads them at startup. So the server can't
+   pick a pose the sprite lacks, and the weights live in one place.
+
+Also:
+- **Baked groups keep nested `rotate()` transforms** rather than flattened path
+  data. That's the same markup the harness draws: 20.8KB raw, 6.2KB gzipped.
+- **Pose fields:** `h['pose'] = {stance, head, tail}` plus a random `h['rev']`,
+  set by `assign_pose(h)`. It's called from `poem_db._enrich_lines` and from the
+  `/pasture`, `/me/pasture` and `/me/saved-horses` routes. `/pasture/more` (the JS
+  chips) is unchanged: default pose, facing from the name hash.
+- **Spacing:** the posed horses reach up to ~41px above the barrel, ~38px below,
+  ~54px ahead and ~34px behind. 2.4 reached ~28 / 35 / 34 / 16. There are new
+  knobs in `static/style.css`, tuned by Clover on the local build (2026-09-15):
+  - `--hz-line`, the poem line pitch: 3.8 → 4
+  - `--hz-gap-x`, the poem chip side margin: 16px → 20px
+  - `--hz-grid-row`, the collection-grid row gap: 48px (unchanged)
+  - `--hz-grid-col`, the space between grid chips: 30px. The grid now has its own
+    gap and no chip side margins. Before, it was 18px of gap plus 2 × `--hz-gap-x`,
+    which made the one knob act differently on poems and grids.
+
+  The phone-only line-height bump (4.2) is gone, so phones now use 4. Check this
+  on a phone at the live test.
 
 ## Files touched
 
@@ -367,8 +425,8 @@ failure. **No full pose production before the sprint clears.**
 
 ## Open questions
 
-1. **Static haunch** — does it read stiff at full hind extension? *Clover checks at
-   first prototype; fallback is a fourth hind segment.*
+1. **Resolved (2026-09-14): static haunch stays.** Clover, in the harness: "I
+   don't think the hind looks stiff." No fourth hind segment.
 2. **Standing-pool size** — how many stances before it feels varied enough?
    *Tune at the sprint; it is a script parameter now, not art.*
 3. **Head-angle distribution** — weight toward neutral, or flat random across the

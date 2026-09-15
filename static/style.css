@@ -1274,7 +1274,7 @@ body.view-decorated .poem-line-out {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
   padding-left: 0; text-indent: 0;
 }
-body.view-fancy .poem-line-out { line-height: 3.8; }
+body.view-fancy .poem-line-out { line-height: var(--hz-line); }
 body.view-plain .poem-line-out { font: 1.05rem/2.0 'IM Fell English', Georgia, serif; }
 
 /* ── Fancy permalink: full-width horse canvas (Option C) ──────────────────────
@@ -1308,12 +1308,23 @@ body.view-fancy .container.poem-permalink .poem-view-footer {
 }
 
 /* ── Decorated chips — Fancy mode (SVG horse, Phase 2.4) ───────────────────── */
+/* Horse spacing — TUNE HERE. The posed horses (2.5.1) reach further than 2.4's:
+   up to ~41px above the barrel, ~38px below, ~54px ahead, ~34px behind.
+   Poems and the collection grids space chips differently (a grid has its own
+   gap; a poem line has chip margins + a word space), so each has its own pair.
+   Values tuned by Clover on the local build, 2026-09-15. */
+body.view-fancy {
+  --hz-line: 4;              /* poems: line pitch, × font-size (2.4: 3.8) */
+  --hz-gap-x: 20px;          /* poems: chip side margin (2.4: 16px) */
+  --hz-grid-row: 48px;       /* pasture / saved-horses grids: row gap */
+  --hz-grid-col: 30px;       /* grids: space between chips in a row (2.4: 18px gap + 2×16px margins) */
+}
 body.view-fancy .poem-horse {
   display: inline-block;
   position: relative;
   overflow: visible;
   padding: 1px 10px 4px;
-  margin: 5px 16px;          /* generous horizontal gap so heads/tails don't crowd neighbours */
+  margin: 5px var(--hz-gap-x);
   min-width: 6ch;
   text-align: center;
   font-family: 'Playfair Display SC', Georgia, serif;
@@ -1446,12 +1457,12 @@ body.view-plain a.poem-horse:hover { filter: brightness(1.08); }
 /* Mobile tightening (1.12 step 6) — Fancy holds up on a narrow viewport at the
    current chip scale: registered names cap at 18 chars, so even the longest
    single token fits one chip-line on a phone (verified). No chip shrink needed.
-   We only keep the extra line-height (head glyphs clear the previous line's leg
-   stubs) and nudge the floating title down so it doesn't dominate a phone.
+   We only nudge the floating title down so it doesn't dominate a phone. (The
+   old phone-only line-height bump went in 2.5.1: --hz-line now clears the
+   posed horses everywhere.)
    (Enlarging chips + harmonising the chip font with the display type is routed
    to the style/font pass, where chip size + font are decided together.) */
 @media (max-width: 520px) {
-  body.view-fancy .poem-line-out { line-height: 4.2; }  /* 2.4: SVG horses need extra vertical clearance */
   body.view-fancy .poem-view-title { font-size: 1.45rem; }
   body.view-fancy .poem-view-body { padding-top: 22px; }
 }
@@ -2541,8 +2552,8 @@ body.view-plain .collection-chips .poem-horse {
 /* 2.4 Fancy: collection chips are full SVG horses. Keep the coat colour driving
    currentColor (the generic .collection-chips a.poem-horse{color:--fg} above is
    for the non-SVG modes), and give the tall horses room so they don't collide. */
-body.view-fancy .collection-chips { gap: 48px 18px; }
-body.view-fancy .collection-chips .poem-horse { color: var(--bg); }
+body.view-fancy .collection-chips { gap: var(--hz-grid-row) var(--hz-grid-col); }
+body.view-fancy .collection-chips .poem-horse { color: var(--bg); margin-inline: 0; }  /* the grid gap does the side spacing */
 .collection-chip-wrap { position: relative; }
 .collection-chip-remove {
   position: absolute; top: -10px; right: -10px;

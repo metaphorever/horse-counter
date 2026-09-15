@@ -31,8 +31,9 @@
   let   busy     = false;
 
   // Single source of truth: the same per-chip SVG horse the server emits via
-  // render_chip()/horse_svg(). It carries no chip-specific data (parts are <use>
-  // refs into the page's injected sprite), so one static copy serves every chip.
+  // render_chip()/horse_svg(), in its default pose (server-rendered chips get a
+  // random pose per render, 2.5.1; these JS chips keep the default for now). Its
+  // parts are <use> refs into the page's injected sprite, so one copy serves all.
   // Fancy shows it; Plain/Reader keep it display:none — matching server output.
   const HORSE_SVG = {{ horse_svg() | tojson }};
 
