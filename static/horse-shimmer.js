@@ -6,33 +6,26 @@
  * the chip. If JS is off, or motion is reduced, horses still render fine — they
  * just don't sweep. Clover approved "JS as a treat."
  *
- * Geometry mirrors horse_svg() in macros.html: scale S = 0.26, left-anchored
- * parts translate(-39,-28.6); right-anchored parts in a nested <svg x="100%">
- * translate(-143,-28.6); barrel = full-width rect, height 26.
+ * The mask is a copy of the chip's own horse_svg() markup (macros.html), so it
+ * follows whatever pose that chip was given (2.5.1 varies it per render).
  */
 (function () {
   if (!document.body.classList.contains('view-fancy')) return;
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   if (!document.querySelector('.horse-sprite')) return;
 
-  var L = 'translate(-39,-28.6) scale(.26)';   // left-anchored parts
-  var R = 'translate(-143,-28.6) scale(.26)';  // right-anchored parts (inside <svg x="100%">)
   var n = 0;
 
-  function maskParts() {
-    // white copies (currentColor -> #fff via style) of every part, same layout
-    // as the base horse, so the sweep is clipped to the exact silhouette.
-    return (
-      '<rect x="0" y="0" width="100%" height="26" fill="#fff"/>' +
-      '<use href="#hz-lfn" style="color:#fff" transform="' + L + '"/>' +
-      '<use href="#hz-lff" style="color:#fff" transform="' + L + '"/>' +
-      '<use href="#hz-head" style="color:#fff" transform="' + L + '"/>' +
-      '<svg x="100%" overflow="visible">' +
-        '<use href="#hz-lhf" style="color:#fff" transform="' + R + '"/>' +
-        '<use href="#hz-lhn" style="color:#fff" transform="' + R + '"/>' +
-        '<use href="#hz-tail" style="color:#fff" transform="' + R + '"/>' +
-      '</svg>'
-    );
+  function maskParts(chip) {
+    // white copies (currentColor -> #fff via style) of exactly the parts this
+    // chip renders, same layout, so the sweep is clipped to its silhouette.
+    var copy = chip.querySelector('.hz').cloneNode(true);
+    var parts = copy.querySelectorAll('use, rect');
+    for (var i = 0; i < parts.length; i++) {
+      parts[i].removeAttribute('class');
+      parts[i].setAttribute('style', 'color:#fff;fill:#fff');
+    }
+    return copy.innerHTML;
   }
 
   function enhance(chip) {
@@ -56,7 +49,7 @@
             '<animateTransform attributeName="gradientTransform" type="translate" ' +
               'from="' + (-w) + ' 0" to="' + w + ' 0" dur="2.6s" repeatCount="indefinite"/>' +
           '</linearGradient>' +
-          '<mask id="' + id + 'm">' + maskParts() + '</mask>' +
+          '<mask id="' + id + 'm">' + maskParts(chip) + '</mask>' +
         '</defs>' +
         '<rect x="-50" y="-46" width="' + (w + 100) + '" height="130" ' +
           'fill="url(#' + id + 'g)" mask="url(#' + id + 'm)"/>' +

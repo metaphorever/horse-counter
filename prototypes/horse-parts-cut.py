@@ -57,7 +57,11 @@ DOCK = (553, 113)         # tail root, for the warps
 
 
 def sprite_path(src, pid):
-    return re.search(r'id="%s"[^>]*d="([^"]+)"' % pid, src).group(1)
+    m = re.search(r'id="%s"[^>]*d="([^"]+)"' % pid, src)
+    if not m:  # since 2.5.1 the sprite is baked from Clover's parts; this script cuts the 2.4 horse
+        sys.exit(f'{SPRITE} has no #{pid}: it is the baked 2.5.1 sprite now. This script cuts the 2.4 '
+                 'horse; point SPRITE at a copy of it from git (git show 52312fe:templates/_horse_sprite.html).')
+    return m.group(1)
 
 
 def to_geom(d, step=1.2):
