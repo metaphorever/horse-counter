@@ -39,7 +39,7 @@ Clerk satellite CNAMEs (5 total) are grey-proxied at Cloudflare because Clerk br
 
 ## Data model
 
-Schema lives in `db/schema.sql`; migrations applied idempotently by `db/seed.py:apply_migrations()` on every `init_db` run (called at startup). No versioned migration table — adds are guarded by `PRAGMA table_info` checks. This works for the current scale; will need to evolve before Phase 2 if migrations become expensive (flagged as an open design question).
+Schema lives in `db/schema.sql`; migrations applied idempotently by `db/seed.py:apply_migrations()` on every `init_db` run (called at startup). No versioned migration table — adds are guarded by `PRAGMA table_info` checks. Every table a migration touches must exist before `apply_migrations()` runs; `crosspost_queue` is created in `seed.py` (`ensure_crosspost_queue()`), not `schema.sql`, so `run_all()` creates it first (a fresh DB crashed at boot until 2026-09-15). This works for the current scale; will need to evolve before Phase 2 if migrations become expensive (flagged as an open design question).
 
 ### Tables
 
