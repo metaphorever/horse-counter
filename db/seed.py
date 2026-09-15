@@ -22,7 +22,8 @@ from db.conn import get_db
 
 
 _COLUMN_MIGRATIONS = [
-    # (table, column, ddl-fragment)
+    # (table, column, ddl-fragment). The table must already exist when this
+    # runs: in schema.sql, or created by an ensure_*() that run_all() calls first.
     ('users',          'trust_level',  "TEXT NOT NULL DEFAULT 'pending'"),
     ('poems',          'inspired_by_text', "TEXT NOT NULL DEFAULT ''"),
     ('poems',          'inspired_by_url',  "TEXT NOT NULL DEFAULT ''"),
@@ -280,7 +281,11 @@ def cleanup_obsolete_tags() -> None:
 
 
 def ensure_crosspost_queue() -> None:
-    """Create crosspost_queue table if missing. Idempotent."""
+    """Create crosspost_queue table if missing. Idempotent.
+
+    The per-platform status columns are added by apply_migrations(), which
+    run_all() calls after this.
+    """
     with get_db() as conn:
         conn.execute(
             """CREATE TABLE IF NOT EXISTS crosspost_queue (
@@ -313,9 +318,11 @@ def ensure_admin_settings() -> None:
 
 
 def run_all() -> None:
+    # Tables created here rather than in schema.sql must exist before
+    # apply_migrations() ALTERs them, or a fresh DB fails with "no such table".
+    ensure_crosspost_queue()
     apply_migrations()
     dedup_tag_taxonomy()   # must run before seed — cleans up pre-constraint duplicates
     seed_tag_taxonomy()
     cleanup_obsolete_tags()
     ensure_admin_settings()
-    ensure_crosspost_queue()
