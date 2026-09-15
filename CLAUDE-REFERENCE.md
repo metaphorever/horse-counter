@@ -76,7 +76,7 @@ Authoritative source is `spec/technical.md`. Quick reference:
 
 **Install:** `uv pip install -r requirements.txt` (user preference; standard `pip` also works)
 
-**Migrate DB:** `python -m tools.init_db --seed-tags` (idempotent; safe to run on every change)
+**Migrate DB:** `python -m tools.init_db` (idempotent; safe to run on every change; seeds the tag taxonomy too)
 
 **Run dev server:** `python app.py` → http://localhost:5000
 

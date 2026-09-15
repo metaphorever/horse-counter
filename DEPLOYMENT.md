@@ -123,8 +123,11 @@ Required keys:
 - Initialise schema:
   ```bash
   cd /data/home/metaphorever/horse-counter
-  /home/metaphorever/.venv/bin/python -m tools.init_db --seed-tags
+  /home/metaphorever/.venv/bin/python -m tools.init_db
   ```
+  The app also runs this at import, so a normal deploy doesn't need it. It
+  seeds the tag taxonomy from `db/seed.py`. (The old `--seed-tags` flag is
+  gone: it wrote a second, legacy set of tags.)
 - No `sqlite3` CLI on the server — use Python:
   ```bash
   python3 -c "import sqlite3; c=sqlite3.connect('/data/home/metaphorever/horse-counter/data/poet.db'); print(list(c.execute('SELECT slug, role FROM users')))"
