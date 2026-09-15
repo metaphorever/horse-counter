@@ -267,8 +267,8 @@ DNS cutover complete. poet.horse is the primary home of the project. Phase 1 ful
   - The famous shimmer follows the chip's pose.
   - Spacing knobs, tuned by Clover: `--hz-line` 4, `--hz-gap-x` 20px, `--hz-grid-row` 48px, `--hz-grid-col` 30px.
   - The 2.5.2 walk decisions are in the overview: the name rides the bob, and the bob is a user toggle.
-  - **Live 2026-09-15** (#93; #91 and #92 merged the same day). Clover's live test passed except one item: **on iPhone the famous shimmer shows but doesn't sweep.** Details and next steps are in ROADMAP's 2.5 notes.
-  - **Next:** fix the iOS shimmer, confirm macOS Safari, print preview and Bake → Download, close 2.5.1, then spec 2.5.2 · Opus · high.
+  - **Live 2026-09-15** (#93; #91 and #92 merged the same day). Clover's live test passed, except that **in Safari (iPhone and Mac) the famous shimmer shows but doesn't sweep**. It also found two pre-existing Fancy print bugs: grey names and a printed title shadow. Details are in ROADMAP (2.5 notes and Bugs).
+  - **Next:** fix the Safari shimmer and the two print bugs, close 2.5.1, then spec 2.5.2 · Opus · high.
 
 **Prior session (2026-09-09/10) — Phase 2.5.1 art model amended, no code:**
 - Reviewed Clover's hand-drawn walk cycle (`prototypes/horse-chip-art-walk.svg`).

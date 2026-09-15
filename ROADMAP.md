@@ -90,9 +90,10 @@ VPS provisioning, SQLite schema, short-code permalinks, Clerk auth, localStorage
       - the shimmer fits the pose
       - reduced motion removes the sweep, on desktop and iPhone
       - the iPhone layout and the signed-in pages (My Pasture, Saved Horses, bio, queue) look right
-    - **Open: on iPhone the famous shimmer band shows but doesn't sweep.** It sits still in the middle of the horse; desktop sweeps. The sweep code (a SMIL `animateTransform` on the gradient in `static/horse-shimmer.js`) is unchanged since 2.4. Only its mask changed in 2.5.1: it's now a copy of the chip's own `<use>` chain. Nothing records 2.4's sweep being checked on iOS, so it's either an old bug or the new mask stops WebKit repainting. First step: compare 2.4 (`git show e494228:static/horse-shimmer.js`) and now in the iOS Simulator. If iOS can't animate it, hide the band there rather than leave a still stripe.
-    - **Still to confirm:** macOS Safari, print preview, and the harness's Bake → Download.
-    - **Next session:** fix the iOS shimmer, clear those three, close 2.5.1, then spec 2.5.2 · Opus · high.
+    - **Also passed, same day:** the macOS Safari layout, no horses in print preview, and the harness's Bake → Download.
+    - **Open: in Safari the famous shimmer band shows but doesn't sweep,** on both iPhone and Mac. It sits still in the middle of the horse; Chrome sweeps. So it's WebKit, not iOS. The sweep code (a SMIL `animateTransform` on the gradient in `static/horse-shimmer.js`) is unchanged since 2.4. Only its mask changed in 2.5.1: it's now a copy of the chip's own `<use>` chain. Nothing records 2.4's sweep being checked in Safari, so it's either an old bug or the new mask stops WebKit repainting. First step: compare 2.4 (`git show e494228:static/horse-shimmer.js`) and now in Safari. If WebKit can't animate it, hide the band there rather than leave a still stripe.
+    - **Found in print preview, pre-existing (not 2.5.1):** horse names print grey, and the title shadow prints. See Bugs below.
+    - **Next session:** fix the Safari shimmer and the two print bugs, close 2.5.1, then spec 2.5.2 · Opus · high.
 
 Editor UX rethink (hold — functional as-is, do not bikeshed), **image-card export (promoted to early Phase 2 — cross-posting prerequisite; technique decision needed first; Playwright path also enables PQ scraping — two-for-one)**, cross-posting connectors (~~Bluesky~~ ✅ done 2.2; **Mastodon next** — see backlog for full research), **per-horse PQ lazy-cache scrape + real coat colors (pair with Playwright dep — see backlog)**, fancy broadsheet print, horsified HTML embed, oEmbed, pasture-search mode, per-horse/per-tag browse pages (nice but big infra lift — defer until FTS5 + SQLite horse dict question resolved), FTS5 search, site-popularity stats, ambient field horses, Tumblr theme port, three-concept disambiguation pass. Follow other posters (low priority). Reply/attribution variant (build when demand signals or people start using attribution field for poem links).
 
@@ -183,6 +184,10 @@ These came out of the step-5 audit of the current codebase. They're not bugs to 
   - **Hybrid worth considering when the time comes:** dictionary for the hot matcher.py lookup path (stays O(1), low surgery), SQLite for query-heavy surfaces (browse filters, per-horse stats pages, override tracking with history). The two synced at app boot or via a build step. Note: `data/horse_overrides.json` is already a small overlay-on-the-gz, so the architecture is informally already hybrid; the open question is whether to formalize and grow that layer in SQLite.
 
 ### Bugs (small, drop into next available PR)
+
+- **Fancy-view print: horse names print grey, and the title shadow prints.** Found by Clover in the 2.5.1 live test, 2026-09-15. Both predate 2.5.1; fold them into the 2.5.1 close session.
+  1. `static/print.css` forces `.poem-horse { color: #0f0c06 !important }`. Since 2.4 the name is a child `.hz-word` with its own `color: var(--fg)` (`style.css`, `body.view-fancy .poem-horse .hz-word`), so light-text coats print light grey. Fix: target `.poem-horse .hz-word` in `print.css` too.
+  2. The Fancy skin's `text-shadow` on the title and date line (1.12, e.g. `body.view-fancy .poem-view-title`) is never reset in print. Fix: `text-shadow: none` in `print.css`.
 
 - ~~**`poems.lines_json` schema comment is outdated.**~~ Fixed 2026-05-22.
 - **Admin PIN logout has no UI affordance.** Deliberately deferred — PIN auth is scheduled for full removal; no point adding a link for a deprecated path.
