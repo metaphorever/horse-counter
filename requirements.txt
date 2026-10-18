@@ -5,3 +5,4 @@ PyJWT>=2.8,<3
 cryptography>=42,<45
 flask-limiter>=3.0,<5
 atproto>=0.0.46,<1
+beautifulsoup4>=4.12,<5
