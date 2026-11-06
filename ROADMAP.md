@@ -189,6 +189,12 @@ These came out of the step-5 audit of the current codebase. They're not bugs to 
   1. `static/print.css` forces `.poem-horse { color: #0f0c06 !important }`. Since 2.4 the name is a child `.hz-word` with its own `color: var(--fg)` (`style.css`, `body.view-fancy .poem-horse .hz-word`), so light-text coats print light grey. Fix: target `.poem-horse .hz-word` in `print.css` too.
   2. The Fancy skin's `text-shadow` on the title and date line (1.12, e.g. `body.view-fancy .poem-view-title`) is never reset in print. Fix: `text-shadow: none` in `print.css`.
 
+- **The per-IP rate limits are actually site-wide, and `reporter_ip` is always the proxy.** Found 2026-11-06, read from the code, not yet confirmed on the server. Requests go Cloudflare → Apache → gunicorn on `127.0.0.1:8765`. The app has no `ProxyFix` and reads no forwarding header, so `request.remote_addr` is `127.0.0.1` on every request.
+  - **Effect:** `Limiter(key_func=get_remote_address)` (`app.py`) puts every visitor in one bucket. Each limit is shared by the whole site: 10/min on `/submit/poem`, 3/hour on reports, 60/min on the search and rhyme endpoints, 20/min on `/auth/clerk/verify`. One busy visitor or one spammer can lock everyone out, and no limit ever singles out an abuser. Every `reporter_ip` saved on a report (`app.py`, report route) is `127.0.0.1`.
+  - **Also:** the limiter uses `memory://` storage and gunicorn runs 2 workers, so each worker keeps its own counts and the real ceiling is about double what's set.
+  - **Fix:** key the limiter and `reporter_ip` on the real client IP, from `CF-Connecting-IP`. Trust that header only because the origin is behind Cloudflare. If the origin can be reached directly, the header can be forged. First check on the server what `request.headers` actually contains.
+  - **Separate decision, not part of this fix:** storing a submitter IP on poems. That's a privacy and ToS question for Phase 4.5. Today nothing can trace an anonymous post, and Apache likely logs only Cloudflare edge IPs.
+
 - ~~**`poems.lines_json` schema comment is outdated.**~~ Fixed 2026-05-22.
 - **Admin PIN logout has no UI affordance.** Deliberately deferred — PIN auth is scheduled for full removal; no point adding a link for a deprecated path.
 - ~~**Same-name horses all render with the first horse's URL.**~~ Fixed 2026-05-22 — render-time URL cycling.
