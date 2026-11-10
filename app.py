@@ -38,7 +38,7 @@ import re
 from datetime import datetime, timezone
 from flask import (
     Flask, g, request, redirect, session, url_for,
-    render_template, flash, jsonify, make_response,
+    render_template, flash, jsonify, make_response, get_template_attribute,
 )
 from functools import wraps
 from flask_limiter import Limiter
@@ -971,18 +971,22 @@ def pasture():
         app_ = horse_appearance(h['name'])
         h['coat']     = app_['coat']
         h['is_famous'] = famous_horses.lookup(h['name']) is not None
-        assign_pose(h)  # pose + facing (2.5.1); /pasture/more's JS chips keep the default pose
+        assign_pose(h)  # pose + facing (2.5.1)
     return render_template('pasture.html', horses=horses)
 
 
 @app.route('/pasture/more')
 def pasture_more():
+    # Scroll-loaded chips get a random pose too: each horse carries its
+    # server-rendered horse_svg() markup, so the macro stays the one source.
+    horse_svg = get_template_attribute('macros.html', 'horse_svg')
     horses = random_horses(dictionary, 30)
     for h in horses:
         app_ = horse_appearance(h['name'])
         h['coat']     = app_['coat']
-        h['rev']      = app_['rev']
         h['is_famous'] = famous_horses.lookup(h['name']) is not None
+        assign_pose(h)  # pose + facing (2.5.1)
+        h['svg'] = str(horse_svg(h))
     return jsonify({'horses': horses})
 
 

@@ -40,19 +40,19 @@
         'transform:translateY(-40%)' + flip + ';overflow:visible;pointer-events:none;' +
         'z-index:0;mix-blend-mode:screen">' +
         '<defs>' +
-          '<linearGradient id="' + id + 'g" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="' + w + '" y2="0">' +
-            '<stop offset="0" stop-color="#fff" stop-opacity="0"/>' +
+          '<linearGradient id="' + id + 'g" x1="0" y1="0" x2="1" y2="0">' +
             '<stop offset=".42" stop-color="#fff" stop-opacity="0"/>' +
             '<stop offset=".5" stop-color="#fff" stop-opacity=".55"/>' +
             '<stop offset=".58" stop-color="#fff" stop-opacity="0"/>' +
-            '<stop offset="1" stop-color="#fff" stop-opacity="0"/>' +
-            '<animateTransform attributeName="gradientTransform" type="translate" ' +
-              'from="' + (-w) + ' 0" to="' + w + ' 0" dur="2.6s" repeatCount="indefinite"/>' +
           '</linearGradient>' +
           '<mask id="' + id + 'm">' + maskParts(chip) + '</mask>' +
         '</defs>' +
-        '<rect x="-50" y="-46" width="' + (w + 100) + '" height="130" ' +
-          'fill="url(#' + id + 'g)" mask="url(#' + id + 'm)"/>' +
+        // the mask sits on a still group; the band inside it slides across
+        // (CSS animation .hz-shine-band in style.css — not SMIL, see there)
+        '<g mask="url(#' + id + 'm)">' +
+          '<rect class="hz-shine-band" x="0" y="-46" width="' + w + '" height="130" ' +
+            'fill="url(#' + id + 'g)"/>' +
+        '</g>' +
       '</svg>';
     chip.insertAdjacentHTML('beforeend', svg);
   }

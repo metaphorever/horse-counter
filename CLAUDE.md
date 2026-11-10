@@ -269,6 +269,11 @@ DNS cutover complete. poet.horse is the primary home of the project. Phase 1 ful
   - The 2.5.2 walk decisions are in the overview: the name rides the bob, and the bob is a user toggle.
   - **Live 2026-09-15** (#93; #91 and #92 merged the same day). Clover's live test passed, except that **in Safari (iPhone and Mac) the famous shimmer shows but doesn't sweep**. It also found two pre-existing Fancy print bugs: grey names and a printed title shadow. Details are in ROADMAP (2.5 notes and Bugs).
   - **Next:** fix the Safari shimmer and the two print bugs, close 2.5.1, then spec 2.5.2 · Opus · high.
+- **2026-11-10: 2.5.1 close-out fixes** (`sessions/2026-11-10-phase-2.5.1-close.md`).
+  - The Safari shimmer was an old bug: WebKit never repaints a SMIL `gradientTransform`, and 2.4 froze too. It now sweeps by CSS animation and passes in Playwright WebKit.
+  - The print name colour and shadows are fixed.
+  - The Infinite Pasture's scroll-loaded chips now get random poses.
+  - **Holds:** Clover checks the live site (Safari sweep on Mac and iPhone, print preview, scroll poses). Then 2.5.1 closes and the 2.5.2 spec starts · Opus · high.
 
 **Prior session (2026-09-09/10) — Phase 2.5.1 art model amended, no code:**
 - Reviewed Clover's hand-drawn walk cycle (`prototypes/horse-chip-art-walk.svg`).

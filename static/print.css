@@ -192,6 +192,18 @@
   .poem-horse::before,
   .poem-horse::after { display: none !important; }
 
+  /* Since 2.4 the Fancy name is a child span with its own coat colour
+     (style.css: body.view-fancy .poem-horse .hz-word), so the chip reset
+     above doesn't reach it — light-text coats printed grey. */
+  .poem-horse .hz-word {
+    color: #0f0c06 !important;
+    transform: none !important;
+  }
+
+  /* No skin's on-grass legibility shadows belong on paper (Fancy title,
+     date line, attribution, collection headers). */
+  * { text-shadow: none !important; }
+
   /* ── Tags ─────────────────────────────────────────────────────────────── */
   .poem-view-tags {
     display: block;
