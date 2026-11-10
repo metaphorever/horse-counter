@@ -162,6 +162,12 @@ Not blocking 2.5.1; resolve when its phase is specced.
 - **Frame-swap mechanism** (2.5.2): CSS cannot animate `<use href>` — SMIL
   `calcMode="discrete"`, a sprite-strip translate, or JS, each with different
   reduced-motion / no-JS behaviour. Interacts with frame count and frame rate.
+  **Evidence, 2026-11-10 (2.5.1 close-out):** WebKit (Safari, Mac and iPhone)
+  never repainted the famous shimmer's SMIL `animateTransform` on a
+  `gradientTransform`. The frames were identical in Playwright WebKit, in both
+  the 2.4 and 2.5.1 scripts. A CSS transform animation on an element inside the
+  same mask repaints fine. That doesn't rule out SMIL `calcMode="discrete"` on
+  `href`, but test any SMIL candidate in WebKit before choosing it.
 - **Frame rate** (2.5.2): 60fps is not assumed. The per-chip `drop-shadow` filter
   re-rasterises on any change inside it, so **15fps costs a quarter of 60fps** and
   lands in the "charming jank" register anyway. Pick it live.

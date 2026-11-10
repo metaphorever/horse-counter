@@ -1402,6 +1402,21 @@ body.view-fancy .poem-horse.famous-horse .hz {
   filter: drop-shadow(1.5px 2px 1.5px rgba(0, 0, 0, 0.34))
           drop-shadow(0 0 1.6px rgba(212, 170, 40, 0.95));
 }
+/* The sweep's light band (built by horse-shimmer.js): a chip-wide rect with a
+   fixed gradient, slid across under a mask of the horse. It moves by CSS
+   transform, not SMIL — WebKit never repaints a SMIL-animated gradientTransform,
+   so in Safari the 2.4–2.5.1 band sat still. fill-box makes 100% = chip width. */
+body.view-fancy .hz-shine-band {
+  transform-box: fill-box;
+  animation: hz-sweep 2.6s linear infinite;
+}
+@keyframes hz-sweep {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.view-fancy .hz-shine { display: none; }
+}
 
 /* ── Famous-horse shimmer ────────────────────────────────────────────────── */
 @keyframes poem-famous-shimmer {
@@ -1471,7 +1486,8 @@ body.view-plain a.poem-horse:hover { filter: brightness(1.08); }
    the Reader/plain aesthetic). */
 @media print {
   .horse-sprite,
-  body.view-fancy .poem-horse .hz { display: none !important; }
+  body.view-fancy .poem-horse .hz,
+  body.view-fancy .poem-horse .hz-shine { display: none !important; }
 }
 
 /* ───── Reader skin (1.12 step 5) ─────────────────────────────────────────────
