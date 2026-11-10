@@ -250,7 +250,7 @@ Open holds:           [testing holds, overrides, flags — or "none"]
 
 ## Current phase
 
-**PHASE: Live — post-launch, Phase 2 in progress (updated 2026-09-15)**
+**PHASE: Live — post-launch, Phase 2 in progress (updated 2026-11-10)**
 
 DNS cutover complete. poet.horse is the primary home of the project. Phase 1 fully shipped and verified. Phase 2 underway — see ROADMAP.md for current priority picture.
 
@@ -273,7 +273,8 @@ DNS cutover complete. poet.horse is the primary home of the project. Phase 1 ful
   - The Safari shimmer was an old bug: WebKit never repaints a SMIL `gradientTransform`, and 2.4 froze too. It now sweeps by CSS animation and passes in Playwright WebKit.
   - The print name colour and shadows are fixed.
   - The Infinite Pasture's scroll-loaded chips now get random poses.
-  - **Holds:** Clover checks the live site (Safari sweep on Mac and iPhone, print preview, scroll poses). Then 2.5.1 closes and the 2.5.2 spec starts · Opus · high.
+  - **Live (PR #130) and verified by Clover, same day. 2.5.1 is CLOSED.** The sweep works in Safari on Mac and in Chrome, print is clean, and scroll poses vary. The iPhone shows no band because Reduce Motion is on, which is by design.
+  - **Next: spec Phase 2.5.2, the walk cycle** · Opus · high. The overview's open questions are the inputs. The frame-swap question now carries the WebKit SMIL evidence.
 
 **Prior session (2026-09-09/10) — Phase 2.5.1 art model amended, no code:**
 - Reviewed Clover's hand-drawn walk cycle (`prototypes/horse-chip-art-walk.svg`).
@@ -318,4 +319,4 @@ DNS cutover complete. poet.horse is the primary home of the project. Phase 1 ful
 - Account-action test-account holds — not blocking, test when convenient
 - Editor section label size parity (Poem / Stable labels should be same size) — slot into next small-items session
 
-Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.16, 1.17, 1.19, 1.20, 1.21, 1.23, 1.29, 2.2, 2.3, **2.4 (live + fully verified 2026-06-19, all holds cleared)**. Collection pages verified 2026-05-24. All Phase 1 holds cleared 2026-05-25.
+Phases shipped and verified: 1.4, 1.12, 1.13, 1.13.1, 1.14, 1.15, 1.16, 1.17, 1.19, 1.20, 1.21, 1.23, 1.29, 2.2, 2.3, **2.4 (live + fully verified 2026-06-19, all holds cleared)**, 2.6, **2.5.1 (live + fully verified 2026-11-10)**. Collection pages verified 2026-05-24. All Phase 1 holds cleared 2026-05-25.
